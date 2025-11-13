@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Corruption Watch PH</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f8f9fa;
+        }
+
+        /* Login Section */
+        .login-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-section::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            top: -250px;
+            right: -250px;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 25px;
+            padding: 3rem;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 10;
+        }
+
+        .login-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+        }
+
+        /* Dashboard Styles */
+        .navbar-admin {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .stat-card.total::before { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .stat-card.pending::before { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .stat-card.review::before { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+        .stat-card.resolved::before { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            opacity: 0.2;
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Reports Table */
+        .reports-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .table tbody tr {
+            transition: all 0.3s;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.01);
+        }
+
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-pending { background: #ffc107; color: #000; }
+        .status-review { background: #17a2b8; color: white; }
+        .status-resolved { background: #28a745; color: white; }
+        .status-rejected { background: #dc3545; color: white; }
+
+        .action-btn {
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: none;
+            transition: all 0.3s;
+            margin: 0 2px;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        #dashboardSection {
+            display: none;
+        }
+
+        /* Loading Spinner */
+        .spinner-border-custom {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.3rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Section -->
+    <section id="loginSection" class="login-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-5">
+                    <div class="login-card">
+                        <div class="login-icon">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <h2 class="text-center mb-3">Admin Login</h2>
+                        <p class="text-center text-muted mb-4">Secure access to corruption reports</p>
+                        
+                        <div id="loginError" class="alert alert-danger d-none">
+                            <i class="fas fa-exclamation-circle"></i> <span id="loginErrorMsg"></span>
+                        </div>
+                        
+                        <form id="loginForm">
+                            <div class="mb-3">
+                                <label class="form-label"><i class="fas fa-user"></i> Username</label>
+                                <input type="text" class="form-control" id="username" value="admin" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label"><i class="fas fa-lock"></i> Password</label>
+                                <input type="password" class="form-control" id="password" value="admin123" required>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary w-100 py-3" id="loginBtn">
+                                <i class="fas fa-sign-in-alt"></i> Login to Dashboard
+                            </button>
+                        </form>
+                        
+                        <div class="text-center mt-4">
+                            <a href="index.html" class="text-decoration-none">
+                                <i class="fas fa-arrow-left"></i> Back to Homepage
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Section -->
+    <div id="dashboardSection">
+        <!-- Navigation -->
+        <nav class="navbar navbar-dark navbar-admin">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold">
+                    <i class="fas fa-shield-alt"></i> Admin Dashboard
+                </a>
+                <div class="d-flex align-items-center">
+                    <span class="text-white me-3">
+                        <i class="fas fa-user"></i> <span id="adminName">Admin</span>
+                    </span>
+                    <button class="btn btn-outline-light btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid py-4">
+            <!-- Statistics Cards -->
+            <div class="row g-4 mb-4 fade-in">
+                <div class="col-md-3">
+                    <div class="stat-card total">
+                        <div class="stat-number" id="totalCount">0</div>
+                        <div class="stat-label">Total Reports</div>
+                        <i class="fas fa-file-alt stat-icon"></i>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card pending">
+                        <div class="stat-number" id="pendingCount">0</div>
+                        <div class="stat-label">Pending</div>
+                        <i class="fas fa-clock stat-icon"></i>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card review">
+                        <div class="stat-number" id="reviewCount">0</div>
+                        <div class="stat-label">Under Review</div>
+                        <i class="fas fa-search stat-icon"></i>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card resolved">
+                        <div class="stat-number" id="resolvedCount">0</div>
+                        <div class="stat-label">Resolved</div>
+                        <i class="fas fa-check-circle stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Table -->
+            <div class="reports-card fade-in">
+                <div class="p-4 border-bottom">
+                    <h4 class="mb-0"><i class="fas fa-list"></i> All Corruption Reports</h4>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Name</th>
+                                <th>Department</th>
+                                <th>Location</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsTableBody">
+                            <tr>
+                                <td colspan="8" class="text-center py-5">
+                                    <div class="spinner-border spinner-border-custom text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-3 text-muted">Loading reports...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Report Modal -->
+    <div class="modal fade" id="viewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-eye"></i> Report Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="viewModalBody">
+                    <!-- Content loaded dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Status Modal -->
+    <div class="modal fade" id="statusModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-edit"></i> Update Status</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="updateReportId">
+                    <div class="mb-3">
+                        <label class="form-label">Select New Status:</label>
+                        <select class="form-select" id="newStatus">
+                            <option value="Pending">Pending</option>
+                            <option value="Under Review">Under Review</option>
+                            <option value="Resolved">Resolved</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="updateStatus()">
+                        <i class="fas fa-save"></i> Update Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, doc, updateDoc, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase Configuration - REPLACE WITH YOUR OWN!
+        const firebaseConfig = {
+            apiKey: "AIzaSyAxoT7j070pF2n3ObIfgHoICaIOhNNzjZI",
+            authDomain: "corruption-reporting-system.firebaseapp.com",
+            projectId: "corruption-reporting-system",
+            storageBucket: "corruption-reporting-system.firebasestorage.app",
+            messagingSenderId: "339218597582",
+            appId: "1:339218597582:web:0a4901e9a31feb6e37729f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Make db available globally
+        window.db = db;
+        window.doc = doc;
+        window.updateDoc = updateDoc;
+
+        // Login handling
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginError = document.getElementById('loginError');
+            const loginBtn = document.getElementById('loginBtn');
+            
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Logging in...';
+            
+            try {
+                // Check credentials against Firebase
+                const adminsRef = collection(db, 'admins');
+                const querySnapshot = await getDocs(adminsRef);
+                
+                let authenticated = false;
+                querySnapshot.forEach((doc) => {
+                    const admin = doc.data();
+                    if (admin.username === username && admin.password === password) {
+                        authenticated = true;
+                        sessionStorage.setItem('adminLoggedIn', 'true');
+                        sessionStorage.setItem('adminName', username);
+                    }
+                });
+                
+                if (authenticated) {
+                    showDashboard();
+                } else {
+                    loginError.classList.remove('d-none');
+                    document.getElementById('loginErrorMsg').textContent = 'Invalid username or password!';
+                }
+            } catch (error) {
+                loginError.classList.remove('d-none');
+                document.getElementById('loginErrorMsg').textContent = 'Error: ' + error.message;
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login to Dashboard';
+            }
+        });
+
+        // Check if already logged in
+        if (sessionStorage.getItem('adminLoggedIn') === 'true') {
+            showDashboard();
+        }
+
+        function showDashboard() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'block';
+            document.getElementById('adminName').textContent = sessionStorage.getItem('adminName') || 'Admin';
+            loadReports();
+        }
+
+        window.logout = function() {
+            sessionStorage.removeItem('adminLoggedIn');
+            sessionStorage.removeItem('adminName');
+            location.reload();
+        }
+
+        // Load reports from Firebase
+        async function loadReports() {
+            try {
+                const reportsRef = collection(db, 'reports');
+                const q = query(reportsRef, orderBy('timestamp', 'desc'));
+                const querySnapshot = await getDocs(q);
+                
+                const reports = [];
+                querySnapshot.forEach((doc) => {
+                    reports.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Update statistics
+                document.getElementById('totalCount').textContent = reports.length;
+                document.getElementById('pendingCount').textContent = reports.filter(r => r.status === 'Pending').length;
+                document.getElementById('reviewCount').textContent = reports.filter(r => r.status === 'Under Review').length;
+                document.getElementById('resolvedCount').textContent = reports.filter(r => r.status === 'Resolved').length;
+                
+                // Update table
+                const tbody = document.getElementById('reportsTableBody');
+                if (reports.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No reports found.</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                tbody.innerHTML = reports.map((report, index) => {
+                    const statusClass = 
+                        report.status === 'Pending' ? 'status-pending' :
+                        report.status === 'Under Review' ? 'status-review' :
+                        report.status === 'Resolved' ? 'status-resolved' : 'status-rejected';
+                    
+                    const shortDesc = report.description.length > 60 
+                        ? report.description.substring(0, 60) + '...' 
+                        : report.description;
+                    
+                    return `
+                        <tr>
+                            <td><strong>#${index + 1}</strong></td>
+                            <td>${report.date || 'N/A'}</td>
+                            <td>${report.name || 'Anonymous'}</td>
+                            <td><span class="badge bg-secondary">${report.department}</span></td>
+                            <td>${report.location || 'N/A'}</td>
+                            <td>${shortDesc}</td>
+                            <td><span class="status-badge ${statusClass}">${report.status}</span></td>
+                            <td>
+                                <button class="action-btn btn-info btn-sm" onclick="viewReport('${report.id}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="action-btn btn-primary btn-sm" onclick="showStatusModal('${report.id}', '${report.status}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                // Store reports globally for modal access
+                window.reportsData = reports;
+                
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                document.getElementById('reportsTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-danger">
+                            <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                            <p>Error loading reports: ${error.message}</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        window.viewReport = function(reportId) {
+            const report = window.reportsData.find(r => r.id === reportId);
+            if (!report) return;
+            
+            const statusClass = 
+                report.status === 'Pending' ? 'status-pending' :
+                report.status === 'Under Review' ? 'status-review' :
+                report.status === 'Resolved' ? 'status-resolved' : 'status-rejected';
+            
+            document.getElementById('viewModalBody').innerHTML = `
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong><i class="fas fa-user"></i> Reporter Name:</strong>
+                        <p>${report.name || 'Anonymous'}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong><i class="fas fa-building"></i> Department:</strong>
+                        <p>${report.department}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong><i class="fas fa-map-marker-alt"></i> Location:</strong>
+                        <p>${report.location || 'Not specified'}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong><i class="fas fa-calendar"></i> Date Reported:</strong>
+                        <p>${report.date || 'N/A'}</p>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <strong><i class="fas fa-info-circle"></i> Status:</strong>
+                        <p><span class="status-badge ${statusClass}">${report.status}</span></p>
+                    </div>
+                    <div class="col-12">
+                        <strong><i class="fas fa-file-alt"></i> Full Description:</strong>
+                        <p class="border p-3 rounded bg-light">${report.description.replace(/\n/g, '<br>')}</p>
+                    </div>
+                </div>
+            `;
+            
+            new bootstrap.Modal(document.getElementById('viewModal')).show();
+        }
+
+        window.showStatusModal = function(reportId, currentStatus) {
+            document.getElementById('updateReportId').value = reportId;
+            document.getElementById('newStatus').value = currentStatus;
+            new bootstrap.Modal(document.getElementById('statusModal')).show();
+        }
+
+        window.updateStatus = async function() {
+            const reportId = document.getElementById('updateReportId').value;
+            const newStatus = document.getElementById('newStatus').value;
+            
+            try {
+                const reportRef = doc(db, 'reports', reportId);
+                await updateDoc(reportRef, {
+                    status: newStatus
+                });
+                
+                bootstrap.Modal.getInstance(document.getElementById('statusModal')).hide();
+                
+                // Reload reports
+                loadReports();
+                
+                // Show success message
+                alert('✅ Report status updated successfully!');
+            } catch (error) {
+                alert('❌ Error updating status: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
