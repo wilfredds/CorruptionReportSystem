@@ -197,6 +197,21 @@
     </style>
 </head>
 <body>
+    <!-- Role Check Script - Must be at top -->
+    <script>
+        // Check if user has admin role BEFORE showing anything
+        window.addEventListener('DOMContentLoaded', () => {
+            const userRole = localStorage.getItem('userRole');
+            
+            if (userRole !== 'admin') {
+                // Not an admin! Redirect back to homepage with message
+                alert('⛔ Access Denied!\n\nThis page is for administrators only.\nPlease select "Administrator" role from the homepage.');
+                window.location.href = 'index.html';
+                return;
+            }
+        });
+    </script>
+
     <!-- Login Section -->
     <section id="loginSection" class="login-section">
         <div class="container">
@@ -383,7 +398,7 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getFirestore, collection, getDocs, doc, updateDoc, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-        // Firebase Configuration - REPLACE WITH YOUR OWN!
+        // Firebase Configuration 
         const firebaseConfig = {
             apiKey: "AIzaSyAxoT7j070pF2n3ObIfgHoICaIOhNNzjZI",
             authDomain: "corruption-reporting-system.firebaseapp.com",
@@ -472,15 +487,18 @@
                     reports.push({ id: doc.id, ...doc.data() });
                 });
                 
-                // Update statistics
-                document.getElementById('totalCount').textContent = reports.length;
-                document.getElementById('pendingCount').textContent = reports.filter(r => r.status === 'Pending').length;
-                document.getElementById('reviewCount').textContent = reports.filter(r => r.status === 'Under Review').length;
-                document.getElementById('resolvedCount').textContent = reports.filter(r => r.status === 'Resolved').length;
+                // SHOW ALL REPORTS - Don't filter out resolved ones!
+                const allReports = reports;
                 
-                // Update table
+                // Update statistics
+                document.getElementById('totalCount').textContent = allReports.length;
+                document.getElementById('pendingCount').textContent = allReports.filter(r => r.status === 'Pending').length;
+                document.getElementById('reviewCount').textContent = allReports.filter(r => r.status === 'Under Review').length;
+                document.getElementById('resolvedCount').textContent = allReports.filter(r => r.status === 'Resolved').length;
+                
+                // Update table - Show all reports including resolved
                 const tbody = document.getElementById('reportsTableBody');
-                if (reports.length === 0) {
+                if (allReports.length === 0) {
                     tbody.innerHTML = `
                         <tr>
                             <td colspan="8" class="text-center py-5">
@@ -492,7 +510,7 @@
                     return;
                 }
                 
-                tbody.innerHTML = reports.map((report, index) => {
+                tbody.innerHTML = allReports.map((report, index) => {
                     const statusClass = 
                         report.status === 'Pending' ? 'status-pending' :
                         report.status === 'Under Review' ? 'status-review' :
@@ -591,19 +609,32 @@
             const newStatus = document.getElementById('newStatus').value;
             
             try {
-                const reportRef = doc(db, 'reports', reportId);
+                // Import updateDoc if not already done
+                const { doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                
+                const reportRef = doc(window.db, 'reports', reportId);
                 await updateDoc(reportRef, {
-                    status: newStatus
+                    status: newStatus,
+                    updatedAt: new Date().toISOString()
                 });
                 
-                bootstrap.Modal.getInstance(document.getElementById('statusModal')).hide();
-                
-                // Reload reports
-                loadReports();
+                // Close modal
+                const modalElement = document.getElementById('statusModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
                 
                 // Show success message
-                alert('✅ Report status updated successfully!');
+                alert('✅ Report status updated successfully to: ' + newStatus);
+                
+                // Reload reports after short delay
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+                
             } catch (error) {
+                console.error('Update error:', error);
                 alert('❌ Error updating status: ' + error.message);
             }
         }
