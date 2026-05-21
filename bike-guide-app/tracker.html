@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Ride Tracker - Bike Guide PH</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2d6a4f">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
+  <style>
+    .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:16px 20px; }
+    .stat-card { background:#fff; border-radius:16px; padding:16px; box-shadow:0 4px 14px rgba(0,0,0,0.08); text-align:center; }
+    .stat-card .sv { font-size:1.6rem; font-weight:800; color:var(--green-primary); }
+    .stat-card .sl { font-size:0.7rem; color:#888; text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
+    .log-form { margin:0 20px 20px; background:#fff; border-radius:20px; box-shadow:0 8px 24px rgba(0,0,0,0.1); padding:20px; }
+    .log-form h3 { font-size:1rem; margin-bottom:14px; }
+    .form-group { margin-bottom:14px; }
+    .form-group label { font-size:0.78rem; font-weight:600; color:#555; display:block; margin-bottom:6px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width:100%; padding:11px 14px;
+      border:1.5px solid #e0e0e0; border-radius:12px;
+      font-family:'Poppins',sans-serif; font-size:0.85rem;
+      outline:none; transition:border-color 0.2s;
+      background:#fafafa;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:#2d6a4f; background:#fff; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .submit-btn { width:100%; padding:14px; background:linear-gradient(135deg,#2d6a4f,#52b788); color:#fff; border:none; border-radius:50px; font-family:'Poppins',sans-serif; font-size:0.95rem; font-weight:700; cursor:pointer; }
+    .rides-list { padding:0 20px 20px; }
+    .rides-list h3 { font-size:0.95rem; font-weight:700; margin-bottom:12px; }
+    .ride-item { background:#fff; border-radius:14px; padding:14px; margin-bottom:10px; box-shadow:0 2px 10px rgba(0,0,0,0.07); display:flex; align-items:center; gap:12px; }
+    .ride-icon { width:42px; height:42px; background:#f0f7f4; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#2d6a4f; font-size:1.1rem; flex-shrink:0; }
+    .ride-info { flex:1; }
+    .ride-name { font-size:0.88rem; font-weight:700; color:#1a1a2e; }
+    .ride-meta { font-size:0.72rem; color:#888; margin-top:2px; }
+    .ride-km { font-size:1rem; font-weight:800; color:#2d6a4f; }
+    .empty-state { text-align:center; padding:40px 20px; color:#aaa; }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+  <div class="top-bar">
+    <a href="dashboard.html" style="color:#fff;margin-right:12px;"><i class="fa-solid fa-arrow-left"></i></a>
+    <span class="app-name"><i class="fa-solid fa-chart-line" style="color:#f4722b;margin-right:6px;"></i>Ride Tracker</span>
+    <div class="top-actions"><span class="rider-badge" id="rider-badge"></span></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat-card"><div class="sv" id="s-rides">0</div><div class="sl">Total Rides</div></div>
+    <div class="stat-card"><div class="sv" id="s-km">0</div><div class="sl">Total km</div></div>
+    <div class="stat-card"><div class="sv" id="s-avg">0</div><div class="sl">Avg Speed km/h</div></div>
+    <div class="stat-card"><div class="sv" id="s-best">0</div><div class="sl">Longest Ride km</div></div>
+  </div>
+
+  <!-- Log Form -->
+  <div class="log-form">
+    <h3><i class="fa-solid fa-plus" style="color:#2d6a4f;"></i> Log a Ride</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Distance (km)*</label>
+        <input type="number" id="f-dist" placeholder="15.5" min="0.1" step="0.1" required>
+      </div>
+      <div class="form-group">
+        <label>Duration (min)*</label>
+        <input type="number" id="f-dur" placeholder="60" min="1" required>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Date*</label>
+      <input type="date" id="f-date" required>
+    </div>
+    <div class="form-group">
+      <label>Route Name</label>
+      <input type="text" id="f-route" placeholder="BGC Loop, Tagaytay, etc.">
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="f-notes" rows="2" placeholder="How was the ride?"></textarea>
+    </div>
+    <button class="submit-btn" onclick="submitRide()"><i class="fa-solid fa-floppy-disk"></i> Save Ride</button>
+    <p id="log-msg" style="text-align:center;font-size:0.8rem;margin-top:10px;color:#2d6a4f;display:none;"></p>
+  </div>
+
+  <!-- Rides List -->
+  <div class="rides-list">
+    <h3>Ride History</h3>
+    <div id="rides-container"><div class="empty-state"><i class="fa-solid fa-person-biking" style="font-size:2rem;margin-bottom:8px;display:block;"></i>No rides yet. Log your first one!</div></div>
+  </div>
+
+  <nav class="bottom-nav" id="bottom-nav"></nav>
+</div>
+
+<script type="module">
+  import { initPage } from './js/app.js';
+  import { logRide, getRides, calcStats } from './js/tracker.js';
+  initPage('tracker');
+
+  // Set today's date as default
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+
+  let rides = [];
+
+  async function loadRides() {
+    rides = await getRides();
+    const stats = calcStats(rides);
+    document.getElementById('s-rides').textContent = stats.totalRides;
+    document.getElementById('s-km').textContent    = stats.totalKm;
+    document.getElementById('s-avg').textContent   = stats.avgSpeed;
+    document.getElementById('s-best').textContent  = stats.longestRide;
+
+    const container = document.getElementById('rides-container');
+    if (rides.length === 0) {
+      container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-person-biking" style="font-size:2rem;margin-bottom:8px;display:block;"></i>No rides yet. Log your first one!</div>';
+      return;
+    }
+    container.innerHTML = rides.map(r => `
+      <div class="ride-item">
+        <div class="ride-icon"><i class="fa-solid fa-person-biking"></i></div>
+        <div class="ride-info">
+          <div class="ride-name">${r.routeName || 'Unnamed Ride'}</div>
+          <div class="ride-meta">${r.date || ''} · ${r.durationMinutes || '?'} min</div>
+          ${r.notes ? `<div class="ride-meta" style="margin-top:2px;">${r.notes}</div>` : ''}
+        </div>
+        <div class="ride-km">${r.distanceKm} km</div>
+      </div>
+    `).join('');
+  }
+
+  window.submitRide = async function() {
+    const dist = parseFloat(document.getElementById('f-dist').value);
+    const dur  = parseInt(document.getElementById('f-dur').value);
+    if (!dist || !dur) { alert('Please enter distance and duration.'); return; }
+    const btn = document.querySelector('.submit-btn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+    await logRide({
+      distanceKm: dist,
+      durationMinutes: dur,
+      date: document.getElementById('f-date').value,
+      routeName: document.getElementById('f-route').value,
+      notes: document.getElementById('f-notes').value,
+    });
+    document.getElementById('f-dist').value  = '';
+    document.getElementById('f-dur').value   = '';
+    document.getElementById('f-route').value = '';
+    document.getElementById('f-notes').value = '';
+    const msg = document.getElementById('log-msg');
+    msg.style.display = 'block'; msg.textContent = '✓ Ride saved!';
+    setTimeout(() => { msg.style.display = 'none'; }, 2500);
+    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Ride';
+    await loadRides();
+  };
+
+  loadRides();
+</script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
+</body>
+</html>
