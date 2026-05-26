@@ -44,8 +44,26 @@ function addBotResponse(item) {
   const messages = document.getElementById('chatMessages');
   const div = document.createElement('div');
   div.className = 'chat-msg bot';
-  div.innerHTML = `<strong>${item.title}</strong><br>${item.response}<br><ul style="margin:8px 0 0 12px;font-size:0.75rem;">` +
-    item.steps.map(s => `<li>${s}</li>`).join('') + '</ul>';
+
+  const title = document.createElement('strong');
+  title.textContent = item.title;
+  div.appendChild(title);
+  div.appendChild(document.createElement('br'));
+
+  const resp = document.createElement('span');
+  resp.textContent = item.response;
+  div.appendChild(resp);
+  div.appendChild(document.createElement('br'));
+
+  const ul = document.createElement('ul');
+  ul.style.cssText = 'margin:8px 0 0 12px;font-size:0.75rem;';
+  (item.steps || []).forEach(s => {
+    const li = document.createElement('li');
+    li.textContent = s;
+    ul.appendChild(li);
+  });
+  div.appendChild(ul);
+
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
 }

@@ -3,46 +3,109 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1b4332">
   <title>Home - Bike Guide PH</title>
   <link rel="icon" href="assets/icons/favicon.ico">
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#2d6a4f">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="css/style.css" rel="stylesheet">
   <style>
-    .hero-banner { padding: 20px 20px 28px; border-radius: 0 0 30px 30px; }
-    .greeting    { font-size: 0.8rem; color: rgba(255,255,255,0.7); margin-bottom: 4px; }
-    .hero-name   { font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 12px; }
-    .stats-row   { display: flex; gap: 8px; flex-wrap: wrap; }
+    /* ── Dashboard-specific styles ── */
+    .hero-banner { padding: 22px 22px 30px; }
+    .hero-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .greeting-label { font-size:0.75rem; color:rgba(255,255,255,0.65); font-weight:600; text-transform:uppercase; letter-spacing:0.8px; }
+    .hero-name { font-size:1.45rem; font-weight:800; color:#fff; line-height:1.2; margin-top:3px; }
+    .hero-name span { color:#f4722b; }
+    .hero-bike-deco {
+      width:70px; height:70px;
+      background:rgba(255,255,255,0.08);
+      border:2px solid rgba(255,255,255,0.15);
+      border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.8rem; color:rgba(255,255,255,0.7);
+      flex-shrink:0;
+      position:relative;
+    }
+    .hero-bike-deco::before {
+      content:'';
+      position:absolute; inset:-5px;
+      border:2px solid rgba(244,114,43,0.4);
+      border-radius:50%;
+      border-top-color:#f4722b;
+      animation: spinWheel 3s linear infinite;
+    }
+    .stats-row { display:flex; gap:8px; flex-wrap:wrap; }
 
+    /* Challenge Strip */
     .challenge-strip {
-      background: linear-gradient(135deg, #f4722b, #ff9a5c);
-      border-radius: 18px;
+      background: linear-gradient(135deg, #e65100, #f4722b, #ff9a5c);
+      border-radius: 20px;
       padding: 16px 18px;
-      margin: 0 20px 20px;
+      margin: 0 20px 24px;
       display: flex; align-items: center; gap: 14px;
       cursor: pointer;
-      box-shadow: 0 6px 20px rgba(244,114,43,0.3);
+      box-shadow: 0 8px 24px rgba(244,114,43,0.32);
+      text-decoration: none;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.22s ease;
     }
-    .challenge-strip .ch-icon { font-size: 2rem; color: #fff; }
-    .challenge-strip .ch-text .ch-title { font-size: 0.92rem; font-weight: 700; color: #fff; }
-    .challenge-strip .ch-text .ch-sub   { font-size: 0.72rem; color: rgba(255,255,255,0.8); }
-    .challenge-strip .ch-arrow { margin-left: auto; color: rgba(255,255,255,0.7); font-size: 1rem; }
+    .challenge-strip::after {
+      content:'\f06d';
+      font-family:'Font Awesome 6 Free'; font-weight:900;
+      position:absolute; right:54px; top:50%; transform:translateY(-50%);
+      font-size:3.5rem; color:rgba(255,255,255,0.08);
+      pointer-events:none;
+    }
+    .challenge-strip:hover { transform:translateY(-3px); box-shadow:0 12px 32px rgba(244,114,43,0.42); }
+    .challenge-strip:active { transform:scale(0.98); }
+    .ch-icon { font-size:2.2rem; color:#fff; flex-shrink:0; }
+    .ch-text { flex:1; }
+    .ch-title { font-size:0.95rem; font-weight:800; color:#fff; }
+    .ch-sub   { font-size:0.72rem; color:rgba(255,255,255,0.82); margin-top:2px; }
+    .ch-arrow { color:rgba(255,255,255,0.6); font-size:0.95rem; }
 
-    .modules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px 20px; }
+    /* Section labels */
+    .section-label {
+      font-size:0.65rem;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:1.2px;
+      color:#999;
+      padding:0 20px;
+      margin-bottom:12px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .section-label::after {
+      content:'';
+      flex:1; height:1px;
+      background:linear-gradient(to right, #e8e8e8, transparent);
+    }
 
-    .color-green  { background: linear-gradient(135deg, #2d6a4f, #52b788); }
-    .color-orange { background: linear-gradient(135deg, #f4722b, #ff9a5c); }
-    .color-blue   { background: linear-gradient(135deg, #2980b9, #6dd5fa); }
-    .color-purple { background: linear-gradient(135deg, #8e44ad, #c39bd3); }
-    .color-teal   { background: linear-gradient(135deg, #00897b, #4db6ac); }
-    .color-red    { background: linear-gradient(135deg, #c0392b, #e74c3c); }
-    .color-brown  { background: linear-gradient(135deg, #6d4c41, #a1887f); }
-    .color-indigo { background: linear-gradient(135deg, #283593, #5c6bc0); }
-    .color-lime   { background: linear-gradient(135deg, #558b2f, #9ccc65); }
-    .color-amber  { background: linear-gradient(135deg, #e65100, #ffa726); }
+    /* Module grid */
+    .modules-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 0 20px 4px;
+    }
+    .module-card { padding: 20px 12px 16px; }
+    .module-card .icon-wrap { width:54px; height:54px; border-radius:16px; font-size:1.4rem; }
+    .module-card .card-label { font-size:0.71rem; }
+
+    /* Wide card spanning full width */
+    .module-card-wide {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      padding: 18px 20px;
+      justify-content: flex-start;
+      gap: 16px;
+      text-align: left;
+    }
+    .module-card-wide .card-label { font-size:0.85rem; letter-spacing:0; }
+    .module-card-wide .card-sublabel { font-size:0.72rem; color:#888; font-weight:400; text-transform:none; letter-spacing:0; margin-top:2px; }
   </style>
 </head>
 <body>
@@ -50,7 +113,9 @@
 
   <!-- Top Bar -->
   <div class="top-bar">
-    <span class="app-name"><i class="fa-solid fa-person-biking" style="color:#f4722b;margin-right:6px;"></i>Bike Guide PH</span>
+    <span class="app-name">
+      <i class="fa-solid fa-person-biking" style="color:#f4722b;margin-right:7px;"></i>Bike Guide PH
+    </span>
     <div class="top-actions">
       <span class="rider-badge" id="rider-badge">Beginner</span>
       <button class="icon-btn" id="lang-toggle" title="Switch language">EN</button>
@@ -59,8 +124,13 @@
 
   <!-- Hero Banner -->
   <div class="hero-banner">
-    <p class="greeting" data-i18n="good_morning">Good morning, Rider!</p>
-    <p class="hero-name" id="hero-greeting">Keep pedaling forward.</p>
+    <div class="hero-top">
+      <div>
+        <div class="greeting-label" data-i18n="good_morning" id="greeting-label">Good morning, Rider!</div>
+        <div class="hero-name" id="hero-greeting">Keep<br><span>pedaling</span> forward.</div>
+      </div>
+      <div class="hero-bike-deco"><i class="fa-solid fa-person-biking"></i></div>
+    </div>
     <div class="stats-row" id="stats-row">
       <span class="stat-pill" id="stat-rides"><i class="fa-solid fa-route"></i> 0 rides</span>
       <span class="stat-pill" id="stat-km"><i class="fa-solid fa-road"></i> 0 km</span>
@@ -69,122 +139,136 @@
   </div>
 
   <!-- Daily Tip -->
-  <div class="tip-card" id="tip-card">
+  <div class="tip-card fade-in-up" id="tip-card">
     <div class="tip-label"><i class="fa-solid fa-lightbulb"></i> Daily Tip</div>
     <p id="tip-text">Loading today's tip...</p>
   </div>
 
-  <!-- Challenge Strip -->
-  <div class="challenge-strip" onclick="window.location.href='challenge.html'">
+  <!-- 30-Day Challenge Strip -->
+  <a class="challenge-strip fade-in-up" href="challenge.html" style="animation-delay:0.05s">
     <i class="fa-solid fa-fire ch-icon"></i>
     <div class="ch-text">
       <div class="ch-title">30-Day Cycling Challenge</div>
       <div class="ch-sub" id="challenge-sub">Start your challenge today!</div>
     </div>
     <i class="fa-solid fa-chevron-right ch-arrow"></i>
-  </div>
+  </a>
 
-  <!-- Section: Learn -->
-  <div class="section-title">
-    <h2><i class="fa-solid fa-book-open" style="color:#2d6a4f;font-size:1rem;"></i> Learn</h2>
-  </div>
-  <div class="modules-grid">
-    <a class="module-card" href="knowledge.html">
-      <div class="icon-wrap color-green"><i class="fa-solid fa-bicycle"></i></div>
+  <!-- Learn -->
+  <div class="section-label">Learn</div>
+  <div class="modules-grid" style="margin-bottom:20px;">
+    <a class="module-card fade-in-up" href="knowledge.html" style="animation-delay:0.08s">
+      <div class="icon-wrap color-dark-green"><i class="fa-solid fa-bicycle"></i></div>
       <span class="card-label">Bike Knowledge</span>
     </a>
-    <a class="module-card" href="gear-guide.html">
+    <a class="module-card fade-in-up" href="gear-guide.html" style="animation-delay:0.10s">
       <div class="icon-wrap color-blue"><i class="fa-solid fa-gears"></i></div>
       <span class="card-label">Gear Guide</span>
     </a>
-    <a class="module-card" href="maintenance.html">
+    <a class="module-card fade-in-up" href="maintenance.html" style="animation-delay:0.12s">
       <div class="icon-wrap color-brown"><i class="fa-solid fa-wrench"></i></div>
       <span class="card-label">Maintenance</span>
     </a>
-    <a class="module-card" href="safety.html">
+    <a class="module-card fade-in-up" href="safety.html" style="animation-delay:0.14s">
       <div class="icon-wrap color-red"><i class="fa-solid fa-shield-halved"></i></div>
       <span class="card-label">Safety Gear</span>
     </a>
   </div>
 
-  <!-- Section: Train -->
-  <div class="section-title">
-    <h2><i class="fa-solid fa-dumbbell" style="color:#f4722b;font-size:1rem;"></i> Train</h2>
-  </div>
-  <div class="modules-grid">
-    <a class="module-card" href="warmup.html">
+  <!-- Train -->
+  <div class="section-label">Train</div>
+  <div class="modules-grid" style="margin-bottom:20px;">
+    <a class="module-card fade-in-up" href="warmup.html" style="animation-delay:0.06s">
       <div class="icon-wrap color-teal"><i class="fa-solid fa-person-running"></i></div>
       <span class="card-label">Warm-Up</span>
     </a>
-    <a class="module-card" href="diet.html">
+    <a class="module-card fade-in-up" href="diet.html" style="animation-delay:0.08s">
       <div class="icon-wrap color-lime"><i class="fa-solid fa-apple-whole"></i></div>
       <span class="card-label">Diet & Nutrition</span>
     </a>
-    <a class="module-card" href="tracker.html">
+    <a class="module-card fade-in-up module-card-wide" href="tracker.html" style="animation-delay:0.10s">
       <div class="icon-wrap color-indigo"><i class="fa-solid fa-chart-line"></i></div>
-      <span class="card-label">Ride Tracker</span>
+      <div>
+        <span class="card-label">Ride Tracker</span>
+        <div class="card-sublabel">Log rides &amp; view your stats</div>
+      </div>
     </a>
-    <a class="module-card" href="carbon.html">
+    <a class="module-card fade-in-up module-card-wide" href="carbon.html" style="animation-delay:0.12s">
       <div class="icon-wrap color-lime"><i class="fa-solid fa-leaf"></i></div>
-      <span class="card-label">Carbon Tracker</span>
+      <div>
+        <span class="card-label">Carbon Tracker</span>
+        <div class="card-sublabel">CO&#8322; saved vs. cars &amp; jeepneys</div>
+      </div>
     </a>
   </div>
 
-  <!-- Section: Explore -->
-  <div class="section-title">
-    <h2><i class="fa-solid fa-compass" style="color:#2980b9;font-size:1rem;"></i> Explore</h2>
-  </div>
-  <div class="modules-grid" style="margin-bottom:28px;">
-    <a class="module-card" href="routes.html">
+  <!-- Explore -->
+  <div class="section-label">Explore</div>
+  <div class="modules-grid" style="margin-bottom:32px;">
+    <a class="module-card fade-in-up module-card-wide" href="routes.html" style="animation-delay:0.06s">
       <div class="icon-wrap color-orange"><i class="fa-solid fa-map-location-dot"></i></div>
-      <span class="card-label">PH Routes</span>
+      <div>
+        <span class="card-label">PH Routes</span>
+        <div class="card-sublabel">BGC, Tagaytay, Baguio &amp; more</div>
+      </div>
     </a>
-    <a class="module-card" href="motivation.html">
+    <a class="module-card fade-in-up" href="motivation.html" style="animation-delay:0.08s">
       <div class="icon-wrap color-purple"><i class="fa-solid fa-star"></i></div>
       <span class="card-label">Motivation</span>
     </a>
+    <a class="module-card fade-in-up" href="premium.html" style="animation-delay:0.10s">
+      <div class="icon-wrap color-amber"><i class="fa-solid fa-crown"></i></div>
+      <span class="card-label">Go Premium</span>
+    </a>
   </div>
 
-  <!-- Bottom Nav -->
   <nav class="bottom-nav" id="bottom-nav"></nav>
 </div>
 
 <script type="module">
   import { initPage, getDailyTip, getRiderLevel } from './js/app.js';
   import { db } from './js/firebase-config.js';
-  import { collection, query, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+  import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
   initPage('home');
 
+  // Time-based greeting
+  const hour = new Date().getHours();
+  const greetWord = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const greetEl = document.getElementById('greeting-label');
+  if (greetEl) greetEl.textContent = greetWord + ', Rider!';
+
   // Daily tip
   getDailyTip().then(tip => {
-    document.getElementById('tip-text').textContent = tip?.tip ?? '';
+    const el = document.getElementById('tip-text');
+    if (el) el.textContent = tip?.tip ?? '';
   });
 
-  // Hero greeting based on time
-  const hour = new Date().getHours();
-  const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  document.getElementById('hero-greeting').textContent = greet + ', Rider! 🚴';
+  // Hero personalized line
+  const levelLines = {
+    beginner:     'Start your journey.',
+    intermediate: 'Push further today.',
+    advanced:     'Chase your best time.',
+  };
+  const level = getRiderLevel();
+  const heroEl = document.getElementById('hero-greeting');
+  if (heroEl) heroEl.innerHTML = `Keep <span>${levelLines[level] || 'pedaling forward.'}</span>`;
 
-  // Load ride stats and challenge progress from Firestore
+  // Firestore stats
   const userId = localStorage.getItem('bikeUserId');
   if (userId && db) {
     try {
-      const ridesRef = collection(db, 'users', userId, 'rides');
-      const snap = await getDocs(ridesRef);
+      const ridesSnap = await getDocs(collection(db, 'users', userId, 'rides'));
       let totalKm = 0;
-      snap.forEach(d => { totalKm += d.data().distanceKm || 0; });
-      document.getElementById('stat-rides').innerHTML = `<i class="fa-solid fa-route"></i> ${snap.size} rides`;
-      document.getElementById('stat-km').innerHTML = `<i class="fa-solid fa-road"></i> ${totalKm.toFixed(1)} km`;
+      ridesSnap.forEach(d => { totalKm += d.data().distanceKm || 0; });
+      document.getElementById('stat-rides').innerHTML = `<i class="fa-solid fa-route"></i> ${ridesSnap.size} ride${ridesSnap.size !== 1 ? 's' : ''}`;
+      document.getElementById('stat-km').innerHTML    = `<i class="fa-solid fa-road"></i> ${totalKm.toFixed(1)} km`;
 
-      const challengeRef = collection(db, 'users', userId, 'challenge');
-      const cSnap = await getDocs(challengeRef);
-      const done = cSnap.docs.filter(d => d.data().completed).length;
+      const cSnap = await getDocs(collection(db, 'users', userId, 'challenge'));
+      const done  = cSnap.docs.filter(d => d.data().completed).length;
       document.getElementById('stat-challenge').innerHTML = `<i class="fa-solid fa-fire"></i> Day ${done} / 30`;
-      if (done > 0) {
-        document.getElementById('challenge-sub').textContent = `Day ${done} complete! Keep going 🔥`;
-      }
-    } catch (_) { /* offline — show defaults */ }
+      if (done > 0) document.getElementById('challenge-sub').textContent = `Day ${done} complete — keep going! 🔥`;
+    } catch (_) { /* offline */ }
   }
 </script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>

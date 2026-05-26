@@ -118,31 +118,71 @@
       container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-person-biking" style="font-size:2rem;margin-bottom:8px;display:block;"></i>No rides yet. Log your first one!</div>';
       return;
     }
-    container.innerHTML = rides.map(r => `
-      <div class="ride-item">
-        <div class="ride-icon"><i class="fa-solid fa-person-biking"></i></div>
-        <div class="ride-info">
-          <div class="ride-name">${r.routeName || 'Unnamed Ride'}</div>
-          <div class="ride-meta">${r.date || ''} · ${r.durationMinutes || '?'} min</div>
-          ${r.notes ? `<div class="ride-meta" style="margin-top:2px;">${r.notes}</div>` : ''}
-        </div>
-        <div class="ride-km">${r.distanceKm} km</div>
-      </div>
-    `).join('');
+    container.innerHTML = '';
+    rides.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'ride-item';
+
+      const icon = document.createElement('div');
+      icon.className = 'ride-icon';
+      icon.innerHTML = '<i class="fa-solid fa-person-biking"></i>';
+
+      const info = document.createElement('div');
+      info.className = 'ride-info';
+
+      const name = document.createElement('div');
+      name.className = 'ride-name';
+      name.textContent = r.routeName || 'Unnamed Ride';
+
+      const meta = document.createElement('div');
+      meta.className = 'ride-meta';
+      meta.textContent = `${r.date || ''} · ${r.durationMinutes || '?'} min`;
+
+      info.appendChild(name);
+      info.appendChild(meta);
+
+      if (r.notes) {
+        const notesEl = document.createElement('div');
+        notesEl.className = 'ride-meta';
+        notesEl.style.marginTop = '2px';
+        notesEl.textContent = r.notes;
+        info.appendChild(notesEl);
+      }
+
+      const km = document.createElement('div');
+      km.className = 'ride-km';
+      km.textContent = r.distanceKm + ' km';
+
+      item.appendChild(icon);
+      item.appendChild(info);
+      item.appendChild(km);
+      container.appendChild(item);
+    });
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
   }
 
   window.submitRide = async function() {
     const dist = parseFloat(document.getElementById('f-dist').value);
     const dur  = parseInt(document.getElementById('f-dur').value);
-    if (!dist || !dur) { alert('Please enter distance and duration.'); return; }
+    const rawRoute = document.getElementById('f-route').value.trim();
+    const rawNotes = document.getElementById('f-notes').value.trim();
+
+    if (!dist || dist <= 0 || dist > 9999) { alert('Please enter a valid distance (0.1 – 9999 km).'); return; }
+    if (!dur  || dur  <= 0 || dur  > 9999) { alert('Please enter a valid duration (1 – 9999 minutes).'); return; }
+
     const btn = document.querySelector('.submit-btn');
     btn.disabled = true; btn.textContent = 'Saving...';
     await logRide({
       distanceKm: dist,
       durationMinutes: dur,
       date: document.getElementById('f-date').value,
-      routeName: document.getElementById('f-route').value,
-      notes: document.getElementById('f-notes').value,
+      routeName: rawRoute.slice(0, 120),
+      notes:     rawNotes.slice(0, 500),
     });
     document.getElementById('f-dist').value  = '';
     document.getElementById('f-dur').value   = '';

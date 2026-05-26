@@ -4,11 +4,15 @@ import { isPremium, setPremium } from './app.js';
 
 export async function submitPremiumRequest(gcashRef) {
   const userId = localStorage.getItem('bikeUserId');
-  if (!userId || !gcashRef.trim()) return { success: false, msg: 'Please enter your GCash reference number.' };
+  const ref = (gcashRef || '').trim().slice(0, 64);
+  if (!userId) return { success: false, msg: 'Device ID missing. Please reload the app.' };
+  if (!ref)    return { success: false, msg: 'Please enter your GCash reference number.' };
+  // Only allow alphanumeric + hyphens in reference
+  if (!/^[a-zA-Z0-9\-]{4,64}$/.test(ref)) return { success: false, msg: 'Reference number should contain only letters, numbers, or hyphens.' };
   try {
     await addDoc(collection(db, 'premiumRequests'), {
       deviceId: userId,
-      gcashRef: gcashRef.trim(),
+      gcashRef: ref,
       amount: 79,
       status: 'pending',
       submittedAt: serverTimestamp(),
