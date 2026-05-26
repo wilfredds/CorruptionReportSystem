@@ -9,6 +9,9 @@ export async function submitPremiumRequest(gcashRef) {
   if (!ref)    return { success: false, msg: 'Please enter your GCash reference number.' };
   // Only allow alphanumeric + hyphens in reference
   if (!/^[a-zA-Z0-9\-]{4,64}$/.test(ref)) return { success: false, msg: 'Reference number should contain only letters, numbers, or hyphens.' };
+  if (!db) {
+    return { success: false, msg: 'Premium activation needs the cloud backend. Add your Firebase config to enable real payments.' };
+  }
   try {
     await addDoc(collection(db, 'premiumRequests'), {
       deviceId: userId,
@@ -25,7 +28,7 @@ export async function submitPremiumRequest(gcashRef) {
 
 export async function checkPremiumActivation() {
   const userId = localStorage.getItem('bikeUserId');
-  if (!userId) return false;
+  if (!userId || !db) return false;
   try {
     const snap = await getDoc(doc(db, 'premiumUsers', userId));
     if (snap.exists() && snap.data().activated) {

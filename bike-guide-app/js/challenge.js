@@ -41,25 +41,44 @@ const CHALLENGE_PLAN = [
 
 export { CHALLENGE_PLAN };
 
+// ── Local storage fallback (when Firebase is not configured) ──
+const chKey = () => `bgph_challenge_${localStorage.getItem('bikeUserId') || 'anonymous'}`;
+function chLocalGet() {
+  try { return JSON.parse(localStorage.getItem(chKey())) || {}; } catch { return {}; }
+}
+function chLocalSet(obj) {
+  localStorage.setItem(chKey(), JSON.stringify(obj));
+}
+
 export async function getDayStatus() {
   const userId = localStorage.getItem('bikeUserId');
   if (!userId) return {};
-  try {
-    const snap = await getDocs(collection(db, 'users', userId, 'challenge'));
-    const status = {};
-    snap.forEach(d => { status[d.id] = d.data(); });
-    return status;
-  } catch { return {}; }
+  if (db) {
+    try {
+      const snap = await getDocs(collection(db, 'users', userId, 'challenge'));
+      const status = {};
+      snap.forEach(d => { status[d.id] = d.data(); });
+      return status;
+    } catch { return chLocalGet(); }
+  }
+  return chLocalGet();
 }
 
 export async function markDayComplete(day) {
   const userId = localStorage.getItem('bikeUserId');
   if (!userId) return;
-  await setDoc(doc(db, 'users', userId, 'challenge', `day_${String(day).padStart(2,'0')}`), {
-    day,
-    completed: true,
-    completedAt: serverTimestamp(),
-  });
+  const key = `day_${String(day).padStart(2, '0')}`;
+  if (db) {
+    await setDoc(doc(db, 'users', userId, 'challenge', key), {
+      day,
+      completed: true,
+      completedAt: serverTimestamp(),
+    });
+    return;
+  }
+  const status = chLocalGet();
+  status[key] = { day, completed: true, completedAt: Date.now() };
+  chLocalSet(status);
 }
 
 export function getStreakCount(status) {

@@ -4,23 +4,41 @@ import { collection, addDoc, getDocs, deleteDoc, doc, orderBy, query, serverTime
 
 const userId = () => localStorage.getItem('bikeUserId') || 'anonymous';
 
+// ── Local storage fallback (when Firebase is not configured) ──
+const lsKey = () => `bgph_rides_${userId()}`;
+function localGet() {
+  try { return JSON.parse(localStorage.getItem(lsKey())) || []; } catch { return []; }
+}
+function localSet(arr) {
+  localStorage.setItem(lsKey(), JSON.stringify(arr));
+}
+
 export async function logRide(rideData) {
-  return addDoc(collection(db, 'users', userId(), 'rides'), {
-    ...rideData,
-    timestamp: serverTimestamp(),
-  });
+  if (db) {
+    return addDoc(collection(db, 'users', userId(), 'rides'), {
+      ...rideData,
+      timestamp: serverTimestamp(),
+    });
+  }
+  const rides = localGet();
+  rides.unshift({ id: crypto.randomUUID(), ...rideData, timestamp: Date.now() });
+  localSet(rides);
 }
 
 export async function getRides() {
-  try {
-    const q = query(collection(db, 'users', userId(), 'rides'), orderBy('timestamp', 'desc'));
-    const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch { return []; }
+  if (db) {
+    try {
+      const q = query(collection(db, 'users', userId(), 'rides'), orderBy('timestamp', 'desc'));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch { return localGet(); }
+  }
+  return localGet();
 }
 
 export async function deleteRide(rideId) {
-  return deleteDoc(doc(db, 'users', userId(), 'rides', rideId));
+  if (db) return deleteDoc(doc(db, 'users', userId(), 'rides', rideId));
+  localSet(localGet().filter(r => r.id !== rideId));
 }
 
 export function calcStats(rides) {

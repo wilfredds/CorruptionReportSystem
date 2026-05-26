@@ -12,5 +12,21 @@ const firebaseConfig = {
   appId: "YOUR_APP_ID"
 };
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+// Until real config is added, run in LOCAL mode: data persists to this
+// device via localStorage. This keeps the whole app testable without a
+// backend and makes the PWA fully functional offline.
+export const firebaseReady = !Object.values(firebaseConfig).some(v => String(v).startsWith('YOUR_'));
+
+let db = null;
+if (firebaseReady) {
+  try {
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+  } catch (e) {
+    console.warn('[Bike Guide PH] Firebase init failed — falling back to local mode.', e);
+  }
+} else {
+  console.info('[Bike Guide PH] Running in LOCAL mode (no Firebase config yet). Rides and challenge progress save to this device only.');
+}
+
+export { db };

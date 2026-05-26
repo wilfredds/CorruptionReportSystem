@@ -227,8 +227,8 @@
 
 <script type="module">
   import { initPage, getDailyTip, getRiderLevel } from './js/app.js';
-  import { db } from './js/firebase-config.js';
-  import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+  import { getRides, calcStats } from './js/tracker.js';
+  import { getDayStatus } from './js/challenge.js';
 
   initPage('home');
 
@@ -254,22 +254,18 @@
   const heroEl = document.getElementById('hero-greeting');
   if (heroEl) heroEl.innerHTML = `Keep <span>${levelLines[level] || 'pedaling forward.'}</span>`;
 
-  // Firestore stats
-  const userId = localStorage.getItem('bikeUserId');
-  if (userId && db) {
-    try {
-      const ridesSnap = await getDocs(collection(db, 'users', userId, 'rides'));
-      let totalKm = 0;
-      ridesSnap.forEach(d => { totalKm += d.data().distanceKm || 0; });
-      document.getElementById('stat-rides').innerHTML = `<i class="fa-solid fa-route"></i> ${ridesSnap.size} ride${ridesSnap.size !== 1 ? 's' : ''}`;
-      document.getElementById('stat-km').innerHTML    = `<i class="fa-solid fa-road"></i> ${totalKm.toFixed(1)} km`;
+  // Ride + challenge stats (works with Firebase or local fallback)
+  try {
+    const rides = await getRides();
+    const stats = calcStats(rides);
+    document.getElementById('stat-rides').innerHTML = `<i class="fa-solid fa-route"></i> ${stats.totalRides} ride${stats.totalRides !== 1 ? 's' : ''}`;
+    document.getElementById('stat-km').innerHTML    = `<i class="fa-solid fa-road"></i> ${stats.totalKm} km`;
 
-      const cSnap = await getDocs(collection(db, 'users', userId, 'challenge'));
-      const done  = cSnap.docs.filter(d => d.data().completed).length;
-      document.getElementById('stat-challenge').innerHTML = `<i class="fa-solid fa-fire"></i> Day ${done} / 30`;
-      if (done > 0) document.getElementById('challenge-sub').textContent = `Day ${done} complete — keep going! 🔥`;
-    } catch (_) { /* offline */ }
-  }
+    const status = await getDayStatus();
+    const done   = Object.values(status).filter(s => s.completed).length;
+    document.getElementById('stat-challenge').innerHTML = `<i class="fa-solid fa-fire"></i> Day ${done} / 30`;
+    if (done > 0) document.getElementById('challenge-sub').textContent = `Day ${done} complete — keep going! 🔥`;
+  } catch (_) { /* show defaults */ }
 </script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
 </body>
