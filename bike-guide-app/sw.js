@@ -1,37 +1,41 @@
-const CACHE_NAME = 'bikeguide-v1';
+const CACHE_NAME = 'bikeguide-v2';
 
+// Relative paths — resolve correctly whether hosted at domain root
+// or in a subfolder like /CorruptionReportSystem/bike-guide-app/
 const STATIC_ASSETS = [
-  '/bike-guide-app/index.html',
-  '/bike-guide-app/dashboard.html',
-  '/bike-guide-app/knowledge.html',
-  '/bike-guide-app/gear-guide.html',
-  '/bike-guide-app/maintenance.html',
-  '/bike-guide-app/safety.html',
-  '/bike-guide-app/warmup.html',
-  '/bike-guide-app/diet.html',
-  '/bike-guide-app/challenge.html',
-  '/bike-guide-app/routes.html',
-  '/bike-guide-app/tracker.html',
-  '/bike-guide-app/carbon.html',
-  '/bike-guide-app/motivation.html',
-  '/bike-guide-app/premium.html',
-  '/bike-guide-app/offline.html',
-  '/bike-guide-app/css/style.css',
-  '/bike-guide-app/css/animations.css',
-  '/bike-guide-app/js/app.js',
-  '/bike-guide-app/js/firebase-config.js',
-  '/bike-guide-app/js/challenge.js',
-  '/bike-guide-app/js/tracker.js',
-  '/bike-guide-app/js/carbon.js',
-  '/bike-guide-app/js/gear-simulator.js',
-  '/bike-guide-app/js/bike-doctor.js',
-  '/bike-guide-app/js/routes.js',
-  '/bike-guide-app/js/premium.js',
-  '/bike-guide-app/assets/data/tips.json',
-  '/bike-guide-app/assets/data/routes.json',
-  '/bike-guide-app/assets/data/exercises.json',
-  '/bike-guide-app/assets/data/troubleshooting.json',
-  '/bike-guide-app/manifest.json',
+  'index.html',
+  'dashboard.html',
+  'knowledge.html',
+  'gear-guide.html',
+  'maintenance.html',
+  'safety.html',
+  'warmup.html',
+  'diet.html',
+  'challenge.html',
+  'routes.html',
+  'tracker.html',
+  'carbon.html',
+  'motivation.html',
+  'premium.html',
+  'offline.html',
+  'css/style.css',
+  'css/animations.css',
+  'js/app.js',
+  'js/firebase-config.js',
+  'js/challenge.js',
+  'js/tracker.js',
+  'js/carbon.js',
+  'js/gear-simulator.js',
+  'js/bike-doctor.js',
+  'js/routes.js',
+  'js/premium.js',
+  'assets/data/tips.json',
+  'assets/data/routes.json',
+  'assets/data/exercises.json',
+  'assets/data/troubleshooting.json',
+  'assets/icons/icon-192.png',
+  'assets/icons/icon-512.png',
+  'manifest.json',
 ];
 
 // Install: cache all static assets
@@ -40,6 +44,7 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(STATIC_ASSETS))
       .then(() => self.skipWaiting())
+      .catch(() => self.skipWaiting())
   );
 });
 
@@ -56,9 +61,9 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Always go network for Firebase and external APIs
+  // Always go to network for Firebase and external APIs
   if (url.hostname.includes('firestore') || url.hostname.includes('firebase') || url.hostname.includes('googleapis')) {
-    event.respondWith(fetch(event.request).catch(() => caches.match('/bike-guide-app/offline.html')));
+    event.respondWith(fetch(event.request).catch(() => caches.match('offline.html')));
     return;
   }
 
@@ -73,7 +78,9 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
           return response;
         })
-        .catch(() => caches.match('/bike-guide-app/offline.html'));
+        .catch(() => {
+          if (event.request.mode === 'navigate') return caches.match('offline.html');
+        });
     })
   );
 });
