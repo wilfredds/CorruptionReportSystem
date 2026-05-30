@@ -1,5 +1,7 @@
-const CACHE_NAME = 'bikeguide-v3';
-const RUNTIME_CACHE = 'bikeguide-runtime-v3';
+const CACHE_NAME = 'bikeguide-v4';
+const RUNTIME_CACHE = 'bikeguide-runtime-v4';
+const TILE_CACHE = 'bikeguide-tiles-v1';
+const MAX_TILES = 600; // cap cached map tiles so storage stays bounded
 
 // Relative paths resolve against the service worker's location, so the app
 // works whether hosted at the domain root or a GitHub Pages project subpath.
@@ -15,6 +17,7 @@ const STATIC_ASSETS = [
   'challenge.html',
   'routes.html',
   'tracker.html',
+  'record.html',
   'carbon.html',
   'motivation.html',
   'premium.html',
@@ -26,6 +29,7 @@ const STATIC_ASSETS = [
   'js/firebase-config.js',
   'js/challenge.js',
   'js/tracker.js',
+  'js/recorder.js',
   'js/carbon.js',
   'js/gear-simulator.js',
   'js/bike-doctor.js',
@@ -49,7 +53,7 @@ self.addEventListener('install', event => {
 
 // Activate: remove old caches, keep current static + runtime caches
 self.addEventListener('activate', event => {
-  const keep = [CACHE_NAME, RUNTIME_CACHE];
+  const keep = [CACHE_NAME, RUNTIME_CACHE, TILE_CACHE];
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => !keep.includes(k)).map(k => caches.delete(k)))
@@ -62,7 +66,33 @@ self.addEventListener('activate', event => {
 function isCacheableThirdParty(url) {
   return url.hostname.includes('fonts.googleapis.com') ||
          url.hostname.includes('fonts.gstatic.com') ||
-         url.hostname.includes('cdnjs.cloudflare.com');
+         url.hostname.includes('cdnjs.cloudflare.com') ||
+         url.hostname.includes('unpkg.com');         // Leaflet JS/CSS
+}
+
+// OpenStreetMap raster tiles — cache-first with an LRU-ish cap so a ride's
+// route stays viewable offline without unbounded storage growth.
+function isMapTile(url) {
+  return /(^|\.)tile\.openstreetmap\.org$/.test(url.hostname);
+}
+async function cacheTile(request) {
+  const cache = await caches.open(TILE_CACHE);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  try {
+    const resp = await fetch(request);
+    if (resp && resp.status === 200) {
+      cache.put(request, resp.clone());
+      // Trim oldest entries when over the cap
+      const keys = await cache.keys();
+      if (keys.length > MAX_TILES) {
+        for (let i = 0; i < keys.length - MAX_TILES; i++) cache.delete(keys[i]);
+      }
+    }
+    return resp;
+  } catch (_) {
+    return cached || Response.error();
+  }
 }
 
 self.addEventListener('fetch', event => {
@@ -91,7 +121,13 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Fonts / icon CSS: stale-while-revalidate from the runtime cache.
+  // Map tiles: cache-first, capped (works offline along a known route).
+  if (isMapTile(url)) {
+    event.respondWith(cacheTile(event.request));
+    return;
+  }
+
+  // Fonts / icon CSS / Leaflet: stale-while-revalidate from the runtime cache.
   if (isCacheableThirdParty(url)) {
     event.respondWith(staleWhileRevalidate(event.request, RUNTIME_CACHE));
     return;

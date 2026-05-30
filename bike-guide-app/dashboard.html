@@ -35,6 +35,21 @@
 
     .modules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px 20px; }
 
+    .record-strip {
+      display: flex; align-items: center; gap: 14px;
+      background: linear-gradient(135deg, #2d6a4f, #52b788);
+      border-radius: 18px; padding: 16px 18px; margin: 0 20px 20px;
+      text-decoration: none; color: #fff;
+      box-shadow: 0 8px 24px rgba(45,106,79,0.35);
+    }
+    .record-strip .rec-pulse {
+      width: 46px; height: 46px; border-radius: 50%;
+      background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;
+      font-size: 1.35rem; animation: pulseGreen 2.5s infinite;
+    }
+    .record-strip .rec-title { font-size: 0.98rem; font-weight: 700; }
+    .record-strip .rec-sub { font-size: 0.72rem; color: rgba(255,255,255,0.85); }
+
     .color-green  { background: linear-gradient(135deg, #2d6a4f, #52b788); }
     .color-orange { background: linear-gradient(135deg, #f4722b, #ff9a5c); }
     .color-blue   { background: linear-gradient(135deg, #2980b9, #6dd5fa); }
@@ -69,6 +84,16 @@
       <span class="stat-pill"><i class="fa-solid fa-fire"></i> Day <b id="num-day">0</b> / 30</span>
     </div>
   </div>
+
+  <!-- Record Ride CTA -->
+  <a href="record.html" class="record-strip">
+    <div class="rec-pulse"><i class="fa-solid fa-location-crosshairs"></i></div>
+    <div class="rec-text">
+      <div class="rec-title">Record a Ride</div>
+      <div class="rec-sub">Live GPS · speed, distance & route map</div>
+    </div>
+    <i class="fa-solid fa-chevron-right" style="margin-left:auto;color:rgba(255,255,255,0.8);"></i>
+  </a>
 
   <!-- Daily Tip -->
   <div class="tip-card" id="tip-card">

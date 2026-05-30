@@ -68,9 +68,9 @@ export function applyLanguage(lang) {
 const navItems = [
   { icon: 'fa-house',        label: { en: 'Home',      tl: 'Tahanan'  }, href: 'dashboard.html', key: 'home' },
   { icon: 'fa-fire',         label: { en: 'Challenge', tl: 'Hamon'    }, href: 'challenge.html', key: 'challenge' },
+  { icon: 'fa-location-crosshairs', label: { en: 'Record', tl: 'I-rekord' }, href: 'record.html', key: 'record', fab: true },
   { icon: 'fa-map-location-dot', label: { en: 'Routes', tl: 'Ruta'   }, href: 'routes.html',    key: 'routes' },
   { icon: 'fa-chart-line',   label: { en: 'Tracker',   tl: 'Talaan'  }, href: 'tracker.html',   key: 'tracker' },
-  { icon: 'fa-ellipsis',     label: { en: 'More',      tl: 'Higit pa'}, href: '#more-menu',     key: 'more' },
 ];
 
 export function renderBottomNav(activeKey) {
@@ -78,7 +78,7 @@ export function renderBottomNav(activeKey) {
   const nav = document.getElementById('bottom-nav');
   if (!nav) return;
   nav.innerHTML = navItems.map(item => `
-    <a class="nav-item ${item.key === activeKey ? 'active' : ''}" href="${item.href}">
+    <a class="nav-item ${item.fab ? 'nav-fab' : ''} ${item.key === activeKey ? 'active' : ''}" href="${item.href}">
       <i class="fa-solid ${item.icon}"></i>
       <span>${item.label[lang]}</span>
     </a>

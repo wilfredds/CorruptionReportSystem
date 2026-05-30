@@ -94,6 +94,23 @@ small { font-size: 0.78rem; }
 .bottom-nav .nav-item.active { color: var(--green-primary); }
 .bottom-nav .nav-item:hover { color: var(--green-light); }
 
+/* Center "Record" action — raised FAB style */
+.bottom-nav .nav-fab { color: #fff; position: relative; }
+.bottom-nav .nav-fab i {
+  position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+  width: 54px; height: 54px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--orange-accent), var(--orange-light));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.35rem; color: #fff;
+  box-shadow: 0 6px 18px rgba(244,114,43,0.5);
+  border: 4px solid var(--white);
+  transition: transform 0.15s ease;
+}
+.bottom-nav .nav-fab span { margin-top: 26px; color: var(--orange-accent); font-weight: 700; }
+.bottom-nav .nav-fab:hover i { transform: translateX(-50%) scale(1.08); color: #fff; }
+.bottom-nav .nav-fab:active i { transform: translateX(-50%) scale(0.94); }
+[data-theme="dark"] .bottom-nav .nav-fab i { border-color: var(--white); }
+
 /* ── Cards ── */
 .card-base {
   background: var(--white);
