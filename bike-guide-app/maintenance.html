@@ -6,6 +6,10 @@
   <title>Maintenance - Bike Guide PH</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2d6a4f">
+  <script>(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(t===null&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="css/style.css" rel="stylesheet">
@@ -137,7 +141,15 @@
       <span class="close-chat" onclick="toggleChat()"><i class="fa-solid fa-xmark"></i></span>
     </div>
     <div class="chatbot-messages" id="chatMessages">
-      <div class="chat-msg bot">Hello! I'm the Bike Doctor. Describe your bike problem and I'll help you fix it. Try: "squeaky brakes", "flat tire", "gear slipping", "chain fell off", "creaking noise".</div>
+      <div class="chat-msg bot">Hi! I'm the <strong>Bike Doctor</strong> 🩺 Describe your bike problem and I'll walk you through the fix. Tap a common issue below or type your own.</div>
+    </div>
+    <div class="chip-row" id="chatChips">
+      <button class="chip" data-q="squeaky brakes">🔊 Squeaky brakes</button>
+      <button class="chip" data-q="flat tire">🛞 Flat tire</button>
+      <button class="chip" data-q="gear slipping">⚙️ Gear slipping</button>
+      <button class="chip" data-q="chain fell off">⛓️ Chain fell off</button>
+      <button class="chip" data-q="creaking noise">🔧 Creaking</button>
+      <button class="chip" data-q="tire pressure">💨 Tire pressure</button>
     </div>
     <div class="chatbot-input-row">
       <input type="text" id="chatInput" placeholder="Describe your problem...">

@@ -6,6 +6,10 @@
   <title>Ride Tracker - Bike Guide PH</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2d6a4f">
+  <script>(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(t===null&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="css/style.css" rel="stylesheet">
@@ -94,63 +98,136 @@
 </div>
 
 <script type="module">
-  import { initPage } from './js/app.js';
-  import { logRide, getRides, calcStats } from './js/tracker.js';
+  import { initPage, toast, countUp } from './js/app.js';
+  import { logRide, getRides, deleteRide, calcStats } from './js/tracker.js';
   initPage('tracker');
 
   // Set today's date as default
   document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
 
   let rides = [];
+  const pendingDeletes = {}; // id -> timeout (debounced server delete, allows Undo)
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+
+  function setStats(list) {
+    const stats = calcStats(list);
+    countUp(document.getElementById('s-rides'), stats.totalRides);
+    countUp(document.getElementById('s-km'),    stats.totalKm,    { decimals: 1 });
+    countUp(document.getElementById('s-avg'),   stats.avgSpeed,   { decimals: 1 });
+    countUp(document.getElementById('s-best'),  stats.longestRide,{ decimals: 1 });
+  }
+
+  const EMPTY = '<div class="empty-state"><i class="fa-solid fa-person-biking" style="font-size:2rem;margin-bottom:8px;display:block;"></i>No rides yet. Log your first one!</div>';
 
   async function loadRides() {
     rides = await getRides();
-    const stats = calcStats(rides);
-    document.getElementById('s-rides').textContent = stats.totalRides;
-    document.getElementById('s-km').textContent    = stats.totalKm;
-    document.getElementById('s-avg').textContent   = stats.avgSpeed;
-    document.getElementById('s-best').textContent  = stats.longestRide;
+    setStats(rides);
+    renderRides();
+  }
 
+  function renderRides() {
     const container = document.getElementById('rides-container');
-    if (rides.length === 0) {
-      container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-person-biking" style="font-size:2rem;margin-bottom:8px;display:block;"></i>No rides yet. Log your first one!</div>';
-      return;
-    }
+    if (rides.length === 0) { container.innerHTML = EMPTY; return; }
     container.innerHTML = rides.map(r => `
-      <div class="ride-item">
-        <div class="ride-icon"><i class="fa-solid fa-person-biking"></i></div>
-        <div class="ride-info">
-          <div class="ride-name">${r.routeName || 'Unnamed Ride'}</div>
-          <div class="ride-meta">${r.date || ''} · ${r.durationMinutes || '?'} min</div>
-          ${r.notes ? `<div class="ride-meta" style="margin-top:2px;">${r.notes}</div>` : ''}
+      <div class="ride-swipe" data-id="${esc(r.id)}">
+        <div class="ride-delete"><span class="swipe-hint">Swipe to delete</span> <i class="fa-solid fa-trash"></i></div>
+        <div class="ride-item">
+          <div class="ride-icon"><i class="fa-solid fa-person-biking"></i></div>
+          <div class="ride-info">
+            <div class="ride-name">${esc(r.routeName) || 'Unnamed Ride'}</div>
+            <div class="ride-meta">${esc(r.date)} · ${esc(r.durationMinutes) || '?'} min</div>
+            ${r.notes ? `<div class="ride-meta" style="margin-top:2px;">${esc(r.notes)}</div>` : ''}
+          </div>
+          <div class="ride-km">${esc(r.distanceKm)} km</div>
         </div>
-        <div class="ride-km">${r.distanceKm} km</div>
       </div>
     `).join('');
+    attachSwipe();
+  }
+
+  function attachSwipe() {
+    document.querySelectorAll('.ride-swipe').forEach(row => {
+      const item = row.querySelector('.ride-item');
+      const OPEN = -76;
+      let startX = 0, dx = 0, dragging = false;
+      item.addEventListener('pointerdown', e => {
+        dragging = true; startX = e.clientX; dx = 0;
+        item.style.transition = 'none';
+        item.setPointerCapture(e.pointerId);
+      });
+      item.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        dx = e.clientX - startX;
+        if (dx > 0) dx *= 0.25; // resist swiping right
+        item.style.transform = `translateX(${dx}px)`;
+      });
+      const finish = () => {
+        if (!dragging) return;
+        dragging = false;
+        item.style.transition = '';
+        const threshold = row.clientWidth * 0.4;
+        if (dx < -threshold) { item.style.transform = 'translateX(-110%)'; removeRide(row); }
+        else if (dx < OPEN / 1.5) { item.style.transform = `translateX(${OPEN}px)`; }
+        else { item.style.transform = ''; }
+        dx = 0;
+      };
+      item.addEventListener('pointerup', finish);
+      item.addEventListener('pointercancel', finish);
+      row.querySelector('.ride-delete').addEventListener('click', () => {
+        item.style.transition = ''; item.style.transform = 'translateX(-110%)';
+        removeRide(row);
+      });
+    });
+  }
+
+  function removeRide(row) {
+    const id = row.dataset.id;
+    if (navigator.vibrate) { try { navigator.vibrate(15); } catch (_) {} }
+    // Optimistically collapse the row and update stats
+    rides = rides.filter(r => r.id !== id);
+    setStats(rides);
+    row.style.height = row.offsetHeight + 'px';
+    requestAnimationFrame(() => {
+      row.style.transition = 'height 0.25s ease, opacity 0.25s ease, margin 0.25s ease';
+      row.style.height = '0'; row.style.opacity = '0'; row.style.marginBottom = '0';
+    });
+    setTimeout(() => { row.remove(); if (rides.length === 0) document.getElementById('rides-container').innerHTML = EMPTY; }, 260);
+    // Defer the real delete so Undo can cancel it
+    pendingDeletes[id] = setTimeout(async () => {
+      try { await deleteRide(id); } catch (_) {}
+      delete pendingDeletes[id];
+    }, 4500);
+    toast('Ride deleted', {
+      type: 'info', duration: 4500,
+      action: { label: 'Undo', onClick: () => { clearTimeout(pendingDeletes[id]); delete pendingDeletes[id]; loadRides(); } },
+    });
   }
 
   window.submitRide = async function() {
     const dist = parseFloat(document.getElementById('f-dist').value);
     const dur  = parseInt(document.getElementById('f-dur').value);
-    if (!dist || !dur) { alert('Please enter distance and duration.'); return; }
+    if (!dist || !dur) { toast('Please enter distance and duration.', { type: 'error' }); return; }
     const btn = document.querySelector('.submit-btn');
-    btn.disabled = true; btn.textContent = 'Saving...';
-    await logRide({
-      distanceKm: dist,
-      durationMinutes: dur,
-      date: document.getElementById('f-date').value,
-      routeName: document.getElementById('f-route').value,
-      notes: document.getElementById('f-notes').value,
-    });
-    document.getElementById('f-dist').value  = '';
-    document.getElementById('f-dur').value   = '';
-    document.getElementById('f-route').value = '';
-    document.getElementById('f-notes').value = '';
-    const msg = document.getElementById('log-msg');
-    msg.style.display = 'block'; msg.textContent = '✓ Ride saved!';
-    setTimeout(() => { msg.style.display = 'none'; }, 2500);
-    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Ride';
-    await loadRides();
+    btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+    try {
+      await logRide({
+        distanceKm: dist,
+        durationMinutes: dur,
+        date: document.getElementById('f-date').value,
+        routeName: document.getElementById('f-route').value,
+        notes: document.getElementById('f-notes').value,
+      });
+      document.getElementById('f-dist').value  = '';
+      document.getElementById('f-dur').value   = '';
+      document.getElementById('f-route').value = '';
+      document.getElementById('f-notes').value = '';
+      toast(`Ride saved — ${dist} km logged! 🚴`, { type: 'success' });
+      await loadRides();
+    } catch (_) {
+      toast('Could not save ride. Check your connection.', { type: 'error' });
+    } finally {
+      btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Ride';
+    }
   };
 
   loadRides();

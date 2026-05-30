@@ -32,21 +32,21 @@ export function renderRouteCard(route, premiumUnlocked) {
       <div style="padding:14px 16px;">
         <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;">
           <div style="flex:1;">
-            <div style="font-size:0.95rem;font-weight:700;color:#1a1a2e;">${isLocked ? '🔒 ' : ''}${route.name}</div>
-            <div style="font-size:0.72rem;color:#888;">${route.region} · ${route.city}</div>
+            <div style="font-size:0.95rem;font-weight:700;color:var(--dark);">${isLocked ? '🔒 ' : ''}${route.name}</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);">${route.region} · ${route.city}</div>
           </div>
           <span style="background:${diffColor};color:#fff;font-size:0.65rem;font-weight:700;padding:4px 10px;border-radius:50px;white-space:nowrap;text-transform:capitalize;">${route.difficulty}</span>
         </div>
         <div style="display:flex;gap:12px;margin-bottom:10px;">
-          <span style="font-size:0.78rem;color:#555;"><i class="fa-solid fa-route" style="color:#2d6a4f;"></i> ${route.distanceKm} km</span>
-          <span style="font-size:0.78rem;color:#555;"><i class="fa-solid fa-mountain" style="color:#2980b9;"></i> ${route.elevationM}m gain</span>
-          <span style="font-size:0.78rem;color:#555;"><i class="fa-regular fa-clock" style="color:#f4722b;"></i> ${route.estimatedHours}h</span>
+          <span style="font-size:0.78rem;color:var(--text-soft);"><i class="fa-solid fa-route" style="color:#2d6a4f;"></i> ${route.distanceKm} km</span>
+          <span style="font-size:0.78rem;color:var(--text-soft);"><i class="fa-solid fa-mountain" style="color:#2980b9;"></i> ${route.elevationM}m gain</span>
+          <span style="font-size:0.78rem;color:var(--text-soft);"><i class="fa-regular fa-clock" style="color:#f4722b;"></i> ${route.estimatedHours}h</span>
         </div>
-        <p style="font-size:0.78rem;color:#555;margin-bottom:10px;">${route.description}</p>
+        <p style="font-size:0.78rem;color:var(--text-soft);margin-bottom:10px;">${route.description}</p>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
           ${route.highlights.map(h => `<span style="background:#f0f7f4;color:#2d6a4f;font-size:0.65rem;font-weight:600;padding:3px 8px;border-radius:50px;">${h}</span>`).join('')}
         </div>
-        <div style="font-size:0.72rem;color:#888;margin-bottom:10px;"><i class="fa-regular fa-sun"></i> Best time: ${route.bestTime}</div>
+        <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:10px;"><i class="fa-regular fa-sun"></i> Best time: ${route.bestTime}</div>
         ${isLocked
           ? `<button onclick="window.location.href='premium.html'" style="width:100%;padding:10px;background:linear-gradient(135deg,#f4722b,#ff9a5c);color:#fff;border:none;border-radius:50px;font-family:'Poppins',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;">🔓 Unlock Premium — ₱79</button>`
           : `<div style="display:flex;gap:8px;">

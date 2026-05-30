@@ -50,22 +50,35 @@ function addBotResponse(item) {
   messages.scrollTop = messages.scrollHeight;
 }
 
-function handleSend() {
-  const input = document.getElementById('chatInput');
-  const text = input.value.trim();
+function suggestTopics() {
+  // Offer the available topics as clickable chips when nothing matched.
+  return troubleshootingData.slice(0, 6).map(t => t.title).join(', ');
+}
+
+function send(text) {
   if (!text) return;
-  input.value = '';
   addMessage(text, 'user');
   showTyping();
+  // Hide quick-reply chips after the first interaction.
+  const chips = document.getElementById('chatChips');
+  if (chips) chips.style.display = 'none';
   setTimeout(() => {
     removeTyping();
     const match = findResponse(text);
     if (match) {
       addBotResponse(match);
     } else {
-      addMessage("I don't have a specific answer for that yet. Try keywords like: 'squeaky brakes', 'flat tire', 'gear slipping', 'chain fell off', 'creaking', 'tire pressure', or 'saddle pain'.", 'bot');
+      addMessage(`I don't have an exact fix for that yet. I can help with: ${suggestTopics()}. Try describing it with one of those keywords.`, 'bot');
     }
-  }, 900);
+  }, 700 + Math.random() * 400);
+}
+
+function handleSend() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  send(text);
 }
 
 function toggleChat() {
@@ -78,10 +91,21 @@ function toggleChat() {
 window.handleSend   = handleSend;
 window.toggleChat   = toggleChat;
 
-// Enter key support
+// Enter key + quick-reply chip support
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('chatInput');
   if (input) input.addEventListener('keypress', e => { if (e.key === 'Enter') handleSend(); });
+
+  const chips = document.getElementById('chatChips');
+  if (chips) {
+    chips.addEventListener('click', e => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      if (navigator.vibrate) { try { navigator.vibrate(8); } catch (_) {} }
+      if (troubleshootingData.length === 0) loadTroubleshooting().then(() => send(chip.dataset.q));
+      else send(chip.dataset.q);
+    });
+  }
 });
 
 loadTroubleshooting();

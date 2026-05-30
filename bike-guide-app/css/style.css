@@ -9,6 +9,8 @@
   --white: #ffffff;
   --gray-light: #f8f9fa;
   --gray-mid: #dee2e6;
+  --text-muted: #888888;
+  --text-soft: #555555;
   --font-main: 'Poppins', sans-serif;
   --radius-card: 20px;
   --radius-sm: 12px;
@@ -384,3 +386,292 @@ small { font-size: 0.78rem; }
 }
 .fade-in-up { animation: fadeInUp 0.5s ease both; }
 .pulse-green { animation: pulseGreen 2s infinite; }
+
+/* ─────────────────────────────────────────────────────────────
+   UX ENHANCEMENTS (toasts, ripple, reveal, skeletons, polish)
+   ───────────────────────────────────────────────────────────── */
+
+/* ── Smooth, GPU-friendly base transitions ── */
+.module-card, .level-card, .challenge-strip, .btn-primary-green,
+.btn-orange, .btn-outline, .submit-btn, .start-btn, .stat-card {
+  will-change: transform;
+}
+.module-card:active, .level-card:active, .challenge-strip:active,
+.stat-card:active, .ride-item:active {
+  transform: scale(0.97);
+  transition: transform 0.08s ease;
+}
+.btn-primary-green:active, .btn-orange:active, .submit-btn:active,
+.start-btn:active, .btn-outline:active { transform: translateY(1px) scale(0.98); }
+
+/* Snappier nav with a sliding active indicator */
+.bottom-nav .nav-item { position: relative; }
+.bottom-nav .nav-item.active::before {
+  content: ''; position: absolute; top: 0; left: 50%;
+  width: 28px; height: 3px; border-radius: 0 0 4px 4px;
+  background: var(--green-primary); transform: translateX(-50%);
+  animation: navPop 0.3s ease both;
+}
+.bottom-nav .nav-item.active i { animation: navBounce 0.4s ease; }
+@keyframes navPop  { from { width: 0; opacity: 0; } to { width: 28px; opacity: 1; } }
+@keyframes navBounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-4px); } }
+
+/* Accessible focus ring */
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible,
+.module-card:focus-visible, .level-card:focus-visible {
+  outline: 3px solid rgba(244,114,43,0.55); outline-offset: 2px; border-radius: 10px;
+}
+
+/* ── Scroll reveal ── */
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22,1,0.36,1); }
+.reveal.revealed { opacity: 1; transform: none; }
+
+/* ── Page transitions ── */
+.page-enter { opacity: 0; }
+.page-enter.page-enter-active { opacity: 1; transition: opacity 0.32s ease; }
+.page-leave { opacity: 0; transform: translateY(-8px); transition: opacity 0.18s ease, transform 0.18s ease; }
+
+/* ── Ripple ── */
+.ripple-ink {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  background: rgba(255,255,255,0.45); transform: scale(0);
+  animation: rippleOut 0.6s ease-out; z-index: 1;
+}
+.module-card .ripple-ink, .stat-card .ripple-ink, .nav-item .ripple-ink { background: rgba(45,106,79,0.18); }
+@keyframes rippleOut { to { transform: scale(2.2); opacity: 0; } }
+
+/* ── Toasts ── */
+.toast-host {
+  position: fixed; left: 50%; bottom: calc(var(--nav-height) + 18px);
+  transform: translateX(-50%); z-index: 4000;
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+  width: max-content; max-width: 90vw; pointer-events: none;
+}
+.toast {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(26,26,46,0.96); color: #fff;
+  padding: 12px 18px; border-radius: 14px;
+  font-size: 0.84rem; font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+  opacity: 0; transform: translateY(16px) scale(0.96);
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.22,1,0.36,1);
+  pointer-events: auto; cursor: pointer;
+}
+.toast.show { opacity: 1; transform: none; }
+.toast i { font-size: 1.05rem; }
+.toast-action {
+  background: rgba(255,255,255,0.18); color: #fff; border: none;
+  border-radius: 50px; padding: 5px 14px; margin-left: 4px;
+  font-family: var(--font-main); font-weight: 700; font-size: 0.78rem; cursor: pointer;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.toast-action:hover { background: rgba(255,255,255,0.32); }
+.toast-success { background: linear-gradient(135deg,#1b4332,#2d6a4f); }
+.toast-success i { color: #95d5b2; }
+.toast-error   { background: linear-gradient(135deg,#7a1f17,#c0392b); }
+.toast-error i { color: #ffd0c8; }
+.toast-info i  { color: #6dd5fa; }
+
+/* ── Skeleton loaders ── */
+.skeleton {
+  position: relative; overflow: hidden;
+  background: #e9edf1; border-radius: 8px; color: transparent !important;
+}
+.skeleton::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.65), transparent);
+  transform: translateX(-100%); animation: shimmer 1.3s infinite;
+}
+.skeleton-line { height: 12px; margin: 6px 0; border-radius: 6px; }
+@keyframes shimmer { to { transform: translateX(100%); } }
+
+/* ── Install prompt bar ── */
+.install-bar {
+  position: fixed; left: 50%; bottom: calc(var(--nav-height) + 16px);
+  transform: translate(-50%, 140%); width: calc(100% - 32px); max-width: 448px;
+  background: #fff; border-radius: 18px; padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 14px 40px rgba(0,0,0,0.22); z-index: 3500;
+  transition: transform 0.4s cubic-bezier(0.22,1,0.36,1);
+}
+.install-bar.show { transform: translate(-50%, 0); }
+.install-bar > i { font-size: 1.6rem; color: var(--green-primary); }
+.install-text { flex: 1; display: flex; flex-direction: column; line-height: 1.2; }
+.install-text strong { font-size: 0.85rem; color: var(--dark); }
+.install-text span { font-size: 0.7rem; color: #888; }
+.install-yes { background: var(--green-primary); color: #fff; border: none; border-radius: 50px; padding: 8px 16px; font-family: var(--font-main); font-weight: 700; font-size: 0.8rem; cursor: pointer; }
+.install-no { background: none; border: none; color: #aaa; font-size: 1.4rem; cursor: pointer; line-height: 1; padding: 0 4px; }
+
+/* ── Quick-reply chips (chatbot) ── */
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px 4px; }
+.chip {
+  background: #eef4f1; color: var(--green-primary); border: 1px solid #d6e6df;
+  border-radius: 50px; padding: 6px 12px; font-size: 0.72rem; font-weight: 600;
+  font-family: var(--font-main); cursor: pointer; transition: var(--transition);
+}
+.chip:hover { background: var(--green-primary); color: #fff; }
+
+/* ── Custom scrollbar ── */
+.chatbot-messages::-webkit-scrollbar { width: 6px; }
+.chatbot-messages::-webkit-scrollbar-thumb { background: #cdd6dd; border-radius: 4px; }
+
+/* ── Respect reduced-motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DARK MODE  (toggle persists in localStorage as 'theme')
+   Attribute-prefixed selectors beat the per-page inline <style>
+   rules on specificity, so surfaces re-skin without !important.
+   ───────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --white: #1b2230;
+  --gray-light: #0f141b;
+  --gray-mid: #2a3340;
+  --charcoal: #e6eaf0;
+  --dark: #f1f5fa;
+  --shadow-card: 0 6px 20px rgba(0,0,0,0.45);
+  --shadow-lg: 0 16px 40px rgba(0,0,0,0.6);
+  --text-muted: #7c8794;
+  --text-soft: #9aa4b2;
+  color-scheme: dark;
+}
+
+/* Smooth the flip between themes */
+body, .page-wrapper, .module-card, .card-base, .bottom-nav,
+.stat-card, .ride-item, .tip-card { transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }
+
+/* Base text */
+[data-theme="dark"] p { color: #9aa4b2; }
+
+/* White card surfaces */
+[data-theme="dark"] .today-card,
+[data-theme="dark"] .calc-section,
+[data-theme="dark"] .history-item,
+[data-theme="dark"] .food-card,
+[data-theme="dark"] .part-card,
+[data-theme="dark"] .fact-pill,
+[data-theme="dark"] .maint-card,
+[data-theme="dark"] .schedule-card,
+[data-theme="dark"] .fact-card,
+[data-theme="dark"] .music-section,
+[data-theme="dark"] .compare-table,
+[data-theme="dark"] .payment-section,
+[data-theme="dark"] .safety-card,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .log-form,
+[data-theme="dark"] .ride-item,
+[data-theme="dark"] .exercise-card,
+[data-theme="dark"] .playlist-item,
+[data-theme="dark"] .route-card,
+[data-theme="dark"] .surface-card { background: #1b2230; color: var(--charcoal); }
+
+/* Routes page text + tags */
+[data-theme="dark"] .rs-item, [data-theme="dark"] .route-desc { color: #9aa4b2; }
+[data-theme="dark"] .rs-item b { color: var(--charcoal); }
+[data-theme="dark"] .tag { background: #16251d; color: #7fd1a8; }
+
+/* Green tint surfaces */
+[data-theme="dark"] .meta-badge,
+[data-theme="dark"] .food-badge,
+[data-theme="dark"] .part-desc-box,
+[data-theme="dark"] .priority-opt,
+[data-theme="dark"] .ride-icon,
+[data-theme="dark"] .ex-anim-box,
+[data-theme="dark"] .gcash-box,
+[data-theme="dark"] .surface-green { background: #16251d; color: #7fd1a8; border-color: #2f5a45; }
+
+/* Warm tint surfaces */
+[data-theme="dark"] .priority-rec,
+[data-theme="dark"] .surface-warm { background: #33240f; color: #f0a35a; }
+
+/* Pill buttons / tabs (white) */
+[data-theme="dark"] .diet-tab,
+[data-theme="dark"] .filter-btn { background: #1b2230; color: #9aa4b2; border-color: #2a3340; }
+
+/* Grey tracks & headers */
+[data-theme="dark"] .progress-track,
+[data-theme="dark"] .phase-toggle { background: #232c39; }
+[data-theme="dark"] .ct-header,
+[data-theme="dark"] .col-header-free { background: #232c39; color: #9aa4b2; }
+
+/* Inputs */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea { background: #141a23; color: var(--charcoal); border-color: #2a3340; }
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder { color: #5d6775; }
+[data-theme="dark"] .form-group input:focus,
+[data-theme="dark"] .form-group select:focus,
+[data-theme="dark"] .form-group textarea:focus { background: #1b2230; border-color: var(--green-light); }
+
+/* Dark-on-light text now needs to be light */
+[data-theme="dark"] .ride-name,
+[data-theme="dark"] .food-name,
+[data-theme="dark"] .part-name,
+[data-theme="dark"] .sc-title,
+[data-theme="dark"] .ex-name,
+[data-theme="dark"] .pl-name,
+[data-theme="dark"] .calendar-title,
+[data-theme="dark"] .food-desc { color: var(--charcoal); }
+
+/* Muted secondary text */
+[data-theme="dark"] .ride-meta,
+[data-theme="dark"] .sl,
+[data-theme="dark"] .freq,
+[data-theme="dark"] .empty-state,
+[data-theme="dark"] .ex-desc,
+[data-theme="dark"] .part-desc { color: #7c8794; }
+
+/* Component surfaces from the shared sheet */
+[data-theme="dark"] .chat-msg.bot { background: #232c39; color: var(--charcoal); }
+[data-theme="dark"] .chip { background: #1f2937; color: #7fd1a8; border-color: #2f5a45; }
+[data-theme="dark"] .skeleton { background: #232c39; }
+[data-theme="dark"] .install-bar { background: #1b2230; }
+[data-theme="dark"] .install-text span { color: #7c8794; }
+[data-theme="dark"] .tip-card { background: linear-gradient(135deg,#13251a,#16291b); border-left-color: var(--green-light); }
+[data-theme="dark"] .tip-card p, [data-theme="dark"] .tip-card .tip-label { color: #cfe9d8; }
+[data-theme="dark"] .day-cell { background: #1a212b; color: #5d6775; }
+[data-theme="dark"] .day-cell.today { background: #2a2018; color: var(--charcoal); }
+[data-theme="dark"] .day-cell.locked { background: #161c24; color: #3a4350; }
+[data-theme="dark"] .chatbot-messages::-webkit-scrollbar-thumb { background: #3a4350; }
+
+/* Theme toggle button (injected into the top bar) */
+.theme-toggle i { transition: transform 0.4s cubic-bezier(0.22,1,0.36,1); }
+[data-theme="dark"] .theme-toggle i { transform: rotate(180deg); }
+
+/* ── Confetti ── */
+.confetti-host { position: fixed; inset: 0; pointer-events: none; z-index: 5000; overflow: hidden; }
+.confetti-piece {
+  position: absolute; top: -16px; opacity: 0;
+  animation-name: confettiFall; animation-timing-function: cubic-bezier(0.3,0.6,0.5,1);
+  animation-fill-mode: forwards;
+}
+@keyframes confettiFall {
+  0%   { opacity: 1; transform: translateY(-10px) rotateZ(0deg); }
+  100% { opacity: 0; transform: translateY(105vh) rotateZ(720deg); }
+}
+
+/* Celebration pop for the completed-day button */
+@keyframes celebratePop {
+  0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); }
+}
+.celebrate { animation: celebratePop 0.5s ease; }
+
+/* ── Swipe-to-delete (ride tracker) ── */
+.ride-swipe { position: relative; border-radius: 14px; overflow: hidden; margin-bottom: 10px; }
+.ride-swipe .ride-item { margin-bottom: 0; position: relative; z-index: 2; touch-action: pan-y; transition: transform 0.25s cubic-bezier(0.22,1,0.36,1); }
+.ride-swipe .ride-delete {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(135deg,#c0392b,#e74c3c);
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 8px; padding-right: 22px; color: #fff; font-weight: 700; font-size: 0.95rem; cursor: pointer;
+}
+.ride-swipe .ride-delete .swipe-hint { font-size: 0.72rem; opacity: 0.9; }

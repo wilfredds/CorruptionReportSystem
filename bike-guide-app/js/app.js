@@ -1,3 +1,8 @@
+import { initUI, toast, countUp, haptic, confetti, setTheme, getTheme, toggleTheme } from './ui.js';
+
+// Re-export shared UX helpers so any page importing from app.js can use them.
+export { toast, countUp, haptic, confetti, setTheme, getTheme, toggleTheme };
+
 // ── User identity (device-based, no login required) ──
 export function getUserId() {
   let id = localStorage.getItem('bikeUserId');
@@ -106,6 +111,7 @@ export async function getDailyTip() {
 export function initPage(activeNavKey) {
   applyLanguage(getLang());
   renderBottomNav(activeNavKey);
+  initUI();
 
   // Update rider badge if present
   const badge = document.getElementById('rider-badge');

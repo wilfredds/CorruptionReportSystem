@@ -6,6 +6,10 @@
   <title>30-Day Challenge - Bike Guide PH</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2d6a4f">
+  <script>(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(t===null&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="css/style.css" rel="stylesheet">
@@ -86,7 +90,7 @@
 </div>
 
 <script type="module">
-  import { initPage, isPremium } from './js/app.js';
+  import { initPage, isPremium, confetti, toast } from './js/app.js';
   import { CHALLENGE_PLAN, getDayStatus, markDayComplete, getStreakCount } from './js/challenge.js';
   initPage('challenge');
 
@@ -149,10 +153,28 @@
 
   window.markToday = async function() {
     const btn = document.getElementById('mark-done-btn');
+    const completedDay = currentDay;
     btn.disabled = true;
-    btn.textContent = 'Saving...';
-    await markDayComplete(currentDay);
-    await render();
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+    try {
+      await markDayComplete(completedDay);
+      await render();
+      // 🎉 Celebrate the completed day
+      confetti();
+      const streak = getStreakCount(dayStatus);
+      const card = document.getElementById('today-card');
+      if (card) { card.classList.remove('celebrate'); void card.offsetWidth; card.classList.add('celebrate'); }
+      if (completedDay === 30) {
+        confetti({ count: 160, duration: 4000 });
+        toast('🏆 Challenge complete! You are a cyclist now!', { type: 'success', duration: 4000 });
+      } else {
+        toast(`Day ${completedDay} done! ${streak}-day streak 🔥`, { type: 'success' });
+      }
+    } catch (_) {
+      toast('Could not save. Check your connection.', { type: 'error' });
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Mark as Done';
+    }
   };
 
   render();

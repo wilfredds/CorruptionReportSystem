@@ -6,6 +6,10 @@
   <title>Home - Bike Guide PH</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2d6a4f">
+  <script>(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(t===null&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="css/style.css" rel="stylesheet">
@@ -60,9 +64,9 @@
     <p class="greeting" data-i18n="good_morning">Good morning, Rider!</p>
     <p class="hero-name" id="hero-greeting">Keep pedaling forward.</p>
     <div class="stats-row" id="stats-row">
-      <span class="stat-pill" id="stat-rides"><i class="fa-solid fa-route"></i> 0 rides</span>
-      <span class="stat-pill" id="stat-km"><i class="fa-solid fa-road"></i> 0 km</span>
-      <span class="stat-pill" id="stat-challenge"><i class="fa-solid fa-fire"></i> Day 0 / 30</span>
+      <span class="stat-pill"><i class="fa-solid fa-route"></i> <b id="num-rides">0</b> rides</span>
+      <span class="stat-pill"><i class="fa-solid fa-road"></i> <b id="num-km">0</b> km</span>
+      <span class="stat-pill"><i class="fa-solid fa-fire"></i> Day <b id="num-day">0</b> / 30</span>
     </div>
   </div>
 
@@ -148,41 +152,56 @@
 </div>
 
 <script type="module">
-  import { initPage, getDailyTip, getRiderLevel } from './js/app.js';
+  import { initPage, getDailyTip, getRiderLevel, countUp } from './js/app.js';
   import { db } from './js/firebase-config.js';
   import { collection, query, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
   initPage('home');
 
+  const $rides = document.getElementById('num-rides');
+  const $km    = document.getElementById('num-km');
+  const $day   = document.getElementById('num-day');
+
   // Daily tip
+  const tipEl = document.getElementById('tip-text');
   getDailyTip().then(tip => {
-    document.getElementById('tip-text').textContent = tip?.tip ?? '';
+    tipEl.textContent = tip?.tip ?? '';
   });
 
-  // Hero greeting based on time
+  // Personalised, time-aware greeting
   const hour = new Date().getHours();
   const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  document.getElementById('hero-greeting').textContent = greet + ', Rider! 🚴';
+  const emoji = hour < 12 ? '🌅' : hour < 18 ? '☀️' : '🌙';
+  document.getElementById('hero-greeting').textContent = `${greet}, Rider! ${emoji}`;
 
-  // Load ride stats and challenge progress from Firestore
+  // 1) Paint last-known stats instantly from cache (no network wait)
+  const cached = JSON.parse(localStorage.getItem('dashStats') || 'null');
+  if (cached) {
+    countUp($rides, cached.rides);
+    countUp($km, cached.km, { decimals: 1 });
+    countUp($day, cached.day);
+    if (cached.day > 0) document.getElementById('challenge-sub').textContent = `Day ${cached.day} complete! Keep going 🔥`;
+  }
+
+  // 2) Refresh from Firestore in the background, then animate to live values
   const userId = localStorage.getItem('bikeUserId');
   if (userId && db) {
     try {
-      const ridesRef = collection(db, 'users', userId, 'rides');
-      const snap = await getDocs(ridesRef);
+      const [snap, cSnap] = await Promise.all([
+        getDocs(collection(db, 'users', userId, 'rides')),
+        getDocs(collection(db, 'users', userId, 'challenge')),
+      ]);
       let totalKm = 0;
       snap.forEach(d => { totalKm += d.data().distanceKm || 0; });
-      document.getElementById('stat-rides').innerHTML = `<i class="fa-solid fa-route"></i> ${snap.size} rides`;
-      document.getElementById('stat-km').innerHTML = `<i class="fa-solid fa-road"></i> ${totalKm.toFixed(1)} km`;
-
-      const challengeRef = collection(db, 'users', userId, 'challenge');
-      const cSnap = await getDocs(challengeRef);
       const done = cSnap.docs.filter(d => d.data().completed).length;
-      document.getElementById('stat-challenge').innerHTML = `<i class="fa-solid fa-fire"></i> Day ${done} / 30`;
-      if (done > 0) {
-        document.getElementById('challenge-sub').textContent = `Day ${done} complete! Keep going 🔥`;
-      }
-    } catch (_) { /* offline — show defaults */ }
+
+      countUp($rides, snap.size);
+      countUp($km, totalKm, { decimals: 1 });
+      countUp($day, done);
+      if (done > 0) document.getElementById('challenge-sub').textContent = `Day ${done} complete! Keep going 🔥`;
+
+      localStorage.setItem('dashStats', JSON.stringify({ rides: snap.size, km: +totalKm.toFixed(1), day: done }));
+    } catch (_) { /* offline — cached values already shown */ }
   }
 </script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
