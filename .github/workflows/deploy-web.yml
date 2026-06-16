@@ -1,0 +1,78 @@
+name: Deploy CycleMind AI (web demo)
+
+# Builds the Flutter web app in mock mode (no Firebase / no API keys) and
+# publishes it to GitHub Pages so it can be opened from any phone browser.
+
+on:
+  push:
+    branches:
+      - claude/cyclemind-ai-vision-r19yap
+    paths:
+      - "cyclemind_ai/**"
+      - ".github/workflows/deploy-web.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; cancel older in-progress runs.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cyclemind_ai
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Generate platform folders (web)
+        run: flutter create . --platforms web
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+        continue-on-error: true
+
+      - name: Run unit tests
+        run: flutter test
+        continue-on-error: true
+
+      # base-href must match the repo name so assets resolve on
+      # https://<owner>.github.io/corruptionreportsystem/
+      - name: Build web (mock mode)
+        run: flutter build web --release --base-href /corruptionreportsystem/
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: cyclemind_ai/build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
