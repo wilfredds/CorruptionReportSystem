@@ -46,11 +46,12 @@ jobs:
         run: flutter test
         continue-on-error: true
 
-      # base-href must match the repo name so assets resolve on
-      # https://<owner>.github.io/corruptionreportsystem/
+      # base-href must match the repo name's EXACT casing, because GitHub Pages
+      # serves the project site at https://<owner>.github.io/CorruptionReportSystem/
+      # A lowercase base-href makes asset requests 404 and the app renders blank.
       - name: Build web (mock mode)
         working-directory: cyclemind_ai
-        run: flutter build web --release --base-href /corruptionreportsystem/
+        run: flutter build web --release --base-href /CorruptionReportSystem/
 
       - name: Publish to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
