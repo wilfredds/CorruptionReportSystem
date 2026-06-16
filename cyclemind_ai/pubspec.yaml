@@ -1,0 +1,63 @@
+name: cyclemind_ai
+description: "CycleMind AI — an AI-powered cycling companion (AI Cycling Coach + AI Bike Doctor)."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  # Flutter 3.27 / Dart 3.6 for the Color.withValues() API used in theming.
+  sdk: ">=3.6.0 <4.0.0"
+  flutter: ">=3.27.0"
+
+# ---------------------------------------------------------------------------
+# Dependency choices (architectural decision):
+#
+# We deliberately AVOID code-generation packages (freezed, json_serializable,
+# riverpod_generator). Reason: this scaffold is meant to compile with a plain
+# `flutter pub get` + `flutter run`, with no `build_runner` step required. We
+# therefore use hand-written immutable models (copyWith / fromJson / toJson /
+# Equatable) and hand-written Riverpod providers. If you prefer codegen, the
+# models are structured so they can be migrated to freezed mechanically.
+# ---------------------------------------------------------------------------
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Navigation
+  go_router: ^14.2.0
+
+  # Value equality without codegen
+  equatable: ^2.0.5
+
+  # Firebase (guarded — app runs on mocks without a configured project)
+  firebase_core: ^3.3.0
+  firebase_auth: ^5.1.4
+  cloud_firestore: ^5.2.1
+  firebase_storage: ^12.1.3
+  google_sign_in: ^6.2.1
+
+  # Media + maps + charts
+  image_picker: ^1.1.2
+  google_maps_flutter: ^2.7.0
+  fl_chart: ^0.68.0
+
+  # Networking (used by the real Claude service impl)
+  http: ^1.2.2
+
+  # Utilities
+  intl: ^0.19.0
+  uuid: ^4.4.2
+
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/data/

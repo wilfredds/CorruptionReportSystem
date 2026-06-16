@@ -1,0 +1,61 @@
+name: Deploy CycleMind AI (web demo)
+
+# Builds the Flutter web app in mock mode (no Firebase / no API keys) and
+# publishes it to GitHub Pages so it can be opened from any phone browser.
+# Publishes to a `gh-pages` branch so it works from any source branch.
+
+on:
+  push:
+    branches:
+      - claude/cyclemind-ai-vision-r19yap
+    paths:
+      - "cyclemind_ai/**"
+      - ".github/workflows/deploy-web.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Generate platform folders (web)
+        working-directory: cyclemind_ai
+        run: flutter create . --platforms web
+
+      - name: Install dependencies
+        working-directory: cyclemind_ai
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: cyclemind_ai
+        run: flutter analyze
+        continue-on-error: true
+
+      - name: Run unit tests
+        working-directory: cyclemind_ai
+        run: flutter test
+        continue-on-error: true
+
+      # base-href must match the repo name so assets resolve on
+      # https://<owner>.github.io/corruptionreportsystem/
+      - name: Build web (mock mode)
+        working-directory: cyclemind_ai
+        run: flutter build web --release --base-href /corruptionreportsystem/
+
+      - name: Publish to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./cyclemind_ai/build/web
+          publish_branch: gh-pages
+          force_orphan: true
