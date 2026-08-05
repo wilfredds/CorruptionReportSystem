@@ -1,0 +1,98 @@
+name: AutoCare CI
+
+# Lints, type-checks, tests and builds the AutoCare app.
+#
+# The database-backed steps run against a throwaway PostgreSQL service
+# container, so the migration, the seed and the security tests are exercised
+# for real rather than skipped.
+#
+# Only runs when something under autocare/ changes — the other projects in this
+# repository are unrelated and have their own workflow.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "autocare/**"
+      - ".github/workflows/autocare-ci.yml"
+  pull_request:
+    paths:
+      - "autocare/**"
+      - ".github/workflows/autocare-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: autocare
+
+jobs:
+  ci:
+    name: Lint, test and build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: autocare
+          POSTGRES_PASSWORD: autocare
+          POSTGRES_DB: autocare
+        ports:
+          - 5432:5432
+        # Wait for Postgres to accept connections before the steps start.
+        options: >-
+          --health-cmd "pg_isready -U autocare -d autocare"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://autocare:autocare@localhost:5432/autocare?schema=public
+      # Throwaway values. These exist only so the build and the seed have
+      # something to read; nothing here is a real credential.
+      AUTH_SECRET: ci-only-secret-never-used-outside-this-runner
+      SEED_RAUL_PASSWORD: CiOnly#Seed1
+      SEED_FRANCE_PASSWORD: CiOnly#Seed2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: autocare/package-lock.json
+
+      # Also runs `prisma generate` via the postinstall hook.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+      # The money maths — pure functions, no database required.
+      - name: Test the total calculation
+        run: npm test
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Seed demo data
+        run: npm run seed
+
+      # Proves the client cannot dictate a total, and drives the real
+      # lockout / audit code against the database.
+      - name: Test job integrity and the security policy
+        run: npm run test:db
+
+      - name: Build
+        run: npm run build

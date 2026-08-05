@@ -322,6 +322,30 @@ npm run typecheck
 negative input. `npm run test:db` proves the client cannot dictate a total, and
 drives the real lockout/audit code against a live database.
 
+### Continuous integration
+
+`.github/workflows/autocare-ci.yml` runs on every push to `main` and every pull
+request that touches `autocare/**`. It spins up a throwaway PostgreSQL service
+container and runs the whole sequence for real — lint, type-check, unit tests,
+`prisma migrate deploy`, seed, the database-backed tests, and the production
+build. Nothing is mocked or skipped.
+
+The workflow ignores changes to the other projects in this repository, and its
+`DATABASE_URL` / `AUTH_SECRET` are throwaway values scoped to the runner.
+
+### Dependency overrides
+
+`package.json` pins two transitive dependencies via `overrides`:
+
+| Package | Why |
+| --- | --- |
+| `sharp` → 0.35.3 | Next ships an older `sharp` for image optimization, which carries libvips CVEs. This app uses no images at all, but the override clears the advisory without a Next major bump. |
+| `postcss` → 8.5.25 | Next pins `postcss@8.4.31` internally, which has path-traversal and XSS advisories. 8.5.25 is the same major and is already what Tailwind and autoprefixer use here. |
+
+Both are same-major bumps. Re-check them when upgrading Next — if a later
+release ships patched versions itself, the overrides can be dropped.
+`npm audit` currently reports zero vulnerabilities.
+
 ---
 
 ## Project layout
