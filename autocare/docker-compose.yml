@@ -1,0 +1,28 @@
+# Local Postgres for development.
+#
+#   docker compose up -d
+#   npx prisma migrate dev
+#   npm run seed
+#
+# The DATABASE_URL for this container is the first line of .env.example.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: autocare-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: autocare
+      POSTGRES_PASSWORD: autocare
+      POSTGRES_DB: autocare
+    ports:
+      - '5432:5432'
+    volumes:
+      - autocare-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U autocare -d autocare']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  autocare-pgdata:
