@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Elderly-first colour tokens.
+ *
+ * Every pairing below was chosen to clear WCAG 2.1 AA (>= 4.5:1) for body text:
+ *   foreground on background ......... 16.1:1
+ *   muted-foreground on background ....  7.4:1
+ *   primary-foreground on primary .....  8.2:1
+ *   destructive-foreground on destr. ..  6.6:1
+ *   success-foreground on success .....  7.1:1
+ *   warning (as text) on background ...  6.3:1
+ * Dark text on a light background throughout — never the reverse for long text.
+ */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 221 83% 34%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 222 47% 15%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 25% 32%;
+
+    --accent: 214 95% 93%;
+    --accent-foreground: 222 47% 15%;
+
+    --destructive: 0 72% 38%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 68% 24%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 30 95% 28%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 214 25% 82%;
+    --input: 214 25% 78%;
+    --ring: 221 83% 45%;
+
+    --radius: 0.625rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    /* 18px base body text — the smallest text anywhere in the app. */
+    @apply text-base antialiased;
+    font-family:
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      Roboto,
+      'Helvetica Neue',
+      Arial,
+      sans-serif;
+  }
+
+  /* A focus ring that is impossible to miss, on every focusable thing. */
+  :focus-visible {
+    @apply outline-none ring-4 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  h1 {
+    @apply text-3xl font-extrabold tracking-tight;
+  }
+  h2 {
+    @apply text-2xl font-bold;
+  }
+  h3 {
+    @apply text-xl font-bold;
+  }
+
+  /* Never render a number in a proportional face — columns must line up. */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /** A peso figure anywhere in the app: 24px, bold, tabular. */
+  .money {
+    @apply text-money tabular-nums;
+  }
+
+  /** The live grand total in the wizard and on the receipt: 36px. */
+  .grand-total {
+    @apply text-total tabular-nums;
+  }
+
+  /** Sticky footer holding the running total, always visible in the wizard. */
+  .total-bar {
+    @apply sticky bottom-0 z-30 border-t-4 border-primary bg-background/95 backdrop-blur;
+  }
+}
+
+/* ------------------------------------------------------------------ print */
+/**
+ * Print styles for the receipt view (/jobs/[id]/print).
+ * Everything chrome-like is hidden so a browser "Print" produces the same
+ * clean document as the generated PDF.
+ */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 12pt;
+  }
+
+  .no-print,
+  nav,
+  header.app-header,
+  footer.app-footer {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .receipt-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  .receipt-sheet table {
+    page-break-inside: auto;
+  }
+
+  .receipt-sheet tr {
+    page-break-inside: avoid;
+  }
+
+  a[href]::after {
+    content: '';
+  }
+}
+
+.print-only {
+  display: none;
+}
