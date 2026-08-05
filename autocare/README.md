@@ -190,16 +190,37 @@ git push
 
 ### Step 4 — Create the tables on Neon
 
-The deploy builds the app but does not create the tables. From your own
-computer, run this once, with `DATABASE_URL` pointing at Neon:
+The deploy builds the app but does **not** create the tables. Pick whichever of
+these suits you — they produce exactly the same database.
+
+**Option A — paste one file into Neon (no local setup needed).**
+
+1. In Neon, open your project and click **SQL Editor**.
+2. Open [`prisma/bootstrap.sql`](prisma/bootstrap.sql), copy the whole file,
+   paste it in, and press **Run**.
+
+That creates the schema, the two owner accounts, the service catalog and two
+sample jobs in one go. It also records the migration as applied, so a later
+`npx prisma migrate deploy` correctly reports "No pending migrations".
+
+**Option B — from your own computer** (needs Node and a clone of this repo):
 
 ```bash
 cd autocare
+npm install
 DATABASE_URL="<your Neon connection string>" npx prisma migrate deploy
 DATABASE_URL="<your Neon connection string>" npm run seed
 ```
 
-Write down the passwords it prints.
+Write down the passwords the seed prints.
+
+Either way, verify it worked by running this in the Neon SQL Editor — it should
+return two users and two jobs:
+
+```sql
+SELECT (SELECT count(*) FROM "User") AS users,
+       (SELECT count(*) FROM "Job")  AS jobs;
+```
 
 ### Step 5 — Log in
 
@@ -332,6 +353,19 @@ build. Nothing is mocked or skipped.
 
 The workflow ignores changes to the other projects in this repository, and its
 `DATABASE_URL` / `AUTH_SECRET` are throwaway values scoped to the runner.
+
+### Regenerating the bootstrap SQL
+
+`prisma/bootstrap.sql` is generated, not hand-written. After adding a migration
+or changing the seed, regenerate it so the two stay in step:
+
+```bash
+npx tsx scripts/make-bootstrap-sql.ts
+```
+
+It embeds every migration in `prisma/migrations/`, computes each one's SHA-256
+checksum for the `_prisma_migrations` bookkeeping table, and hashes the admin
+passwords with bcrypt at cost 12 — the plaintext is never written to the file.
 
 ### Dependency overrides
 
