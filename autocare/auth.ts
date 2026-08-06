@@ -1,20 +1,24 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
+import { headers } from 'next/headers';
 import { authConfig } from './auth.config';
 import { verifyCredentials } from './lib/auth-logic';
 import { loginSchema } from './lib/validation';
 import { prisma } from './lib/prisma';
+import { hit } from './lib/rate-limit';
 
 /**
  * The Node-runtime Auth.js instance: `authConfig` plus the Credentials
  * provider.
  *
- * `authorize` is deliberately read-only. Counting failed attempts, locking the
- * account and writing audit rows all happen in the login server action
- * (app/(auth)/login/actions.ts) so that one attempt is never counted twice.
+ * `authorize` is deliberately read-only with respect to the failure counters.
+ * Counting failed attempts, locking the account and writing the audit rows all
+ * happen in the login server action (app/(auth)/login/actions.ts) so that one
+ * attempt is never counted twice.
+ *
  * The checks here still stand on their own, so a request posted straight at
- * /api/auth/callback/credentials cannot bypass the lockout or sign in to a
- * disabled account.
+ * /api/auth/callback/credentials cannot bypass the lockout, sign in to a
+ * disabled account, or be used to brute-force without tripping the IP limit.
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -29,12 +33,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const parsed = loginSchema.safeParse(raw);
         if (!parsed.success) return null;
 
+        // The login server action rate-limits by IP too, but this endpoint is
+        // reachable directly, so it needs its own limit rather than relying on
+        // the caller having come through the form.
+        let ip: string | null = null;
+        try {
+          const h = await headers();
+          ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? h.get('x-real-ip') ?? null;
+        } catch {
+          ip = null;
+        }
+        if (!hit(`authorize:${ip ?? 'unknown'}`).allowed) return null;
+
         const result = await verifyCredentials(parsed.data.username, parsed.data.password);
         if (!result.ok) return null;
 
-        const policy = await prisma.user.findUnique({
+        const account = await prisma.user.findUnique({
           where: { id: result.user.id },
-          select: { policyAcceptedAt: true },
+          select: {
+            policyAcceptedAt: true,
+            tokenVersion: true,
+            mustChangePassword: true,
+          },
         });
 
         return {
@@ -43,7 +63,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           username: result.user.username,
           role: result.user.role,
           locale: result.user.locale,
-          policyAccepted: Boolean(policy?.policyAcceptedAt),
+          policyAccepted: Boolean(account?.policyAcceptedAt),
+          tokenVersion: account?.tokenVersion ?? 0,
+          mustChangePassword: Boolean(account?.mustChangePassword),
         };
       },
     }),

@@ -48,7 +48,9 @@
     "settings": "设置",
     "audit": "操作记录",
     "policy": "使用守则",
-    "menu": "菜单"
+    "menu": "菜单",
+    "trash": "回收站",
+    "account": "我的账户"
   },
   "login": {
     "title": "登录",
@@ -367,7 +369,10 @@
     "action_RESET_PASSWORD": "修改密码",
     "action_UPDATE_SETTINGS": "修改设置",
     "action_EXPORT_DATA": "下载备份",
-    "action_ACCEPT_POLICY": "同意守则"
+    "action_ACCEPT_POLICY": "同意守则",
+    "action_RESTORE_JOB": "恢复了工单",
+    "action_PURGE_JOB": "彻底删除了工单",
+    "action_CHANGE_OWN_PASSWORD": "修改了自己的密码"
   },
   "receipt": {
     "title": "收据",
@@ -438,5 +443,33 @@
   "footer": {
     "rules": "使用守则",
     "copyright": "© {year} {shopName}"
+  },
+  "trash": {
+    "title": "回收站",
+    "subtitle": "已删除的工单。在您决定之前，什么都不会消失。",
+    "explainer": "删除工单后它会来到这里，而不是直接消失。点一下就能恢复，也可以彻底删除。",
+    "empty": "回收站是空的。",
+    "restore": "恢复",
+    "restored": "工单已恢复。",
+    "purge": "彻底删除",
+    "purged": "工单已彻底删除。",
+    "purgeTitle": "要彻底删除这张工单吗？",
+    "purgeBody": "{customer} 的工单 {number} 将永远消失。这一步真的无法撤销。",
+    "purgeConfirm": "是，永久删除",
+    "deletedBy": "{who} 于 {when} 删除",
+    "restoreHint": "恢复后它会重新出现在您的列表和合计里。"
+  },
+  "account": {
+    "title": "我的账户",
+    "subtitle": "您的资料和密码。",
+    "changePassword": "修改我的密码",
+    "currentPassword": "当前密码",
+    "newPassword": "新密码",
+    "passwordChanged": "密码已修改。",
+    "wrongCurrentPassword": "这不是您当前的密码。",
+    "sameAsOld": "请选择一个和现在不同的密码。",
+    "otherDevicesNote": "更改密码后，其他所有手机和电脑都会退出登录。本设备将保持登录状态。",
+    "mustChangeTitle": "请先设置您自己的密码",
+    "mustChangeBody": "您现在用的密码是别人设置的。改成只有您知道的密码后就可以继续了。"
   }
 }

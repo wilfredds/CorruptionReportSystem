@@ -95,6 +95,9 @@ async function main() {
       role: 'ADMIN',
       locale: 'fil',
       passwordHash: await bcrypt.hash(ADMIN_PASSWORDS.raul, BCRYPT_COST),
+      // These starting passwords are printed below and live in the README, so
+      // the account cannot be used until its owner picks a private one.
+      mustChangePassword: true,
     },
     update: { name: 'RAUL V. SANTOS', role: 'ADMIN', isActive: true },
   });
@@ -107,6 +110,7 @@ async function main() {
       role: 'ADMIN',
       locale: 'fil',
       passwordHash: await bcrypt.hash(ADMIN_PASSWORDS.france, BCRYPT_COST),
+      mustChangePassword: true,
     },
     update: { name: 'Francis Wilfred Antiporda', role: 'ADMIN', isActive: true },
   });
@@ -307,7 +311,8 @@ async function main() {
 ╚══════════════════════════════════════════════════════════════════╝
 
   These passwords are shown ONCE. Only their bcrypt hashes are stored.
-  Change them from Users -> Change password after your first login.
+  Both accounts are flagged so the first login goes straight to My Account
+  and asks for a password of your own before anything else opens.
 `);
 }
 

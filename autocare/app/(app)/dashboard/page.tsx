@@ -6,6 +6,7 @@ import { requirePageUser } from '@/lib/session';
 import { can } from '@/lib/rbac';
 import { formatPeso } from '@/lib/calc';
 import { intlTagFor } from '@/i18n/locales';
+import { notDeleted } from '@/lib/jobs';
 import { decimalToNumber, startOfDay, endOfDay, formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, StatCard } from '@/components/ui/card';
@@ -39,17 +40,18 @@ export default async function DashboardPage({
   const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
   const [todayJobs, todayMoney, monthMoney, unpaid, recentJobs, monthlyRows] = await Promise.all([
-    prisma.job.count({ where: { date: { gte: todayStart, lte: todayEnd } } }),
+    prisma.job.count({ where: { ...notDeleted, date: { gte: todayStart, lte: todayEnd } } }),
     prisma.job.aggregate({
       _sum: { amountPaid: true },
-      where: { date: { gte: todayStart, lte: todayEnd } },
+      where: { ...notDeleted, date: { gte: todayStart, lte: todayEnd } },
     }),
     prisma.job.aggregate({
       _sum: { amountPaid: true },
-      where: { date: { gte: monthStart, lte: todayEnd } },
+      where: { ...notDeleted, date: { gte: monthStart, lte: todayEnd } },
     }),
-    prisma.job.aggregate({ _sum: { balance: true }, where: { status: { not: 'PAID' } } }),
+    prisma.job.aggregate({ _sum: { balance: true }, where: { ...notDeleted, status: { not: 'PAID' } } }),
     prisma.job.findMany({
+      where: notDeleted,
       orderBy: { date: 'desc' },
       take: 10,
       include: {
@@ -58,7 +60,7 @@ export default async function DashboardPage({
       },
     }),
     prisma.job.findMany({
-      where: { date: { gte: twelveMonthsAgo } },
+      where: { ...notDeleted, date: { gte: twelveMonthsAgo } },
       select: { date: true, amountPaid: true },
     }),
   ]);
@@ -89,12 +91,12 @@ export default async function DashboardPage({
       {params.denied === '1' ? <DeniedNotice /> : null}
 
       <div>
-        <h1>{t('greeting', { name: user.name.split(' ')[0] })}</h1>
-        <p className="mt-1 text-lg text-muted-foreground">{formatDate(now, tag)}</p>
+        <h1 className="animate-rise">{t('greeting', { name: user.name.split(' ')[0] })}</h1>
+        <p className="animate-rise mt-1 text-lg text-muted-foreground">{formatDate(now, tag)}</p>
       </div>
 
       {/* The single largest, most prominent control on the screen. */}
-      <Button asChild size="hero" variant="success">
+      <Button asChild size="hero" variant="hero" className="animate-pop">
         <Link href="/jobs/new">
           <PlusCircle aria-hidden />
           <span>{t('recordNewJob')}</span>
@@ -147,7 +149,7 @@ export default async function DashboardPage({
               <li key={job.id}>
                 <Link
                   href={`/jobs/${job.id}`}
-                  className="flex min-h-tap flex-wrap items-center justify-between gap-4 rounded-lg border-2 border-border bg-background p-4 hover:border-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
+                  className="flex min-h-tap flex-wrap items-center justify-between gap-4 lift rounded-lg border-2 border-border bg-background p-4 hover:border-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-lg font-bold">

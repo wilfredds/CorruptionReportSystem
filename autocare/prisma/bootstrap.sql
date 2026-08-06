@@ -272,6 +272,27 @@ ALTER TABLE "JobService" ADD CONSTRAINT "JobService_serviceId_fkey" FOREIGN KEY 
 -- AddForeignKey
 ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
+-- ============================================================
+-- schema from prisma/migrations/20260806123853_soft_delete_and_session_revocation/migration.sql
+-- ============================================================
+
+-- AlterTable
+ALTER TABLE "Job" ADD COLUMN     "deletedAt" TIMESTAMP(3),
+ADD COLUMN     "deletedById" TEXT;
+
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "mustChangePassword" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "tokenVersion" INTEGER NOT NULL DEFAULT 0;
+
+-- CreateIndex
+CREATE INDEX "Job_deletedAt_idx" ON "Job"("deletedAt");
+
+-- CreateIndex
+CREATE INDEX "Job_deletedAt_date_idx" ON "Job"("deletedAt", "date");
+
+-- AddForeignKey
+ALTER TABLE "Job" ADD CONSTRAINT "Job_deletedById_fkey" FOREIGN KEY ("deletedById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
 
 -- ============================================================
 -- Prisma migration bookkeeping
@@ -292,6 +313,7 @@ CREATE TABLE IF NOT EXISTS "_prisma_migrations" (
 );
 
 INSERT INTO "_prisma_migrations" ("id","checksum","finished_at","migration_name","started_at","applied_steps_count") VALUES (gen_random_uuid()::text, '9c1897b7c93fc5ce4fdf68b6eb7f7100d92560dae9038f0e5e70255153252a45', now(), '20260805141346_init', now(), 1);
+INSERT INTO "_prisma_migrations" ("id","checksum","finished_at","migration_name","started_at","applied_steps_count") VALUES (gen_random_uuid()::text, '4715f9e066040cfb865f4ea0a96de72fd3be64fa4025685a5d1b33480bb953b2', now(), '20260806123853_soft_delete_and_session_revocation', now(), 1);
 
 
 -- ============================================================
@@ -306,14 +328,16 @@ INSERT INTO "ShopSetting" ("id","name","address","phone","updatedAt") VALUES
    now());
 
 -- ============================================================
--- Owner accounts. Passwords are bcrypt hashes (cost 12) — the
--- plaintext is never stored. CHANGE BOTH after the first login:
--- Users -> Change password.
+-- Owner accounts. Passwords are bcrypt hashes (cost 12) — the plaintext is
+-- never stored. Both are flagged mustChangePassword, so the first login goes
+-- straight to My Account and asks for a private password before anything
+-- else opens. The starting passwords below are public (they are in the
+-- README), which is exactly why the flag is set.
 -- ============================================================
 
-INSERT INTO "User" ("id","name","username","passwordHash","role","locale","isActive","failedLoginAttempts","createdAt","updatedAt") VALUES
-  ('seed-user-raul',   'RAUL V. SANTOS',            'raul',   '$2a$12$zrP3LUQwkhfp5GnJ.eDaNehcmX8wkrqzXZOAmmiufPHirPomJL.Ti',   'ADMIN', 'fil', true, 0, now(), now()),
-  ('seed-user-france', 'Francis Wilfred Antiporda', 'france', '$2a$12$UT1uL4bFkExLcMeMEAPRQeN/kIP1zECioe64ihG8TmtvxFtKxYjGa', 'ADMIN', 'fil', true, 0, now(), now());
+INSERT INTO "User" ("id","name","username","passwordHash","role","locale","isActive","failedLoginAttempts","tokenVersion","mustChangePassword","createdAt","updatedAt") VALUES
+  ('seed-user-raul',   'RAUL V. SANTOS',            'raul',   '$2a$12$x4dXhyN8EHuL37aiCGk9yumcTMzznW3xEvqra6/1Ix3VmT9caP9JW',   'ADMIN', 'fil', true, 0, 0, true, now(), now()),
+  ('seed-user-france', 'Francis Wilfred Antiporda', 'france', '$2a$12$7UmLZDmmNmvNzUYUn6RTAezYT/fom1EF/t4uwH8QKlEM11oJkIpmC', 'ADMIN', 'fil', true, 0, 0, true, now(), now());
 
 
 -- ============================================================

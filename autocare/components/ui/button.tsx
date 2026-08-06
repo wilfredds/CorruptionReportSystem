@@ -8,15 +8,18 @@ import { cn } from '@/lib/utils';
  * There is no icon-only variant on purpose: buttons always carry a text label.
  */
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-3 whitespace-nowrap rounded-lg font-semibold ' +
-    'transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring ' +
+  'press relative overflow-hidden inline-flex items-center justify-center gap-3 whitespace-nowrap ' +
+    'rounded-lg font-semibold ' +
+    'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring ' +
     'focus-visible:ring-offset-2 focus-visible:ring-offset-background ' +
     'disabled:pointer-events-none disabled:opacity-60 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
         default: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-sm',
+        /** The orange hero button, with a slow sheen so it reads as THE action. */
+        hero: 'brand-gradient text-primary-foreground shadow-lg hover:brightness-110',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-sm',
         outline:
           'border-2 border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground',
         ghost: 'text-foreground hover:bg-accent hover:text-accent-foreground',

@@ -48,7 +48,9 @@
     "settings": "設定",
     "audit": "操作履歴",
     "policy": "利用ルール",
-    "menu": "メニュー"
+    "menu": "メニュー",
+    "trash": "ゴミ箱",
+    "account": "マイアカウント"
   },
   "login": {
     "title": "ログイン",
@@ -367,7 +369,10 @@
     "action_RESET_PASSWORD": "パスワードを変更",
     "action_UPDATE_SETTINGS": "設定を変更",
     "action_EXPORT_DATA": "バックアップを取得",
-    "action_ACCEPT_POLICY": "ルールに同意"
+    "action_ACCEPT_POLICY": "ルールに同意",
+    "action_RESTORE_JOB": "作業を元に戻した",
+    "action_PURGE_JOB": "作業を完全に削除した",
+    "action_CHANGE_OWN_PASSWORD": "自分のパスワードを変更"
   },
   "receipt": {
     "title": "領収書",
@@ -438,5 +443,33 @@
   "footer": {
     "rules": "利用ルール",
     "copyright": "© {year} {shopName}"
+  },
+  "trash": {
+    "title": "ゴミ箱",
+    "subtitle": "削除した作業です。あなたが決めるまで何も消えません。",
+    "explainer": "作業を削除すると、消えるのではなくここに入ります。ワンタップで戻せますし、完全に削除もできます。",
+    "empty": "ゴミ箱は空です。",
+    "restore": "元に戻す",
+    "restored": "作業を元に戻しました。",
+    "purge": "完全に削除",
+    "purged": "作業を完全に削除しました。",
+    "purgeTitle": "この作業を完全に削除しますか？",
+    "purgeBody": "{customer}様の作業 {number} は永久に消えます。これは本当に元に戻せません。",
+    "purgeConfirm": "はい、完全に削除します",
+    "deletedBy": "{when} に {who} が削除",
+    "restoreHint": "元に戻すと、一覧と合計にも再び表示されます。"
+  },
+  "account": {
+    "title": "マイアカウント",
+    "subtitle": "ご自身の情報とパスワードです。",
+    "changePassword": "パスワードを変更",
+    "currentPassword": "現在のパスワード",
+    "newPassword": "新しいパスワード",
+    "passwordChanged": "パスワードを変更しました。",
+    "wrongCurrentPassword": "現在のパスワードが違います。",
+    "sameAsOld": "今お使いのものとは違うパスワードを選んでください。",
+    "otherDevicesNote": "パスワードを変更すると、他のすべての端末からログアウトされます。この端末はログインしたままです。",
+    "mustChangeTitle": "まずご自身のパスワードを設定してください",
+    "mustChangeBody": "今のパスワードは別の人が決めたものです。ご自身だけが知るものに変えると、続けられます。"
   }
 }

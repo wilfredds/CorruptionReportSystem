@@ -18,6 +18,24 @@ Hindi na po kailangan ng notebook. Pindutin lang po ang mga malalaking button.
 > lagyan ng tsek ang kahon, tapos pindutin ang **Sumasang-ayon ako — tuloy**.
 > Minsan lang po ito lalabas.
 
+> **Unang beses din:** hihingin po ng sistema na **palitan ninyo ang
+> password**. Ito po ay dahil ang unang password ninyo ay alam ng iba —
+> nakasulat po kasi ito sa papel na ibinigay sa inyo. Pumili po kayo ng
+> sarili ninyong password na kayo lang ang nakakaalam, tapos pindutin ang
+> **I-save**. Hindi po bubukas ang ibang pahina hangga't hindi ninyo ito
+> nagagawa. Isang beses lang po ito.
+>
+> Kapag napalitan na, **dito po ay nananatili kayong naka-log in** — pero
+> mala-log out po ang lahat ng ibang cellphone o computer na naka-log in sa
+> account ninyo. Mabuti po iyon.
+
+### Kung gusto ninyong palitan ulit ang password
+
+Anumang oras po: pindutin ang **Aking Account** sa gilid. Hihingin po muna ang
+**lumang password** bago kayo makapagpalit — para kung may makapulot ng
+cellphone ninyo na nakabukas, hindi po nila kayo mailalabas sa sarili ninyong
+account.
+
 ---
 
 ## 2. Paano magtala ng trabaho (7 hakbang, wala pang 1 minuto)
@@ -158,9 +176,31 @@ customer.
 | **Mga User** | Gumawa ng account para sa katulong ninyo. Puwede rin ninyong i-off o palitan ang password nila. |
 | **Mga Setting** | Baguhin ang pangalan, address at numero ng shop na lumalabas sa resibo. |
 | **Talaan ng Ginawa** | Makikita ninyo ang lahat ng nangyari — sino ang nag-log in at sino ang nagbago ng ano. |
+| **Basurahan** | Nandito po ang mga trabahong nabura. **Puwede pong ibalik.** Basahin ang bilang 8-A sa ibaba. |
 
 Ang mga katulong (staff) po ay puwede lang magtala ng trabaho at magdagdag ng
 customer. **Hindi po nila makikita ang kita, ang settings, o ang talaan.**
+**Hindi rin po sila puwedeng magbura ng trabaho** — kayo lang po.
+
+---
+
+## 8-A. Ang Basurahan — kung may nabura kayong mali
+
+**Huwag pong mag-alala kapag may nabura kayo.** Hindi po talaga nawawala agad
+ang trabaho — napupunta lang po ito sa **Basurahan**.
+
+1. Pindutin ang **Basurahan** sa gilid.
+2. Hanapin ang trabahong gusto ninyong ibalik.
+3. Pindutin ang **berdeng button na "Ibalik"**.
+
+Babalik po ang trabaho sa listahan na buo — kasama ang lahat ng piyesa,
+serbisyo at ang KABUUAN. Walang po mababago kahit isang piso.
+
+> **Ang pulang "Burahin nang tuluyan"** ay para po kung talagang gusto ninyong
+> mawala na ito habambuhay. **Ito lang po ang bagay sa buong sistema na hindi
+> na maibabalik.** May tanong pa po ito bago tuluyang burahin. Kung hindi po
+> kayo sigurado — huwag na lang po, iwan ninyo sa Basurahan. Walang po itong
+> nasisira.
 
 ---
 
@@ -181,10 +221,12 @@ customer. **Hindi po nila makikita ang kita, ang settings, o ang talaan.**
 
 | Nangyari | Gawin |
 | --- | --- |
-| Nakalimutan ang password | Tawagan si Francis (admin) — mapapalitan niya ito. |
+| Nakalimutan ang password | Tawagan si Francis (admin) — bibigyan niya kayo ng bago, tapos papapalitan po kayo agad ng sarili ninyo. |
 | Naka-lock ang account | Maghintay ng 15 minuto, o patulong kay Francis. |
+| Gusto palitan ang password | **Aking Account** → ilagay ang luma at ang bago → **I-save**. |
 | Mali ang naitala sa trabaho | Buksan ang trabaho → **Baguhin** → ayusin → **I-save**. |
-| Gusto burahin ang trabaho | Buksan ang trabaho → **Burahin** → **Oo, burahin na**. Hindi na po ito maibabalik. |
+| Gusto burahin ang trabaho | Buksan ang trabaho → **Burahin** → **Oo, burahin na**. Mapupunta po ito sa **Basurahan**. |
+| **Nabura ko po ang mali!** | **Basurahan** → hanapin → **Ibalik**. Babalik pong buo. Huwag mag-alala. |
 | May mali sa screen | I-refresh po (pababa-taas sa cellphone), o i-log out at mag-log in ulit. |
 
 ---
@@ -194,5 +236,6 @@ customer. **Hindi po nila makikita ang kita, ang settings, o ang talaan.**
 > **Pindutin lang, huwag mag-type kung puwede.**
 > **Huwag kayong mag-alala sa math — kusang tama ang kabuuan.**
 > **Palaging may Bumalik kung may mali.**
+> **At kung may nabura kayo — nasa Basurahan lang po iyon, maibabalik.**
 
 Maraming salamat po! 🚗

@@ -51,12 +51,25 @@ model User {
   lockedUntil         DateTime?
   /// Set the first time the user acknowledges the Acceptable Use Policy.
   policyAcceptedAt    DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+
+  /// Bumped whenever the account is disabled or its password is reset. Any
+  /// session carrying an older value is rejected on the next request, so
+  /// "turn this account off" takes effect immediately instead of waiting for
+  /// the JWT to expire. See lib/session.ts.
+  tokenVersion Int @default(0)
+
+  /// Forces a password change before the user can do anything else. Set on
+  /// accounts created by an admin and on the seeded owner accounts, whose
+  /// starting passwords are known.
+  mustChangePassword Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   createdCustomers Customer[] @relation("CustomerCreatedBy")
   createdJobs      Job[]      @relation("JobCreatedBy")
   mechanicJobs     Job[]      @relation("JobMechanic")
+  deletedJobs      Job[]      @relation("JobDeletedBy")
   auditLogs        AuditLog[]
 
   @@index([role])
@@ -116,16 +129,16 @@ model Service {
 }
 
 model Job {
-  id          String    @id @default(cuid())
-  jobNumber   String    @unique
-  customerId  String
-  customer    Customer  @relation(fields: [customerId], references: [id])
-  vehicleId   String
-  vehicle     Vehicle   @relation(fields: [vehicleId], references: [id])
-  mechanicId  String?
-  mechanic    User?     @relation("JobMechanic", fields: [mechanicId], references: [id])
-  date        DateTime  @default(now())
-  status      JobStatus @default(UNPAID)
+  id         String    @id @default(cuid())
+  jobNumber  String    @unique
+  customerId String
+  customer   Customer  @relation(fields: [customerId], references: [id])
+  vehicleId  String
+  vehicle    Vehicle   @relation(fields: [vehicleId], references: [id])
+  mechanicId String?
+  mechanic   User?     @relation("JobMechanic", fields: [mechanicId], references: [id])
+  date       DateTime  @default(now())
+  status     JobStatus @default(UNPAID)
 
   laborCharge Decimal @default(0) @db.Decimal(12, 2)
   expenses    Decimal @default(0) @db.Decimal(12, 2)
@@ -143,6 +156,14 @@ model Job {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  /// Soft delete. A job is the shop's financial record, so "Burahin" moves it
+  /// to the Trash instead of destroying it. Every query for live jobs filters
+  /// on `deletedAt: null` (see lib/jobs.ts `notDeleted`). An ADMIN can restore
+  /// it, or purge it for good from the Trash page.
+  deletedAt   DateTime?
+  deletedById String?
+  deletedBy   User?     @relation("JobDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
+
   parts    JobPart[]
   services JobService[]
 
@@ -151,6 +172,9 @@ model Job {
   @@index([date])
   @@index([status])
   @@index([createdById])
+  @@index([deletedAt])
+  /// The dashboard and jobs list always filter live jobs by date.
+  @@index([deletedAt, date])
 }
 
 model JobPart {

@@ -20,6 +20,20 @@ export async function nextJobNumber(tx: TxClient, when: Date = new Date()): Prom
   return `JOB-${year}-${String(counter.lastNumber).padStart(4, '0')}`;
 }
 
+/**
+ * The filter every "live jobs" query must carry.
+ *
+ * Jobs are soft-deleted, so forgetting this would silently resurrect deleted
+ * work in a list, a report or the dashboard. Spread it into the `where` of any
+ * query that should only see current jobs:
+ *
+ *     where: { ...notDeleted, status: 'UNPAID' }
+ */
+export const notDeleted = { deletedAt: null } as const;
+
+/** The mirror of the above, for the Trash page. */
+export const onlyDeleted = { deletedAt: { not: null } } as const;
+
 /** A job with everything a receipt or a detail page needs. */
 export const jobInclude = {
   customer: true,

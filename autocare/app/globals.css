@@ -3,54 +3,63 @@
 @tailwind utilities;
 
 /**
- * Elderly-first colour tokens.
+ * AutoCare theme — orange and deep navy.
  *
- * Every pairing below was chosen to clear WCAG 2.1 AA (>= 4.5:1) for body text:
- *   foreground on background ......... 16.1:1
- *   muted-foreground on background ....  7.4:1
- *   primary-foreground on primary .....  8.2:1
- *   destructive-foreground on destr. ..  6.6:1
- *   success-foreground on success .....  7.1:1
- *   warning (as text) on background ...  6.3:1
- * Dark text on a light background throughout — never the reverse for long text.
+ * Orange is the owner's colour, so it carries every primary action. Navy is
+ * its partner: it does the reading work (ink, headings, the nav rail) because
+ * a page of orange text is exhausting, while orange stays reserved for "this
+ * is the thing to press". Surfaces are a warm off-white rather than pure grey
+ * so the orange sits in a warm family instead of fighting a cold one.
+ *
+ * Every pairing below was measured against WCAG 2.1 AA — 18/18 pass, with body
+ * text at 17.5:1 and the orange button at 4.76:1. The ratios are listed so a
+ * future edit can be re-checked rather than eyeballed. If you change a value,
+ * re-run the contrast check before shipping it.
  */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    /* surfaces ------------------------------------------------- */
+    --background: 30 40% 99%; /* warm off-white */
+    --foreground: 222 47% 11%; /* navy ink            17.54:1 */
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 222 47% 11%; /*                 17.90:1 */
 
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 221 83% 34%;
+    --muted: 30 30% 95%;
+    --muted-foreground: 222 16% 38%; /*                 6.69:1 */
+
+    /* the two brand colours ------------------------------------ */
+    --primary: 22 92% 40%; /* ORANGE                     4.76:1 on white */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 214 32% 91%;
-    --secondary-foreground: 222 47% 15%;
+    --secondary: 222 47% 20%; /* NAVY                   14.27:1 */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 25% 32%;
+    --accent: 28 90% 94%; /* pale orange wash */
+    --accent-foreground: 22 85% 25%; /*                  8.39:1 */
 
-    --accent: 214 95% 93%;
-    --accent-foreground: 222 47% 15%;
-
-    --destructive: 0 72% 38%;
+    /* state ---------------------------------------------------- */
+    --destructive: 0 72% 38%; /*                         7.47:1 */
     --destructive-foreground: 0 0% 100%;
 
-    --success: 152 68% 24%;
+    --success: 152 68% 24%; /*                           6.92:1 */
     --success-foreground: 0 0% 100%;
 
-    --warning: 30 95% 28%;
+    --warning: 30 95% 28%; /*                            6.97:1 */
     --warning-foreground: 0 0% 100%;
 
-    --border: 214 25% 82%;
-    --input: 214 25% 78%;
-    --ring: 221 83% 45%;
+    /* lines and focus ------------------------------------------ */
+    --border: 28 25% 84%;
+    --input: 28 25% 76%;
+    --ring: 22 92% 45%; /* orange focus ring, impossible to miss */
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
+
+    /* One shared easing so every motion in the app feels related. */
+    --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
   }
 }
 
@@ -83,13 +92,13 @@
   }
 
   h1 {
-    @apply text-3xl font-extrabold tracking-tight;
+    @apply text-3xl font-extrabold tracking-tight text-secondary;
   }
   h2 {
-    @apply text-2xl font-bold;
+    @apply text-2xl font-bold text-secondary;
   }
   h3 {
-    @apply text-xl font-bold;
+    @apply text-xl font-bold text-secondary;
   }
 
   /* Never render a number in a proportional face — columns must line up. */
@@ -112,6 +121,137 @@
   /** Sticky footer holding the running total, always visible in the wizard. */
   .total-bar {
     @apply sticky bottom-0 z-30 border-t-4 border-primary bg-background/95 backdrop-blur;
+    box-shadow: 0 -12px 28px -18px hsl(var(--foreground) / 0.4);
+  }
+
+  /** The warm gradient used on the login panel and the dashboard hero. */
+  .brand-gradient {
+    background-image: linear-gradient(
+      135deg,
+      hsl(var(--primary)) 0%,
+      hsl(14 88% 44%) 55%,
+      hsl(var(--secondary)) 100%
+    );
+  }
+}
+
+/* ---------------------------------------------------------------- motion */
+/**
+ * Animation is here to explain what changed, never to decorate. Three rules:
+ *   1. Nothing lasts longer than 400ms — an elderly user should never be
+ *      waiting on an effect to finish before they can tap.
+ *   2. Movement is small (8–12px). Big slides are disorienting.
+ *   3. Everything collapses to nothing under prefers-reduced-motion, below.
+ */
+@layer utilities {
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes pop {
+    0% {
+      transform: scale(0.92);
+      opacity: 0;
+    }
+    60% {
+      transform: scale(1.03);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  /** A soft pulse on the running total whenever the number changes. */
+  @keyframes total-bump {
+    0% {
+      transform: scale(1);
+    }
+    35% {
+      transform: scale(1.06);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  /** Sweeps once across the primary button to draw the eye to it. */
+  @keyframes sheen {
+    from {
+      transform: translateX(-120%);
+    }
+    to {
+      transform: translateX(220%);
+    }
+  }
+
+  .animate-rise {
+    animation: rise 0.42s var(--ease-out-soft) both;
+  }
+  .animate-fade-in {
+    animation: fade-in 0.32s var(--ease-out-soft) both;
+  }
+  .animate-pop {
+    animation: pop 0.34s var(--ease-out-soft) both;
+  }
+  .animate-total-bump {
+    animation: total-bump 0.36s var(--ease-out-soft);
+  }
+
+  /** Press feedback: every button dips slightly when tapped. */
+  .press {
+    transition:
+      transform 0.12s var(--ease-out-soft),
+      box-shadow 0.2s var(--ease-out-soft),
+      background-color 0.2s var(--ease-out-soft);
+  }
+  .press:active {
+    transform: translateY(1px) scale(0.99);
+  }
+
+  /** Cards and rows lift a little on hover — desktop affordance only. */
+  .lift {
+    transition:
+      transform 0.2s var(--ease-out-soft),
+      box-shadow 0.2s var(--ease-out-soft),
+      border-color 0.2s var(--ease-out-soft);
+  }
+  @media (hover: hover) {
+    .lift:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 30px -18px hsl(var(--foreground) / 0.45);
+    }
+  }
+}
+
+/**
+ * Respect the system setting. Someone who gets motion sickness, or who simply
+ * finds movement confusing, turns this on once and the whole app goes still.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -145,8 +285,15 @@
     display: block !important;
   }
 
-  .receipt-sheet {
+  /* Colour is expensive on a shop printer and the receipt must read in mono. */
+  .receipt-sheet,
+  .receipt-sheet * {
+    color: #000 !important;
     box-shadow: none !important;
+    animation: none !important;
+  }
+
+  .receipt-sheet {
     border: none !important;
     margin: 0 !important;
     padding: 0 !important;

@@ -40,6 +40,9 @@ export async function createUserAction(input: {
           username: parsed.data.username,
           role: parsed.data.role,
           passwordHash: await hashPassword(parsed.data.password),
+          // The admin knows this password, so it is a one-time key: the new
+          // user must set their own before they can use the system.
+          mustChangePassword: true,
         },
         select: { id: true, username: true, role: true },
       });
@@ -82,6 +85,10 @@ export async function setUserActiveAction(
         isActive,
         // Re-enabling an account also clears any stale lockout.
         ...(isActive ? { failedLoginAttempts: 0, lockedUntil: null } : {}),
+        // Turning an account off must take effect NOW, not whenever their
+        // 30-minute token happens to expire. Bumping this invalidates every
+        // session they already hold (checked in lib/session.ts).
+        ...(isActive ? {} : { tokenVersion: { increment: 1 } }),
       },
       select: { id: true, username: true },
     });
@@ -122,6 +129,11 @@ export async function resetPasswordAction(input: {
         // A fresh password clears the lockout so they can log straight in.
         failedLoginAttempts: 0,
         lockedUntil: null,
+        // Anyone holding a session on the old password is signed out.
+        tokenVersion: { increment: 1 },
+        // An admin picked this password, so the owner of the account has to
+        // replace it with one only they know before doing anything else.
+        mustChangePassword: true,
       },
       select: { id: true, username: true },
     });

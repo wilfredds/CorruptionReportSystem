@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
+import { prisma } from './prisma';
 import type { AppRole } from './rbac';
 
 /**
@@ -8,6 +9,18 @@ import type { AppRole } from './rbac';
  * THIS is the security boundary — not the middleware. Every server action,
  * route handler and page calls one of these before it touches data, because a
  * request can be aimed straight at an endpoint without ever rendering a page.
+ *
+ * Each call re-reads the User row rather than trusting the JWT alone. That
+ * costs one indexed primary-key lookup per request and buys three things the
+ * token cannot give us:
+ *
+ *   1. Turning an account off logs it out NOW. Previously a disabled user kept
+ *      working until their 30-minute token expired.
+ *   2. Resetting a password kills that user's other sessions, via tokenVersion.
+ *   3. Role changes take effect on the next request, not the next login.
+ *
+ * The middleware still reads the token only — it runs on the Edge with no
+ * database — which is exactly why it is a convenience layer and this is not.
  */
 
 export interface SessionUser {
@@ -17,20 +30,67 @@ export interface SessionUser {
   role: AppRole;
   locale: string;
   policyAccepted: boolean;
+  mustChangePassword: boolean;
 }
 
-/** The signed-in user, or null. Never throws. */
+/**
+ * Decide whether a set of token claims still corresponds to a usable account.
+ *
+ * Split out from `getSessionUser` so the revocation rules can be exercised
+ * directly against a database in tests/access-control.test.ts, with no
+ * Next.js request context in play. This is the part that matters, so it is the
+ * part that is tested.
+ */
+export async function resolveSessionUser(
+  id: string | undefined,
+  tokenVersion: number | undefined,
+): Promise<SessionUser | null> {
+  if (!id) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      role: true,
+      locale: true,
+      isActive: true,
+      tokenVersion: true,
+      policyAcceptedAt: true,
+      mustChangePassword: true,
+      lockedUntil: true,
+    },
+  });
+
+  // Deleted, disabled, or locked out since the token was minted.
+  if (!user || !user.isActive) return null;
+  if (user.lockedUntil && user.lockedUntil > new Date()) return null;
+
+  // Password reset or forced sign-out since the token was minted.
+  if ((tokenVersion ?? 0) !== user.tokenVersion) return null;
+
+  return {
+    id: user.id,
+    name: user.name,
+    username: user.username,
+    role: user.role,
+    locale: user.locale,
+    policyAccepted: Boolean(user.policyAcceptedAt),
+    mustChangePassword: user.mustChangePassword,
+  };
+}
+
+/**
+ * The signed-in user, or null. Never throws.
+ *
+ * Returns null — i.e. signed out — when the account has been disabled or its
+ * tokenVersion has moved on, even if the cookie is still cryptographically
+ * valid.
+ */
 export async function getSessionUser(): Promise<SessionUser | null> {
   const session = await auth();
-  if (!session?.user?.id) return null;
-  return {
-    id: session.user.id,
-    name: session.user.name ?? session.user.username,
-    username: session.user.username,
-    role: session.user.role,
-    locale: session.user.locale,
-    policyAccepted: session.user.policyAccepted,
-  };
+  return resolveSessionUser(session?.user?.id, session?.user?.tokenVersion);
 }
 
 /** Thrown by the `require*` helpers used inside server actions. */
@@ -98,10 +158,7 @@ export async function guarded<T>(fn: () => Promise<ActionResult<T>>): Promise<Ac
     return await fn();
   } catch (error) {
     if (error instanceof AuthorizationError) {
-      return {
-        ok: false,
-        messageKey: error.kind === 'unauthenticated' ? 'errors.forbidden' : 'errors.forbidden',
-      };
+      return { ok: false, messageKey: 'errors.forbidden' };
     }
     // Next.js signals redirect/notFound by throwing — let those through.
     if (

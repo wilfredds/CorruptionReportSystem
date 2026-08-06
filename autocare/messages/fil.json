@@ -48,7 +48,9 @@
     "settings": "Mga Setting",
     "audit": "Talaan ng Ginawa",
     "policy": "Patakaran sa Paggamit",
-    "menu": "Menu"
+    "menu": "Menu",
+    "trash": "Basurahan",
+    "account": "Aking Account"
   },
   "login": {
     "title": "Mag-log in",
@@ -367,7 +369,10 @@
     "action_RESET_PASSWORD": "Pinalitan ang password",
     "action_UPDATE_SETTINGS": "Binago ang setting",
     "action_EXPORT_DATA": "Nag-download ng kopya",
-    "action_ACCEPT_POLICY": "Sumang-ayon sa patakaran"
+    "action_ACCEPT_POLICY": "Sumang-ayon sa patakaran",
+    "action_RESTORE_JOB": "Ibinalik ang trabaho",
+    "action_PURGE_JOB": "Tuluyang inalis ang trabaho",
+    "action_CHANGE_OWN_PASSWORD": "Pinalitan ang sariling password"
   },
   "receipt": {
     "title": "Resibo",
@@ -438,5 +443,33 @@
   "footer": {
     "rules": "Patakaran sa Paggamit",
     "copyright": "© {year} {shopName}"
+  },
+  "trash": {
+    "title": "Basurahan",
+    "subtitle": "Mga trabahong binura. Wala pong tuluyang nawawala hangga’t hindi ninyo sinabi.",
+    "explainer": "Kapag may nagbura ng trabaho, dito po ito napupunta — hindi basta nawawala. Isang pindot lang para ibalik, o tuluyang alisin.",
+    "empty": "Walang laman ang basurahan.",
+    "restore": "Ibalik",
+    "restored": "Naibalik na ang trabaho.",
+    "purge": "Tuluyang alisin",
+    "purged": "Tuluyan nang naalis ang trabaho.",
+    "purgeTitle": "Tuluyang alisin ang trabahong ito?",
+    "purgeBody": "Ang trabaho {number} para kay {customer} ay tuluyang mawawala. Ito po talaga ay hindi na maibabalik.",
+    "purgeConfirm": "Oo, tuluyang alisin",
+    "deletedBy": "Binura ni {who} noong {when}",
+    "restoreHint": "Kapag ibinalik, babalik din po ito sa inyong listahan at kabuuan."
+  },
+  "account": {
+    "title": "Aking Account",
+    "subtitle": "Ang inyong detalye at password.",
+    "changePassword": "Palitan ang aking password",
+    "currentPassword": "Kasalukuyang password",
+    "newPassword": "Bagong password",
+    "passwordChanged": "Napalitan na ang inyong password.",
+    "wrongCurrentPassword": "Hindi po iyan ang kasalukuyang password ninyo.",
+    "sameAsOld": "Pumili po ng ibang password, hindi iyong ginagamit ninyo ngayon.",
+    "otherDevicesNote": "Kapag pinalitan ninyo ang password, mala-log out po ang lahat ng ibang telepono at kompyuter. Dito po ay mananatili kayong naka-log in.",
+    "mustChangeTitle": "Pakigawa po muna ng sarili ninyong password",
+    "mustChangeBody": "Iba po ang pumili ng password na ginagamit ninyo. Pumili po ng alam ninyo lang, tapos puwede na kayong magpatuloy."
   }
 }

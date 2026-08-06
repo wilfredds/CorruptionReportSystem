@@ -127,8 +127,10 @@ The seed creates the two owner accounts:
 | RAUL V. SANTOS | `raul` | `HiOcten#2026raul` |
 | Francis Wilfred Antiporda | `france` | `HiOcten#2026france` |
 
-Both are **ADMIN**. Change these passwords after the first login:
-**Users → Change password**.
+Both are **ADMIN**. Both are also flagged `mustChangePassword`, so the first
+login goes straight to **My Account** and no other page opens until a private
+password has been set. The passwords above are printed in this README, which is
+exactly why that flag exists — treat them as public.
 
 To seed different passwords instead, set them before running the seed:
 
@@ -136,8 +138,17 @@ To seed different passwords instead, set them before running the seed:
 SEED_RAUL_PASSWORD='...' SEED_FRANCE_PASSWORD='...' npm run seed
 ```
 
-On a user's very first login the app shows the **Rules of Use** page and will
-not let them go any further until they tick the box. That is deliberate.
+So a first login runs: **Rules of Use** (tick the box — the app will not go
+further until you do) → **My Account** (choose your own password) → dashboard.
+Changing a password signs out every *other* phone or computer; the browser
+doing the changing stays signed in.
+
+Afterwards, anyone can change their own password at any time under
+**My Account**, which asks for the current password first — so someone who
+finds an unlocked phone cannot lock the real owner out of the account. An admin
+can still reset someone else's password under **Users**, and that reset both
+signs the other person out everywhere and forces them to pick a new password on
+their next login.
 
 ---
 
@@ -282,7 +293,12 @@ Arithmetic is done in whole centavos, so adding ten ₱0.07 lines gives exactly
 | RBAC in middleware **and** re-checked server-side | `middleware.ts`, `lib/rbac.ts`, `lib/session.ts` |
 | Zod validation on every mutation | `lib/validation.ts` |
 | Audit logging | `lib/audit.ts` |
-| Security headers + CSP | `next.config.mjs` |
+| Static security headers (HSTS, frame, isolation) | `next.config.mjs` |
+| Nonce-based Content-Security-Policy, built per request | `lib/security-headers.ts` + `middleware.ts` |
+| Immediate session revocation (`tokenVersion`) | `prisma/schema.prisma`, `lib/session.ts` |
+| Forced password change on first login | `mustChangePassword`, `middleware.ts`, `app/(app)/account/` |
+| Self-service password change | `app/(app)/account/` |
+| Recoverable delete (Trash) instead of destroying records | `lib/jobs.ts`, `app/(app)/trash/` |
 | Acceptable Use Policy, acknowledged on first login | `app/policy/` |
 
 A few things worth knowing:
@@ -292,6 +308,25 @@ A few things worth knowing:
   control is `requireUser` / `requireAdmin` / `requireCapability` in
   `lib/session.ts`, called inside every server action and route handler,
   because a request can always be aimed straight at an endpoint.
+- **A session is re-checked against the database on every request.** The JWT
+  alone is not trusted. `getSessionUser()` re-reads the `User` row and refuses
+  the request if the account has been disabled, locked, or had its password
+  reset since the token was minted — that last one via a `tokenVersion` counter
+  the token carries a copy of. Cost: one indexed primary-key lookup. Benefit:
+  turning an account off logs it out *now* rather than up to 30 minutes later.
+- **The CSP carries a per-request nonce and does not contain
+  `script-src 'unsafe-inline'`.** That directive is the one that makes a CSP
+  stop being an XSS defence, and a static header cannot avoid it because
+  Next.js needs to boot its own inline scripts. So the policy is generated in
+  middleware with a fresh 128-bit nonce, which Next.js stamps onto its script
+  tags; nothing else can execute. It is set in exactly one place, because two
+  CSP headers make the browser enforce the intersection of both — a confusing
+  way to break a page.
+- **Deleting a job hides it; it does not destroy it.** Jobs are the shop's
+  financial record, so `deleteJobAction` sets `deletedAt` and `deletedById`.
+  The job leaves every list, total and report immediately, and an admin can
+  restore it from **Trash**. Permanently erasing it is a separate, confirmed
+  action on that page — the only irreversible one in the system.
 - **CSRF** is handled by Next.js Server Actions, which verify the `Origin`
   header against the `Host` header on every call. If you put the app behind a
   proxy or a second domain, list it in `ALLOWED_ORIGINS`.
@@ -312,7 +347,7 @@ A few things worth knowing:
 ## Languages
 
 Filipino is the default; English, Spanish, Japanese, Korean and Chinese ship
-alongside it. All six catalogs are complete (404 keys each) — no UI text is
+alongside it. All six catalogs are complete (433 keys each) — no UI text is
 hardcoded.
 
 ### Adding another language
@@ -334,14 +369,25 @@ record, so it follows them to a new device. URLs stay clean — there is no
 
 ```bash
 npm test        # money maths — no database needed
-npm run test:db # job integrity + security policy — needs DATABASE_URL
+npm run test:db # job integrity + security + access control — needs DATABASE_URL
 npm run test:all
 npm run typecheck
 ```
 
-`npm test` covers `lib/calc.ts`: rounding, the status rule, float drift, and
-negative input. `npm run test:db` proves the client cannot dictate a total, and
-drives the real lockout/audit code against a live database.
+45 assertions in four files, all against real code:
+
+| File | What it proves |
+| --- | --- |
+| `tests/calc.test.ts` (11) | `lib/calc.ts`: rounding, the status rule, float drift, negative input |
+| `tests/job-integrity.test.ts` (6) | the client cannot dictate a total — the server recomputes it |
+| `tests/security.test.ts` (11) | the real lockout, audit and hashing code, against a live database |
+| `tests/access-control.test.ts` (17) | session revocation, soft delete and restore, the capability map |
+
+`tests/access-control.test.ts` is the one to read if you change anything about
+sessions or deleting: it asserts that disabling an account kills its live
+session, that a password reset invalidates tokens issued before it, that a
+deleted job disappears from the totals but keeps its figures, and that restoring
+brings it back unchanged.
 
 ### Continuous integration
 
@@ -390,6 +436,8 @@ app/
   (app)/                 the signed-in shell (top bar, nav, footer)
     dashboard/           home screen
     jobs/                list, new (wizard), [id] detail, edit, print
+    trash/               deleted jobs — restore or erase (admin only)
+    account/             change your own password
     customers/ vehicles/ services/ reports/ users/ settings/ audit/
   policy/                Acceptable Use Policy + first-login gate
   api/
@@ -405,6 +453,7 @@ lib/
   validation.ts          every Zod schema
   session.ts  rbac.ts    authorization
   auth-logic.ts          login rules, lockout
+  security-headers.ts    the per-request CSP and its nonce
   audit.ts  prisma.ts  settings.ts  jobs.ts  password.ts  rate-limit.ts
   pdf/receipt-pdf.tsx    the A4 PDF
 messages/                fil, en, es, ja, ko, zh

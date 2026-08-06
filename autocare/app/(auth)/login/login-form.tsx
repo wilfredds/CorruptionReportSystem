@@ -52,14 +52,11 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         >
           <AlertCircle className="mt-0.5 size-7 shrink-0 text-destructive" aria-hidden />
           <div className="space-y-1">
+            {/* One message, whatever went wrong. A per-account attempt counter
+                here would tell an attacker which usernames are real. */}
             <p className="text-lg font-semibold text-destructive">
               {translateError(state.error, state.values)}
             </p>
-            {typeof state.attemptsLeft === 'number' && state.attemptsLeft > 0 ? (
-              <p className="text-base text-destructive">
-                {t('attemptsLeft', { count: state.attemptsLeft })}
-              </p>
-            ) : null}
           </div>
         </div>
       ) : null}

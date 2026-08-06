@@ -48,7 +48,9 @@
     "settings": "설정",
     "audit": "활동 기록",
     "policy": "이용 수칙",
-    "menu": "메뉴"
+    "menu": "메뉴",
+    "trash": "휴지통",
+    "account": "내 계정"
   },
   "login": {
     "title": "로그인",
@@ -367,7 +369,10 @@
     "action_RESET_PASSWORD": "비밀번호 변경",
     "action_UPDATE_SETTINGS": "설정 변경",
     "action_EXPORT_DATA": "백업 내려받기",
-    "action_ACCEPT_POLICY": "수칙 동의"
+    "action_ACCEPT_POLICY": "수칙 동의",
+    "action_RESTORE_JOB": "작업을 되돌림",
+    "action_PURGE_JOB": "작업을 완전히 삭제",
+    "action_CHANGE_OWN_PASSWORD": "본인 비밀번호 변경"
   },
   "receipt": {
     "title": "영수증",
@@ -438,5 +443,33 @@
   "footer": {
     "rules": "이용 수칙",
     "copyright": "© {year} {shopName}"
+  },
+  "trash": {
+    "title": "휴지통",
+    "subtitle": "삭제한 작업입니다. 직접 정하기 전까지는 사라지지 않습니다.",
+    "explainer": "작업을 삭제하면 사라지지 않고 여기로 옵니다. 한 번 눌러 되돌리거나, 완전히 지울 수 있습니다.",
+    "empty": "휴지통이 비었습니다.",
+    "restore": "되돌리기",
+    "restored": "작업을 되돌렸습니다.",
+    "purge": "완전히 삭제",
+    "purged": "작업을 완전히 삭제했습니다.",
+    "purgeTitle": "이 작업을 완전히 삭제할까요?",
+    "purgeBody": "{customer} 고객의 작업 {number}이(가) 영원히 사라집니다. 이것은 정말 되돌릴 수 없습니다.",
+    "purgeConfirm": "예, 완전히 삭제합니다",
+    "deletedBy": "{when}에 {who}이(가) 삭제",
+    "restoreHint": "되돌리면 목록과 합계에 다시 나타납니다."
+  },
+  "account": {
+    "title": "내 계정",
+    "subtitle": "내 정보와 비밀번호입니다.",
+    "changePassword": "비밀번호 변경",
+    "currentPassword": "현재 비밀번호",
+    "newPassword": "새 비밀번호",
+    "passwordChanged": "비밀번호를 변경했습니다.",
+    "wrongCurrentPassword": "현재 비밀번호가 아닙니다.",
+    "sameAsOld": "지금 쓰는 것과 다른 비밀번호를 골라 주세요.",
+    "otherDevicesNote": "비밀번호를 변경하면 다른 모든 기기에서 로그아웃됩니다. 이 기기는 로그인 상태로 유지됩니다.",
+    "mustChangeTitle": "먼저 본인 비밀번호를 정해 주세요",
+    "mustChangeBody": "지금 쓰는 비밀번호는 다른 사람이 정한 것입니다. 본인만 아는 것으로 바꾸면 계속할 수 있습니다."
   }
 }

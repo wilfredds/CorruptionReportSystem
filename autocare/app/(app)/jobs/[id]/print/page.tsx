@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
 import { requirePageUser } from '@/lib/session';
-import { jobInclude, serializeJob } from '@/lib/jobs';
+import { jobInclude, notDeleted, serializeJob } from '@/lib/jobs';
 import { getShopInfo } from '@/lib/settings';
 import { ReceiptView } from '@/components/receipt/receipt-view';
 import { PrintControls } from './print-controls';
@@ -20,7 +20,7 @@ export default async function PrintReceiptPage({ params }: { params: Promise<{ i
   const { id } = await params;
 
   const [job, shop, tcom] = await Promise.all([
-    prisma.job.findUnique({ where: { id }, include: jobInclude }),
+    prisma.job.findFirst({ where: { id, ...notDeleted }, include: jobInclude }),
     getShopInfo(),
     getTranslations('common'),
   ]);

@@ -8,7 +8,7 @@ import { can } from '@/lib/rbac';
 import { formatPeso } from '@/lib/calc';
 import { intlTagFor } from '@/i18n/locales';
 import { decimalToNumber, formatDate } from '@/lib/utils';
-import { describeVehicle } from '@/lib/jobs';
+import { describeVehicle, notDeleted } from '@/lib/jobs';
 import { Button } from '@/components/ui/button';
 import { Card, StatCard } from '@/components/ui/card';
 import { Badge, statusVariant } from '@/components/ui/badge';
@@ -41,6 +41,7 @@ export default async function CustomerDetailPage({
     include: {
       vehicles: { orderBy: { plateNumber: 'asc' } },
       jobs: {
+        where: notDeleted,
         orderBy: { date: 'desc' },
         include: { vehicle: { select: { plateNumber: true } } },
       },
@@ -171,7 +172,7 @@ export default async function CustomerDetailPage({
               <li key={job.id}>
                 <Link
                   href={`/jobs/${job.id}`}
-                  className="flex min-h-tap flex-wrap items-center justify-between gap-4 rounded-lg border-2 border-border bg-background p-4 hover:border-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
+                  className="flex min-h-tap flex-wrap items-center justify-between gap-4 lift rounded-lg border-2 border-border bg-background p-4 hover:border-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-lg font-bold">{job.jobNumber}</span>

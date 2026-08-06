@@ -3,7 +3,7 @@ import { renderToBuffer } from '@react-pdf/renderer';
 import { getTranslations, getLocale } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/session';
-import { jobInclude, serializeJob } from '@/lib/jobs';
+import { jobInclude, notDeleted, serializeJob } from '@/lib/jobs';
 import { getShopInfo } from '@/lib/settings';
 import { intlTagFor } from '@/i18n/locales';
 import { ReceiptPdf, type ReceiptLabels } from '@/lib/pdf/receipt-pdf';
@@ -27,7 +27,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const { id } = await params;
 
   const [job, shop, tr, tj, locale] = await Promise.all([
-    prisma.job.findUnique({ where: { id }, include: jobInclude }),
+    prisma.job.findFirst({ where: { id, ...notDeleted }, include: jobInclude }),
     getShopInfo(),
     getTranslations('receipt'),
     getTranslations('job'),

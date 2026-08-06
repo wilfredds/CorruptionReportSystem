@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { formatPeso, type JobTotals } from '@/lib/calc';
 import { intlTagFor } from '@/i18n/locales';
@@ -17,6 +18,23 @@ export function TotalBar({ totals, className }: { totals: JobTotals; className?:
   const tj = useTranslations('job');
   const tag = intlTagFor(useLocale());
 
+  /**
+   * Re-trigger a short pulse whenever the total actually changes.
+   *
+   * The point is confirmation, not decoration: the owner taps "Carwash" and
+   * the number visibly reacts, so he knows it registered without having to
+   * compare figures. Keying the element on the value restarts the CSS
+   * animation; `prefers-reduced-motion` flattens it to nothing.
+   */
+  const [pulseKey, setPulseKey] = React.useState(0);
+  const previous = React.useRef(totals.total);
+  React.useEffect(() => {
+    if (previous.current !== totals.total) {
+      previous.current = totals.total;
+      setPulseKey((n) => n + 1);
+    }
+  }, [totals.total]);
+
   return (
     <div className={cn('total-bar -mx-4 mt-8 px-4 py-4 sm:mx-0 sm:rounded-t-xl', className)}>
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
@@ -24,9 +42,10 @@ export function TotalBar({ totals, className }: { totals: JobTotals; className?:
           <p className="text-lg font-semibold text-muted-foreground">{t('grandTotal')}</p>
           {/* Read-only by construction: rendered text, never an input. */}
           <output
+            key={pulseKey}
             aria-live="polite"
             aria-atomic="true"
-            className="grand-total block text-primary"
+            className="animate-total-bump grand-total block origin-left text-primary"
           >
             {formatPeso(totals.total, tag)}
           </output>

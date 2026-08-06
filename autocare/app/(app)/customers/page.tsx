@@ -87,7 +87,7 @@ export default async function CustomersPage({
             <li key={customer.id}>
               <Link
                 href={`/customers/${customer.id}`}
-                className="flex min-h-tap flex-wrap items-center justify-between gap-4 rounded-lg border-2 border-border bg-background p-4 hover:border-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
+                className="flex min-h-tap flex-wrap items-center justify-between gap-4 lift rounded-lg border-2 border-border bg-background p-4 hover:border-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-lg font-bold">{customer.fullName}</span>

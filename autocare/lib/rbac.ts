@@ -13,7 +13,13 @@ import type { Role } from '@prisma/client';
 export type AppRole = Role;
 
 /** Route prefixes only an ADMIN may open. */
-export const ADMIN_ONLY_PREFIXES = ['/reports', '/users', '/settings', '/audit'] as const;
+export const ADMIN_ONLY_PREFIXES = [
+  '/reports',
+  '/users',
+  '/settings',
+  '/audit',
+  '/trash',
+] as const;
 
 /** Route prefixes any signed-in user may open. */
 export const AUTHENTICATED_PREFIXES = [
@@ -22,6 +28,7 @@ export const AUTHENTICATED_PREFIXES = [
   '/customers',
   '/vehicles',
   '/services',
+  '/account',
 ] as const;
 
 /** Pages that never require a session. */
@@ -55,7 +62,15 @@ export const can = {
   manageServices: (role?: AppRole) => role === 'ADMIN',
   viewServices: (role?: AppRole) => role === 'ADMIN' || role === 'STAFF',
   manageJobs: (role?: AppRole) => role === 'ADMIN' || role === 'STAFF',
-  deleteJobs: (role?: AppRole) => role === 'ADMIN' || role === 'STAFF',
+  /**
+   * Deleting is ADMIN-only. The role table grants STAFF "create/view/edit
+   * jobs" and stops there — a job is the shop's financial record, so removing
+   * one is an owner decision. Deletes are soft anyway (see the Trash page), so
+   * an owner can undo a mistake.
+   */
+  deleteJobs: (role?: AppRole) => role === 'ADMIN',
+  restoreJobs: (role?: AppRole) => role === 'ADMIN',
+  purgeJobs: (role?: AppRole) => role === 'ADMIN',
   manageCustomers: (role?: AppRole) => role === 'ADMIN' || role === 'STAFF',
   /** Removing a customer or vehicle outright is an owner-level decision. */
   deleteCustomers: (role?: AppRole) => role === 'ADMIN',
@@ -76,6 +91,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/vehicles', labelKey: 'vehicles', icon: 'car' },
   { href: '/services', labelKey: 'services', icon: 'wrench' },
   { href: '/reports', labelKey: 'reports', icon: 'chart', adminOnly: true },
+  { href: '/trash', labelKey: 'trash', icon: 'trash', adminOnly: true },
   { href: '/users', labelKey: 'users', icon: 'shield', adminOnly: true },
   { href: '/settings', labelKey: 'settings', icon: 'settings', adminOnly: true },
   { href: '/audit', labelKey: 'audit', icon: 'history', adminOnly: true },

@@ -48,7 +48,9 @@
     "settings": "Ajustes",
     "audit": "Registro de actividad",
     "policy": "Normas de uso",
-    "menu": "Menú"
+    "menu": "Menú",
+    "trash": "Papelera",
+    "account": "Mi cuenta"
   },
   "login": {
     "title": "Iniciar sesión",
@@ -367,7 +369,10 @@
     "action_RESET_PASSWORD": "Cambió una contraseña",
     "action_UPDATE_SETTINGS": "Cambió los ajustes",
     "action_EXPORT_DATA": "Descargó una copia",
-    "action_ACCEPT_POLICY": "Aceptó las normas"
+    "action_ACCEPT_POLICY": "Aceptó las normas",
+    "action_RESTORE_JOB": "Recuperó un trabajo",
+    "action_PURGE_JOB": "Borró un trabajo definitivamente",
+    "action_CHANGE_OWN_PASSWORD": "Cambió su contraseña"
   },
   "receipt": {
     "title": "Recibo",
@@ -438,5 +443,33 @@
   "footer": {
     "rules": "Normas de uso",
     "copyright": "© {year} {shopName}"
+  },
+  "trash": {
+    "title": "Papelera",
+    "subtitle": "Trabajos eliminados. Nada desaparece hasta que usted lo diga.",
+    "explainer": "Cuando alguien elimina un trabajo, viene aquí en vez de desaparecer. Recupérelo con un toque, o bórrelo definitivamente.",
+    "empty": "La papelera está vacía.",
+    "restore": "Recuperar",
+    "restored": "El trabajo fue recuperado.",
+    "purge": "Borrar definitivamente",
+    "purged": "El trabajo se borró definitivamente.",
+    "purgeTitle": "¿Borrar este trabajo definitivamente?",
+    "purgeBody": "El trabajo {number} de {customer} desaparecerá para siempre. Esto sí que no se puede deshacer.",
+    "purgeConfirm": "Sí, borrar para siempre",
+    "deletedBy": "Eliminado por {who} el {when}",
+    "restoreHint": "Al recuperarlo vuelve a sus listas y a sus totales."
+  },
+  "account": {
+    "title": "Mi cuenta",
+    "subtitle": "Sus datos y su contraseña.",
+    "changePassword": "Cambiar mi contraseña",
+    "currentPassword": "Contraseña actual",
+    "newPassword": "Contraseña nueva",
+    "passwordChanged": "Su contraseña fue cambiada.",
+    "wrongCurrentPassword": "Esa no es su contraseña actual.",
+    "sameAsOld": "Elija una contraseña distinta de la que tiene ahora.",
+    "otherDevicesNote": "Al cambiar su contraseña se cerrará la sesión en todos los demás teléfonos y ordenadores. Aquí seguirá con la sesión iniciada.",
+    "mustChangeTitle": "Primero elija su propia contraseña",
+    "mustChangeBody": "Otra persona eligió la contraseña que usa. Elija una que solo usted conozca y podrá continuar."
   }
 }

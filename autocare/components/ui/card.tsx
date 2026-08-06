@@ -5,7 +5,10 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('rounded-xl border-2 border-border bg-card text-card-foreground shadow-sm', className)}
+      className={cn(
+        'lift rounded-xl border-2 border-border bg-card text-card-foreground shadow-sm',
+        className,
+      )}
       {...props}
     />
   ),
@@ -70,7 +73,9 @@ export function StatCard({
         ? 'text-destructive'
         : 'text-foreground';
   return (
-    <Card className="p-6">
+    <Card className="animate-rise relative overflow-hidden p-6">
+      {/* A thin brand bar so a row of stat cards reads as one family. */}
+      <span aria-hidden className="brand-gradient absolute inset-x-0 top-0 h-1.5" />
       <p className="text-lg font-semibold text-muted-foreground">{label}</p>
       <p className={cn('mt-2 text-total tabular-nums', toneClass)}>{value}</p>
       {hint ? <p className="mt-1 text-base text-muted-foreground">{hint}</p> : null}
