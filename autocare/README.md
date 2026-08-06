@@ -246,10 +246,42 @@ for your domain registrar.
 
 ### If a later deploy needs a schema change
 
-After changing `prisma/schema.prisma`, create the migration locally
-(`npx prisma migrate dev`), commit it, then apply it to Neon with
-`DATABASE_URL="<neon>" npx prisma migrate deploy` before or just after the
-deploy finishes.
+Migrations apply themselves on Vercel. `vercel.json` points the Build Command
+at `npm run build:vercel`, which is:
+
+```
+prisma migrate deploy && prisma generate && next build
+```
+
+So the flow for a schema change is: edit `prisma/schema.prisma`, run
+`npx prisma migrate dev` locally to create the migration, commit it, push. The
+next deploy applies it to Neon before it builds.
+
+Three things worth knowing about that:
+
+- **Migrate runs first on purpose.** If it fails, the build fails and the old
+  deployment keeps serving. That is the outcome you want — a build that
+  succeeded while the migration failed would put code live against a schema it
+  cannot read, which takes the site down rather than degrading it.
+- **`npm run build` is unchanged** and still just `prisma generate && next
+  build`. Local and CI builds do not touch anybody's database; only the Vercel
+  path migrates.
+- **If the build fails on an advisory lock or a prepared-statement error**,
+  `DATABASE_URL` is pointing at Neon's *pooled* endpoint (the host contains
+  `-pooler`). Prisma's migration engine needs a direct connection. Fix it by
+  adding Neon's direct string as a second variable and telling Prisma about it:
+
+  ```prisma
+  datasource db {
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")   // pooled — used by the app
+    directUrl = env("DIRECT_URL")     // direct — used by migrations
+  }
+  ```
+
+  Then add `DIRECT_URL` in Vercel → Settings → Environment Variables. This is
+  not set up in advance because declaring `directUrl` makes the variable
+  mandatory, and a missing one fails every build.
 
 ---
 
