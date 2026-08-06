@@ -246,10 +246,57 @@ for your domain registrar.
 
 ### If a later deploy needs a schema change
 
-After changing `prisma/schema.prisma`, create the migration locally
-(`npx prisma migrate dev`), commit it, then apply it to Neon with
-`DATABASE_URL="<neon>" npx prisma migrate deploy` before or just after the
-deploy finishes.
+Migrations apply themselves on Vercel. `vercel.json` points the Build Command
+at `npm run build:vercel`, which is:
+
+```
+if [ "$VERCEL_ENV" = production ]; then prisma migrate deploy; fi \
+  && prisma generate && next build
+```
+
+So the flow for a schema change is: edit `prisma/schema.prisma`, run
+`npx prisma migrate dev` locally to create the migration, commit it, push, and
+merge. The **production** deploy applies it to Neon before it builds.
+
+Four things worth knowing about that:
+
+- **Only production migrates.** Preview and production share one
+  `DATABASE_URL`, so without the `VERCEL_ENV` guard every preview build would
+  reach into the live database — meaning an unreviewed branch could alter
+  production data before anyone merged it. That is not hypothetical: the first
+  build after this script was added was a *preview*, and it applied a pending
+  migration to the production database. The guard is why that cannot happen
+  again.
+- **The cost of that guard:** a preview of a branch carrying a new migration
+  runs against the old schema, so it will error at runtime. Merge it to test
+  it. Acceptable here because previews are barely used; if that changes, give
+  previews their own Neon branch and set `DATABASE_URL` per environment
+  instead.
+- **Migrate runs first on purpose.** If it fails, the build fails and the old
+  deployment keeps serving. That is the outcome you want — a build that
+  succeeded while the migration failed would put code live against a schema it
+  cannot read, which takes the site down rather than degrading it. Verified:
+  pointing `DATABASE_URL` at an unreachable host exits 1 without ever reaching
+  `next build`.
+- **`npm run build` is unchanged** and still just `prisma generate && next
+  build`. Local and CI builds do not touch anybody's database; only the Vercel
+  production path migrates.
+- **If the build fails on an advisory lock or a prepared-statement error**,
+  `DATABASE_URL` is pointing at Neon's *pooled* endpoint (the host contains
+  `-pooler`). Prisma's migration engine needs a direct connection. Fix it by
+  adding Neon's direct string as a second variable and telling Prisma about it:
+
+  ```prisma
+  datasource db {
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")   // pooled — used by the app
+    directUrl = env("DIRECT_URL")     // direct — used by migrations
+  }
+  ```
+
+  Then add `DIRECT_URL` in Vercel → Settings → Environment Variables. This is
+  not set up in advance because declaring `directUrl` makes the variable
+  mandatory, and a missing one fails every build.
 
 ---
 
