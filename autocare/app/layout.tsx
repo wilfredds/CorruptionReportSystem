@@ -17,7 +17,11 @@ export const viewport: Viewport = {
   initialScale: 1,
   // Never block pinch-zoom: some users will want to magnify further.
   maximumScale: 5,
-  themeColor: '#0b3ea8',
+  // Tints the browser chrome on Android/mobile Chrome. It must match the top of
+  // the page — the sticky header is `bg-background` — so the phone's address bar
+  // blends into the app instead of drawing a coloured band above it.
+  // This is the warm off-white of `--background` (30 40% 99%).
+  themeColor: '#fdfcfb',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
