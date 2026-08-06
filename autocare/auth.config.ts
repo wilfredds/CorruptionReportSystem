@@ -56,11 +56,19 @@ export const authConfig = {
         token.username = (user as { username?: string }).username;
         token.locale = (user as { locale?: string }).locale ?? 'fil';
         token.policyAccepted = (user as { policyAccepted?: boolean }).policyAccepted ?? false;
+        // Pins the session to a generation of the account. lib/session.ts
+        // rejects the request if the User row has moved on (password reset,
+        // account disabled), which is what makes revocation immediate.
+        token.tokenVersion = (user as { tokenVersion?: number }).tokenVersion ?? 0;
+        token.mustChangePassword =
+          (user as { mustChangePassword?: boolean }).mustChangePassword ?? false;
       }
       // `update()` from the client (language switch, policy acknowledgement).
       if (trigger === 'update' && session) {
         if (typeof session.locale === 'string') token.locale = session.locale;
         if (session.policyAccepted === true) token.policyAccepted = true;
+        if (session.mustChangePassword === false) token.mustChangePassword = false;
+        if (typeof session.tokenVersion === 'number') token.tokenVersion = session.tokenVersion;
       }
       return token;
     },
@@ -71,6 +79,8 @@ export const authConfig = {
         session.user.username = token.username as string;
         session.user.locale = token.locale as string;
         session.user.policyAccepted = Boolean(token.policyAccepted);
+        session.user.tokenVersion = (token.tokenVersion as number) ?? 0;
+        session.user.mustChangePassword = Boolean(token.mustChangePassword);
       }
       return session;
     },

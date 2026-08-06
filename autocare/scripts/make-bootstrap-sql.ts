@@ -122,14 +122,16 @@ INSERT INTO "ShopSetting" ("id","name","address","phone","updatedAt") VALUES
    now());
 
 -- ============================================================
--- Owner accounts. Passwords are bcrypt hashes (cost 12) — the
--- plaintext is never stored. CHANGE BOTH after the first login:
--- Users -> Change password.
+-- Owner accounts. Passwords are bcrypt hashes (cost 12) — the plaintext is
+-- never stored. Both are flagged mustChangePassword, so the first login goes
+-- straight to My Account and asks for a private password before anything
+-- else opens. The starting passwords below are public (they are in the
+-- README), which is exactly why the flag is set.
 -- ============================================================
 
-INSERT INTO "User" ("id","name","username","passwordHash","role","locale","isActive","failedLoginAttempts","createdAt","updatedAt") VALUES
-  (${q(raulId)},   'RAUL V. SANTOS',            'raul',   ${q(raulHash)},   'ADMIN', 'fil', true, 0, now(), now()),
-  (${q(franceId)}, 'Francis Wilfred Antiporda', 'france', ${q(franceHash)}, 'ADMIN', 'fil', true, 0, now(), now());
+INSERT INTO "User" ("id","name","username","passwordHash","role","locale","isActive","failedLoginAttempts","tokenVersion","mustChangePassword","createdAt","updatedAt") VALUES
+  (${q(raulId)},   'RAUL V. SANTOS',            'raul',   ${q(raulHash)},   'ADMIN', 'fil', true, 0, 0, true, now(), now()),
+  (${q(franceId)}, 'Francis Wilfred Antiporda', 'france', ${q(franceHash)}, 'ADMIN', 'fil', true, 0, 0, true, now(), now());
 `);
 
   // Service catalog

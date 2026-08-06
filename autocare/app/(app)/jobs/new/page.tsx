@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
 import { requirePageUser } from '@/lib/session';
+import { notDeleted } from '@/lib/jobs';
 import { decimalToNumber } from '@/lib/utils';
 import { JobWizard } from '@/components/wizard/job-wizard';
 import { nextKey, type JobDraft } from '@/components/wizard/wizard-types';
@@ -50,8 +51,8 @@ export default async function NewJobPage({
   let initialDraft: Partial<JobDraft> | undefined;
 
   if (params.from) {
-    const source = await prisma.job.findUnique({
-      where: { id: params.from },
+    const source = await prisma.job.findFirst({
+      where: { id: params.from, ...notDeleted },
       include: { parts: true, services: true },
     });
     if (source) {

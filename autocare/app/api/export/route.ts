@@ -4,7 +4,7 @@ import { getSessionUser } from '@/lib/session';
 import { can } from '@/lib/rbac';
 import { audit } from '@/lib/audit';
 import { decimalToNumber, toCsv, startOfDay, endOfDay } from '@/lib/utils';
-import { describeVehicle } from '@/lib/jobs';
+import { describeVehicle, notDeleted } from '@/lib/jobs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -41,8 +41,10 @@ export async function GET(request: Request) {
         }
       : {};
 
+  // Deleted jobs are excluded from the backup: it mirrors what the shop
+  // actually has on the books.
   const jobs = await prisma.job.findMany({
-    where,
+    where: { ...where, ...notDeleted },
     orderBy: { date: 'asc' },
     include: {
       customer: true,

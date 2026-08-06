@@ -10,7 +10,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/calc.test.ts",
-    "test:db": "tsx tests/job-integrity.test.ts && tsx tests/security.test.ts",
+    "test:db": "tsx tests/job-integrity.test.ts && tsx tests/security.test.ts && tsx tests/access-control.test.ts",
     "test:all": "npm run test && npm run test:db",
     "seed": "tsx prisma/seed.ts",
     "db:generate": "prisma generate",

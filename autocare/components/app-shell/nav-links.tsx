@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Settings,
   History,
+  Trash2,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,7 @@ const ICONS: Record<string, LucideIcon> = {
   shield: ShieldCheck,
   settings: Settings,
   history: History,
+  trash: Trash2,
 };
 
 /**

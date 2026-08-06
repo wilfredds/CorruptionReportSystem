@@ -12,7 +12,7 @@ import {
 } from '@/lib/session';
 import { jobSchema, customerSchema, vehicleSchema, fieldErrors } from '@/lib/validation';
 import { computeJobTotals, computeLineTotal, toDecimalString } from '@/lib/calc';
-import { nextJobNumber } from '@/lib/jobs';
+import { nextJobNumber, notDeleted, onlyDeleted } from '@/lib/jobs';
 import { decimalToNumber } from '@/lib/utils';
 
 /**
@@ -165,18 +165,29 @@ export async function saveJobAction(
   });
 }
 
+/**
+ * "Burahin" on a job.
+ *
+ * This is a SOFT delete: the row is stamped, not destroyed. The job vanishes
+ * from every list, report and total immediately, but an owner can bring it
+ * back from the Trash page. That matters because the person using this every
+ * day is not comfortable with computers, and a mis-tap on a financial record
+ * should never be final.
+ */
 export async function deleteJobAction(jobId: string): Promise<ActionResult> {
   return guarded(async () => {
     const user = await requireCapability(can.deleteJobs);
 
-    const job = await prisma.job.findUnique({
-      where: { id: jobId },
+    const job = await prisma.job.findFirst({
+      where: { id: jobId, ...notDeleted },
       select: { id: true, jobNumber: true, total: true, customer: { select: { fullName: true } } },
     });
     if (!job) return { ok: false, messageKey: 'errors.notFound' };
 
-    // JobPart and JobService cascade from the Job.
-    await prisma.job.delete({ where: { id: jobId } });
+    await prisma.job.update({
+      where: { id: jobId },
+      data: { deletedAt: new Date(), deletedById: user.id },
+    });
 
     await audit({
       userId: user.id,
@@ -187,12 +198,80 @@ export async function deleteJobAction(jobId: string): Promise<ActionResult> {
         jobNumber: job.jobNumber,
         customer: job.customer.fullName,
         total: decimalToNumber(job.total),
+        soft: true,
       },
     });
 
     revalidatePath('/jobs');
     revalidatePath('/dashboard');
+    revalidatePath('/trash');
     return { ok: true, messageKey: 'jobs.deleted' };
+  });
+}
+
+/** Bring a job back from the Trash. ADMIN only. */
+export async function restoreJobAction(jobId: string): Promise<ActionResult> {
+  return guarded(async () => {
+    const user = await requireCapability(can.restoreJobs);
+
+    const job = await prisma.job.findFirst({
+      where: { id: jobId, ...onlyDeleted },
+      select: { id: true, jobNumber: true },
+    });
+    if (!job) return { ok: false, messageKey: 'errors.notFound' };
+
+    await prisma.job.update({
+      where: { id: jobId },
+      data: { deletedAt: null, deletedById: null },
+    });
+
+    await audit({
+      userId: user.id,
+      action: 'RESTORE_JOB',
+      entity: 'Job',
+      entityId: jobId,
+      metadata: { jobNumber: job.jobNumber },
+    });
+
+    revalidatePath('/jobs');
+    revalidatePath('/dashboard');
+    revalidatePath('/trash');
+    return { ok: true, messageKey: 'trash.restored' };
+  });
+}
+
+/**
+ * Destroy a trashed job for good. ADMIN only, and only reachable from the
+ * Trash page behind its own confirmation — this is the one genuinely
+ * irreversible action in the app.
+ */
+export async function purgeJobAction(jobId: string): Promise<ActionResult> {
+  return guarded(async () => {
+    const user = await requireCapability(can.purgeJobs);
+
+    const job = await prisma.job.findFirst({
+      where: { id: jobId, ...onlyDeleted },
+      select: { id: true, jobNumber: true, total: true, customer: { select: { fullName: true } } },
+    });
+    if (!job) return { ok: false, messageKey: 'errors.notFound' };
+
+    // JobPart and JobService cascade from the Job.
+    await prisma.job.delete({ where: { id: jobId } });
+
+    await audit({
+      userId: user.id,
+      action: 'PURGE_JOB',
+      entity: 'Job',
+      entityId: jobId,
+      metadata: {
+        jobNumber: job.jobNumber,
+        customer: job.customer.fullName,
+        total: decimalToNumber(job.total),
+      },
+    });
+
+    revalidatePath('/trash');
+    return { ok: true, messageKey: 'trash.purged' };
   });
 }
 

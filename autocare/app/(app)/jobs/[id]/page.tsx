@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { Pencil, Printer, Download, Copy, ArrowLeft } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { requirePageUser } from '@/lib/session';
-import { jobInclude, serializeJob } from '@/lib/jobs';
+import { jobInclude, notDeleted, serializeJob } from '@/lib/jobs';
 import { getShopInfo } from '@/lib/settings';
 import { Button } from '@/components/ui/button';
 import { ReceiptView } from '@/components/receipt/receipt-view';
@@ -17,7 +17,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
 
   const [job, shop, t, tcom] = await Promise.all([
-    prisma.job.findUnique({ where: { id }, include: jobInclude }),
+    prisma.job.findFirst({ where: { id, ...notDeleted }, include: jobInclude }),
     getShopInfo(),
     getTranslations('jobs'),
     getTranslations('common'),

@@ -26,8 +26,17 @@ export interface LoginState {
   error?: string;
   /** Interpolation values for the error message (e.g. minutes remaining). */
   values?: Record<string, string | number>;
-  attemptsLeft?: number;
 }
+
+/*
+ * Note on what this action deliberately does NOT tell the caller.
+ *
+ * It used to return "you have N tries left". That leaked whether a username
+ * exists: an unknown name always reported the full 5, while a real one counted
+ * down. Wrong username and wrong password are now indistinguishable — same
+ * message, no counter. The lockout still happens, the user is just told about
+ * it when it trips rather than being given a countdown.
+ */
 
 export async function loginAction(
   _prev: LoginState | undefined,
@@ -65,9 +74,12 @@ export async function loginAction(
       return { error: 'login.errorLocked', values: { minutes: LOCKOUT_MINUTES } };
     }
     if (result.reason === 'inactive') {
-      return { error: 'login.errorInactive' };
+      // Reported as a plain wrong-password so that a disabled account is not
+      // distinguishable from one that never existed. The admin can see the
+      // real reason in the Activity Log.
+      return { error: 'login.errorInvalid' };
     }
-    return { error: 'login.errorInvalid', attemptsLeft: outcome.attemptsRemaining };
+    return { error: 'login.errorInvalid' };
   }
 
   await recordSuccessfulLogin(result.user.id, ip);

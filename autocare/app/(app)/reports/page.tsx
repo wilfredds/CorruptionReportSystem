@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { requirePageAdmin } from '@/lib/session';
 import { formatPeso } from '@/lib/calc';
 import { intlTagFor } from '@/i18n/locales';
+import { notDeleted } from '@/lib/jobs';
 import { decimalToNumber, formatDate, startOfDay, endOfDay } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, StatCard } from '@/components/ui/card';
@@ -38,7 +39,7 @@ export default async function ReportsPage({
     parsedTo && !Number.isNaN(parsedTo.getTime()) ? endOfDay(parsedTo) : endOfDay(now);
 
   const jobs = await prisma.job.findMany({
-    where: { date: { gte: from, lte: to } },
+    where: { ...notDeleted, date: { gte: from, lte: to } },
     include: {
       customer: { select: { id: true, fullName: true } },
       parts: { select: { partName: true, quantity: true, lineTotal: true } },

@@ -7,6 +7,7 @@ import { requirePageUser } from '@/lib/session';
 import { formatPeso } from '@/lib/calc';
 import { intlTagFor } from '@/i18n/locales';
 import { decimalToNumber, formatDate, startOfDay, endOfDay } from '@/lib/utils';
+import { notDeleted } from '@/lib/jobs';
 import { jobFilterSchema } from '@/lib/validation';
 import { Button } from '@/components/ui/button';
 import { Badge, statusVariant } from '@/components/ui/badge';
@@ -35,7 +36,8 @@ export default async function JobsPage({
 
   const filters = jobFilterSchema.parse(raw);
 
-  const where: Prisma.JobWhereInput = {};
+  // Trashed jobs never appear in the list; they live on /trash.
+  const where: Prisma.JobWhereInput = { ...notDeleted };
 
   if (filters.q) {
     where.OR = [
@@ -109,7 +111,7 @@ export default async function JobsPage({
             <li key={job.id}>
               <Link
                 href={`/jobs/${job.id}`}
-                className="flex min-h-tap flex-wrap items-center justify-between gap-4 rounded-lg border-2 border-border bg-background p-4 hover:border-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
+                className="flex min-h-tap flex-wrap items-center justify-between gap-4 lift rounded-lg border-2 border-border bg-background p-4 hover:border-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring"
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-lg font-bold">{job.customer.fullName}</span>

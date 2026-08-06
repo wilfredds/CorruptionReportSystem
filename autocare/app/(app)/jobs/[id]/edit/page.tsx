@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
 import { requirePageUser } from '@/lib/session';
+import { notDeleted } from '@/lib/jobs';
 import { decimalToNumber } from '@/lib/utils';
 import { toDateInputValue } from '@/lib/utils';
 import { EditJobForm } from './edit-job-form';
@@ -13,8 +14,8 @@ export default async function EditJobPage({ params }: { params: Promise<{ id: st
   const { id } = await params;
 
   const [job, t] = await Promise.all([
-    prisma.job.findUnique({
-      where: { id },
+    prisma.job.findFirst({
+      where: { id, ...notDeleted },
       include: {
         parts: true,
         services: true,

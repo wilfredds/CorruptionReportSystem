@@ -189,6 +189,15 @@ export const resetPasswordSchema = z.object({
 
 export const userIdSchema = z.object({ userId: z.string().trim().min(1) });
 
+/**
+ * Changing your own password. The current one is required so that an unlocked
+ * device cannot be used to take the account over.
+ */
+export const changeOwnPasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'errors.requiredField').max(200),
+  newPassword: passwordSchema,
+});
+
 // ---------------------------------------------------------------- settings
 
 export const shopSettingsSchema = z.object({

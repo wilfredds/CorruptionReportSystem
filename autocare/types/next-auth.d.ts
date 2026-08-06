@@ -8,6 +8,8 @@ declare module 'next-auth' {
       username: string;
       locale: string;
       policyAccepted: boolean;
+      tokenVersion: number;
+      mustChangePassword: boolean;
     } & DefaultSession['user'];
   }
 
@@ -16,6 +18,8 @@ declare module 'next-auth' {
     username?: string;
     locale?: string;
     policyAccepted?: boolean;
+    tokenVersion?: number;
+    mustChangePassword?: boolean;
   }
 }
 
@@ -26,6 +30,8 @@ declare module 'next-auth/jwt' {
     username?: string;
     locale?: string;
     policyAccepted?: boolean;
+    tokenVersion?: number;
+    mustChangePassword?: boolean;
   }
 }
 
