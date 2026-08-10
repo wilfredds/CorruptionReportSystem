@@ -23,6 +23,19 @@ export type DrillCategory =
 /** How the drill is performed, as opposed to how calls are chosen. */
 export type DrillStyle = 'shadow' | 'ghosting' | 'ladder' | 'hiit' | 'custom'
 
+/** Whether the workout needs a court, or can be done in a garage. */
+export type DrillLocation = 'court' | 'anywhere'
+
+/**
+ * One exercise in a conditioning circuit. A drill carrying these runs as a
+ * circuit rather than a corner-calling drill.
+ */
+export interface CircuitStep {
+  exerciseSlug: string
+  workSec: number
+  restSec: number
+}
+
 export type SessionSource = 'timer' | 'conditioning' | 'benchmark'
 
 export interface Profile {
@@ -61,6 +74,15 @@ export interface Drill {
   defaultWarmupSec: number
   defaultCooldownSec: number
   level: SkillLevel
+
+  /* Conditioning (Phase 3) */
+  /** Non-null makes this a circuit workout rather than a corner-call drill. */
+  circuit: CircuitStep[] | null
+  /** How many times the circuit repeats. Ignored when `circuit` is null. */
+  circuitRounds: number
+  location: DrillLocation
+  /** Free-text kit list, e.g. ["agility ladder"]. Empty means nothing needed. */
+  equipment: string[]
 }
 
 export interface Session {

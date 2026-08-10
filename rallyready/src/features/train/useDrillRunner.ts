@@ -5,6 +5,7 @@ import { stopVibration } from '@/lib/audio/haptics'
 import { cancelSpeech, primeSpeech } from '@/lib/audio/speech'
 import { setToneVolume, unlockAudio } from '@/lib/audio/tones'
 import { WakeLockManager } from '@/lib/audio/wakeLock'
+import { findExercise } from '@/lib/data/seed/exercises'
 import { DrillClock } from '@/lib/timer/clock'
 import type { CornerId } from '@/lib/timer/corners'
 import { createCursor } from '@/lib/timer/cursor'
@@ -204,6 +205,10 @@ export function useDrillRunner({ plan, preferences, onComplete }: UseDrillRunner
           playCue(event, {
             preferences: preferencesRef.current,
             phaseOf: (index) => timeline.blocks[index]?.phase,
+            exerciseNameOf: (index) => {
+              const slug = timeline.blocks[index]?.exerciseSlug
+              return slug ? findExercise(slug)?.name : undefined
+            },
           })
         }
 

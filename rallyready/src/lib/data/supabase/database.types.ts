@@ -1,7 +1,9 @@
 import type { CornerId } from '@/lib/timer/corners'
 import type { DrillMode } from '@/lib/timer/types'
 import type {
+  CircuitStep,
   DrillCategory,
+  DrillLocation,
   DrillStyle,
   SessionSource,
   SkillLevel,
@@ -49,6 +51,10 @@ export interface DrillRow {
   default_warmup_sec: number
   default_cooldown_sec: number
   level: SkillLevel
+  circuit: CircuitStep[] | null
+  circuit_rounds: number
+  location: DrillLocation
+  equipment: string[]
   created_at: string
 }
 

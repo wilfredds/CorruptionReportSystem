@@ -1,8 +1,8 @@
-import type { Drill } from '@/lib/data/types'
+import type { CircuitStep, Drill } from '@/lib/data/types'
 
 import { cornerIdsForLayout, type CornerId, type CourtLayout } from './corners'
 import { applyMode } from './sequencer'
-import type { DrillMode, DrillPlan, SprintSet } from './types'
+import type { DrillMode, DrillPlan, LadderStep, SprintSet } from './types'
 
 /**
  * The editable shape of a drill as the user configures it, and the bridge from
@@ -25,6 +25,36 @@ export interface DrillConfig {
   avoidImmediateRepeat: boolean
   deceptionProbability: number
   deceptionGapMs: number
+  /** Non-null runs this as a conditioning circuit instead of a call drill. */
+  circuit: CircuitStep[] | null
+  circuitRounds: number
+}
+
+export function isCircuit(config: DrillConfig): boolean {
+  return config.circuit !== null && config.circuit.length > 0
+}
+
+/**
+ * Flattens a circuit into ladder steps: every exercise in every round becomes
+ * its own timed block, labelled so the runner can say where you are.
+ */
+export function circuitToLadder(steps: CircuitStep[], rounds: number): LadderStep[] {
+  const ladder: LadderStep[] = []
+  for (let round = 1; round <= rounds; round++) {
+    steps.forEach((step, index) => {
+      ladder.push({
+        workSec: step.workSec,
+        restSec: step.restSec,
+        intervalMs: MIN_INTERVAL_MS,
+        exerciseSlug: step.exerciseSlug,
+        label:
+          rounds > 1
+            ? `Round ${round} · ${index + 1} of ${steps.length}`
+            : `${index + 1} of ${steps.length}`,
+      })
+    })
+  }
+  return ladder
 }
 
 /** §4: shot interval adjustable from 0.8s to 3s — up to ~60 calls a minute. */
@@ -54,6 +84,8 @@ export function configFromDrill(drill: Drill): DrillConfig {
     avoidImmediateRepeat: true,
     deceptionProbability: 0.35,
     deceptionGapMs: 600,
+    circuit: drill.circuit,
+    circuitRounds: drill.circuitRounds,
   }
 }
 
@@ -78,16 +110,23 @@ export function planFromConfig(
     config.mode,
   )
 
+  const circuit = isCircuit(config)
+
   return {
     prepareSec: config.prepareSec,
-    warmupSec: config.warmupSec,
+    // A circuit's warm-up cannot be corner calls — there is no court model in
+    // play — so it is dropped and the cool-down kept.
+    warmupSec: circuit ? 0 : config.warmupSec,
     rounds: config.rounds,
     workSec: config.workSec,
     restSec: config.restSec,
     intervalMs: config.intervalMs,
     cooldownSec: config.cooldownSec,
-    splitStepLeadMs: options.splitStepLeadMs,
-    sprint: config.sprint ?? undefined,
+    splitStepLeadMs: circuit ? 0 : options.splitStepLeadMs,
+    ...(circuit && config.circuit
+      ? { ladder: circuitToLadder(config.circuit, config.circuitRounds) }
+      : {}),
+    sprint: circuit ? undefined : (config.sprint ?? undefined),
     seed: options.seed,
     sequencer,
   }
@@ -215,6 +254,18 @@ export function matchStructure(config: DrillConfig): StructurePreset | undefined
 
 /** Total wall-clock length of a configured drill, in seconds. */
 export function estimateDurationSec(config: DrillConfig): number {
+  if (isCircuit(config) && config.circuit) {
+    const perRound = config.circuit.reduce(
+      (total, step) => total + step.workSec + step.restSec,
+      0,
+    )
+    // The very last rest is dropped by the timeline builder.
+    const lastRest = config.circuit.at(-1)?.restSec ?? 0
+    return (
+      config.prepareSec + perRound * config.circuitRounds - lastRest + config.cooldownSec
+    )
+  }
+
   const main = config.rounds * config.workSec + Math.max(0, config.rounds - 1) * config.restSec
   const sprint = config.sprint
     ? config.sprint.rounds * config.sprint.workSec +

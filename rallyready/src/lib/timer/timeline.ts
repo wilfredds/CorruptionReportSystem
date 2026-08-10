@@ -57,6 +57,9 @@ export function sanitizePlan(plan: DrillPlan): DrillPlan {
           restSec: clampInt(step.restSec, 0, 1800),
           intervalMs: clampInt(step.intervalMs, MIN_INTERVAL_MS, MAX_INTERVAL_MS),
           ...(step.label !== undefined ? { label: step.label } : {}),
+          // Must survive sanitising: dropping it silently turns a circuit back
+          // into a corner-calling drill.
+          ...(step.exerciseSlug !== undefined ? { exerciseSlug: step.exerciseSlug } : {}),
         }))
       : undefined,
     sprint: plan.sprint
@@ -79,6 +82,12 @@ interface BlockDraft {
   intervalMs?: number
   round?: number
   roundsInSet?: number
+  exerciseSlug?: string
+}
+
+/** Phases where the player is working, as opposed to recovering or waiting. */
+function isActivePhase(phase: DrillBlock['phase']): boolean {
+  return phase === 'work' || phase === 'sprint' || phase === 'warmup'
 }
 
 function draftBlocks(plan: DrillPlan): BlockDraft[] {
@@ -104,30 +113,41 @@ function draftBlocks(plan: DrillPlan): BlockDraft[] {
   }
 
   // A ladder replaces the uniform main set: every step sets its own load.
-  const mainSet: { workSec: number; restSec: number; intervalMs: number; label: string }[] =
-    plan.ladder?.length
-      ? plan.ladder.map((step, index) => ({
-          workSec: step.workSec,
-          restSec: step.restSec,
-          intervalMs: step.intervalMs,
-          label: step.label ?? `Level ${index + 1} of ${plan.ladder?.length ?? 0}`,
-        }))
-      : Array.from({ length: plan.rounds }, (_, index) => ({
-          workSec: plan.workSec,
-          restSec: plan.restSec,
-          intervalMs: plan.intervalMs,
-          label: `Round ${index + 1} of ${plan.rounds}`,
-        }))
+  interface MainStep {
+    workSec: number
+    restSec: number
+    intervalMs: number
+    label: string
+    exerciseSlug?: string
+  }
+
+  const mainSet: MainStep[] = plan.ladder?.length
+    ? plan.ladder.map((step, index) => ({
+        workSec: step.workSec,
+        restSec: step.restSec,
+        intervalMs: step.intervalMs,
+        label: step.label ?? `Level ${index + 1} of ${plan.ladder?.length ?? 0}`,
+        ...(step.exerciseSlug !== undefined ? { exerciseSlug: step.exerciseSlug } : {}),
+      }))
+    : Array.from({ length: plan.rounds }, (_, index) => ({
+        workSec: plan.workSec,
+        restSec: plan.restSec,
+        intervalMs: plan.intervalMs,
+        label: `Round ${index + 1} of ${plan.rounds}`,
+      }))
 
   mainSet.forEach((step, index) => {
     drafts.push({
       phase: 'work',
       durationMs: step.workSec * 1000,
       label: step.label,
-      emitsCalls: true,
+      // A step with an exercise is a circuit block: the player is doing tuck
+      // jumps, not chasing a corner, so there is nothing to call.
+      emitsCalls: step.exerciseSlug === undefined,
       intervalMs: step.intervalMs,
       round: index + 1,
       roundsInSet: mainSet.length,
+      ...(step.exerciseSlug !== undefined ? { exerciseSlug: step.exerciseSlug } : {}),
     })
     if (step.restSec > 0) {
       drafts.push({
@@ -209,6 +229,7 @@ export function buildTimeline(rawPlan: DrillPlan): Timeline {
       ...(draft.intervalMs !== undefined ? { intervalMs: draft.intervalMs } : {}),
       ...(draft.round !== undefined ? { round: draft.round } : {}),
       ...(draft.roundsInSet !== undefined ? { roundsInSet: draft.roundsInSet } : {}),
+      ...(draft.exerciseSlug !== undefined ? { exerciseSlug: draft.exerciseSlug } : {}),
     })
     cursorMs += draft.durationMs
   })
@@ -278,11 +299,13 @@ export function buildTimeline(rawPlan: DrillPlan): Timeline {
     }
   }
 
-  // "3, 2, 1" into every calling block that follows a non-calling one.
+  // "3, 2, 1" into every work block that follows a pause. Keyed on the phase
+  // rather than on whether calls are issued, so a circuit block — which never
+  // calls a corner — still gets counted in.
   blocks.forEach((block, index) => {
-    if (!block.emitsCalls || index === 0) return
+    if (!isActivePhase(block.phase) || index === 0) return
     const previous = blocks[index - 1]
-    if (!previous || previous.emitsCalls) return
+    if (!previous || isActivePhase(previous.phase)) return
     for (let secondsLeft = COUNTDOWN_FROM; secondsLeft >= 1; secondsLeft--) {
       const at = block.startMs - secondsLeft * 1000
       if (at >= previous.startMs) events.push({ at, kind: 'countdown', secondsLeft })

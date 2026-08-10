@@ -11,145 +11,145 @@ the way.
 | ---------------------------------------- | ----------------------------- |
 | 0 — Scaffold, design system, data layer  | ✅ Done                        |
 | 1 — Guided drill trainer                 | ✅ Done                        |
-| **2 — Accounts, progress, benchmark**    | ✅ **Done — ready for review** |
-| 3 — Stamina & conditioning               | ⬜ Not started                 |
+| 2 — Accounts, progress, benchmark        | ✅ Done                        |
+| **3 — Stamina & conditioning**           | ✅ **Done — ready for review** |
 | 4 — Multi-week programs                  | ⬜ Not started                 |
 | 5 — Curated library                      | ⬜ Not started                 |
 
-`npm run verify` is green: 0 type errors, 0 lint errors/warnings, 161 unit
+`npm run verify` is green: 0 type errors, 0 lint errors/warnings, 184 unit
 tests passing, production build clean.
 
 ---
 
-## Phase 2 — acceptance criteria
+## Phase 3 — what the brief asked for
 
-> *Sessions auto-log to the user's account; dashboard shows real trends; a user
-> can take the benchmark test and see their score history.*
+> *Badminton-specific HIIT built on real rally:rest ratios; Tabata; multifeed-style
+> shadow intervals. Agility-ladder and plyometric circuits with short demo clips
+> and coaching cues. On-court and at-home variants. Reuse the Phase-1 timer
+> engine; conditioning logs to `sessions` too.*
 
-| Criterion                     | Status | How                                                                                                                     |
-| ----------------------------- | :----: | ------------------------------------------------------------------------------------------------------------------------ |
-| Sessions log to the account   |   ✅   | Signing in swaps the repository bundle to Supabase; a signed-out history is uploaded on first sign-in.                     |
-| Dashboard shows real trends   |   ✅   | Weekly streak calendar, training-load bars, pace line, personal bests, trophy case — every figure derived from real rows.  |
-| Benchmark and score history   |   ✅   | Twelve-level protocol, score charted over time, per-attempt result pages.                                                  |
+| Item                             | Status | How                                                                                     |
+| -------------------------------- | :----: | ----------------------------------------------------------------------------------------- |
+| HIIT on real rally:rest ratios   |   ✅   | Match Rhythm (6/12 × 12, a true 1:2) and Rally HIIT (15/15 × 10, deliberately harder).      |
+| Tabata                           |   ✅   | Shipped in Phase 1 as a drill *and* a structure preset on any drill.                        |
+| Multifeed shadow intervals       |   ✅   | 10s flat out / 30s recovery × 10 — short efforts so movement quality never degrades.        |
+| Agility-ladder circuits          |   ✅   | Four patterns: in-and-out, lateral shuffle, crossover, high knees.                          |
+| Plyometric circuits              |   ✅   | Jump squats, split jumps, lateral bounds, tuck jumps, step jumps.                           |
+| Demo clips + coaching cues       |   ◑   | Cues and faults in full; demos are drawn schematics rather than video — see below.          |
+| On-court and at-home variants    |   ✅   | Every workout is tagged, every exercise lists a no-kit substitute, and Train has a filter.  |
+| Reuse the timer engine           |   ✅   | One engine; circuits are ladder steps that name an exercise instead of calling a corner.    |
+| Conditioning logs to `sessions`  |   ✅   | Same session row, `source: 'conditioning'`, feeding the same streak and dashboard.          |
 
 ### Built
 
-**Auth.** Email/password and Google OAuth through Supabase, wrapped so nothing
-outside `src/lib/auth` and `src/lib/data` ever touches the client. `unavailable`
-is a first-class state: with no Supabase project configured the sign-in screen
-explains that plainly instead of offering a button that cannot work, and the
-whole app carries on against local storage.
+**Circuits in the engine.** A ladder step can now carry an `exerciseSlug`. A
+step that does issues no corner calls, and the block records which exercise to
+perform. That one addition is the whole of the engine work — the clock, cursor,
+countdowns, pause/resume, wake lock and session logging are all untouched and
+shared.
 
-**Migration.** Signing in for the first time uploads the local history —
-sessions, their metrics, benchmarks and badges — resolving drill slugs to uuids
-on the way through. It runs once per account, and the local copy is deliberately
-left in place: it is still the offline fallback, so a failed upload loses
-nothing and simply retries next time.
+**The exercise catalogue.** Eleven exercises with real coaching cues, common
+faults, and an explicit substitute for anyone without the kit. Bundled with the
+app, so a circuit runs in a garage with no signal.
 
-**Onboarding.** Three questions — level, discipline, goal — then straight into
-a drill chosen for those answers, with the reason shown so the pick does not
-look arbitrary, plus a day-one badge. Available signed-out too; it is a
-training profile, not an account feature.
+**Drawn demos.** Ladder work gets an animated footfall diagram; everything else
+gets a side-view figure computed from pose parameters — squat depth, height off
+the floor, tuck, arm swing, foot split, and lead-leg asymmetry. One renderer
+covers every non-ladder exercise, which is what makes a demo affordable for all
+of them.
 
-**Progress dashboard.** Weekly streak calendar over twelve weeks, training load
-in minutes per week, a pace trend, personal bests per drill, and the trophy
-case. Recharts throughout, wired to the same CSS custom properties as the rest
-of the app, so switching theme recolours every chart with no React involvement.
+**The circuit board.** In place of the court board: the exercise named large
+enough to read from the floor, the looping schematic, and the single cue that
+matters most. During a rest it switches to what is coming next, because that is
+the only thing worth knowing while you catch your breath. And the voice
+announces the exercise by name, so a circuit is as eyes-free as a drill —
+"tuck jumps" tells you everything, "go" tells you nothing.
 
-**Badges.** Nine achievements across bronze, silver and gold, so a beginner
-always has one within reach and a returning competitor still has one to chase.
-Locked badges show live progress towards the unlock.
+**Train, split.** Drills and Conditioning as tabs, plus a "No court" filter.
+Seven of the twelve workouts now need nothing but floor space.
 
-**Benchmark.** Twelve levels of four-corner movement, work stepping 18s → 30s
-against a fixed 10s recovery. Score is total corner touches — finer-grained than
-the level alone, so two players who both fail in level 7 are still separated by
-how far in they got. Charted over time, with each attempt compared against the
-one before.
-
-**Engine.** `DrillPlan` gained `ladder`: explicit per-step work/rest/interval
-that replaces the uniform main set. The benchmark needs it, and Phase 3's
-pyramid and ladder conditioning will too.
+**Generated SQL seed.** The catalogue and the Postgres seed had already drifted
+once, so `npm run seed:sql` now derives the SQL from the TypeScript. One source
+of truth.
 
 ---
 
 ## Decisions and their reasons
 
-**Everything derived, nothing counted.** Streaks, statistics and badges are all
-projections over the session history. Badge awarding is reconciliation rather
-than an event: each load compares the derived set against what is stored and
-writes the difference. A badge cannot be missed because the app was closed at
-the wrong moment, and cannot be awarded twice.
+**Circuits are drills, not a separate entity.** They share the table, the
+runner, the session log, the streak and the dashboard. A conditioning workout
+differs from a footwork drill in what it asks you to do, not in what it *is* —
+modelling it separately would have duplicated all of that for nothing.
 
-**The shot interval is fixed across the benchmark.** The load rises because the
-work grows while the rest does not — 1.8:1 at level 1, 3:1 at level 12. Moving
-the interval as well would confound endurance with reaction time, and the test
-is meant to measure one thing.
+**Demos are drawn rather than embedded.** Vetted clips are Phase 5, and made-up
+links rot. Rendering the demo means it works offline, matches the theme, and
+costs nothing to keep. For ladder patterns — where the pattern, not the effort,
+is the hard part — a diagram is arguably clearer than a video you would have to
+scrub back and forth.
 
-**No warm-up inside the benchmark, and no split-step tick.** A folded-in warm-up
-would change the score depending on how tired it left you; the metronome would
-pace the athlete through a test of their own pacing.
+**The figure holds each keyframe.** Blending continuously between poses looked
+like a person swaying: the figure spent all its time between positions and never
+actually showed the one being taught. It now sits in each keyframe for 45% of
+the slot, then moves.
 
-**The benchmark runner has no Skip.** Skipping a level would invalidate the
-score. Stopping is the measurement, and the confirmation dialog says so — "this
-is the test, not a failure".
+**A lunge needed asymmetric legs.** Mirroring the two legs rendered every lunge
+as a wide stance. Poses now carry a `lead` parameter: front knee stacked over
+the ankle, trailing knee dropped towards the floor, torso upright rather than
+pitched forward.
 
-**The pace chart's Y axis is inverted.** Faster is a smaller number, and a chart
-where improvement points downwards gets misread every time.
+**Circuits drop the warm-up, the split-step tick and the sprint set.** All three
+are corner-call concepts. A metronome tick before a jump squat is meaningless,
+and a "warm-up" of corner calls makes no sense in a room with no court.
 
-**Weekly streak calendar, two axis labels.** Twelve week-labels collide under
-24px cells on a phone, so the calendar shows the first week and "This week" and
-puts the rest in tooltips and screen-reader text.
+**Countdowns are keyed on the phase, not on whether calls are issued.** A
+circuit block calls no corners but still needs "3, 2, 1" — otherwise the first
+few seconds of every exercise are guesswork.
 
 ### Deviations from the brief's data model
 
-Beyond the Phase 1 additions to `drills`, Phase 2 adds:
-
-- `profiles.goal` — onboarding asks what the player is training for, and the
-  recommendation and (later) program adaptation both need it.
-- `sessions.drill_name` (Phase 1) continues to earn its place: benchmark
-  sessions have no `drill_id` at all and still need a name in the log.
+`drills` gains four Phase-3 columns: `circuit` (jsonb), `circuit_rounds`,
+`location` and `equipment`. The circuit is jsonb rather than a child table
+because it is an ordered value object that is always read and written whole and
+never queried into — a `circuit_steps` table would buy joins nobody needs.
 
 ### Fixed while verifying in a browser
 
-- The Slider's `aria-label` sat on the Radix root, but the *thumb* is what
-  carries `role="slider"` — so every slider in the app was anonymous to a
-  screen reader. Now forwarded to the thumb.
-- The benchmark's rest screen announced the level just finished rather than the
-  one coming up.
-- The pace chart clipped its own axis labels, and one decimal place collapsed
-  distinct sessions onto the same tick.
-- The quoted benchmark duration omitted the lead-in; it now comes from one
-  helper that the test asserts against the built timeline.
+- `sanitizePlan` rebuilt ladder steps and dropped `exerciseSlug`, silently
+  turning every circuit back into a corner-calling drill. Caught by a test
+  written before the UI existed.
+- The runner's status line read "Then · Rest" during a circuit — technically
+  true, useless in practice. It now names the next exercise.
+- The session summary showed "Calls: 0" and a blank average interval for
+  circuits. Those tiles are now dropped and "Rounds" reads "Exercises".
+- The figure's head clipped the top of its viewBox at full standing height.
+- The pose caption named the keyframe being left rather than the one on screen,
+  so "TUCK" was shown over a figure standing on the ground.
 
 ### Known limitations
 
-- **The Supabase path is written and fully typed but has not been run against a
-  live project** in this environment — there is no Supabase instance to point
-  at. The local backend is exercised end to end. The schema is idempotent and
-  the adapter is typed against it, so the first real connection is the
-  remaining unknown.
-- **Session metrics are fetched whole** for the dashboard (one query, not
-  N+1), which is fine at hundreds of sessions and would want pagination at
-  tens of thousands.
-- **Local sessions upload but do not sync back down.** Sign in on a second
-  device and you see the account's history, not that device's local rows; those
-  stay put as the offline fallback.
-- **iOS backgrounding** still suspends `speechSynthesis` when the user switches
-  apps. Unchanged from Phase 1, and not something a web app can fix.
+- **Demos are schematic, not filmed.** They convey pattern and shape well and
+  tempo poorly. Phase 5 adds vetted clips alongside them, not instead of them.
+- **Circuits are not editable per step.** You can change the number of rounds
+  and the cool-down, but not swap an exercise or retime an individual block.
+  Custom circuits belong with the user-authored content in Phase 4.
+- **The Supabase path is still unexercised against a live project** — no
+  instance to point at here. Fully typed against the schema; the local backend
+  is exercised end to end.
+- **`equipment` is free text.** Fine for the seeded catalogue, too loose for
+  filtering once users author their own workouts.
 
 ---
 
-## Next: Phase 3 — stamina and conditioning
+## Next: Phase 4 — structured multi-week programs
 
-1. Badminton-specific HIIT on real rally:rest ratios, and Tabata — both already
-   expressible as plans; mostly a content and UI job.
-2. Multifeed-style shadow intervals, favouring short sharp efforts so movement
-   quality holds.
-3. Agility-ladder circuits (in-out, lateral shuffle, crossover, high knees) and
-   plyometric circuits (jump squats, tuck jumps, box/step jumps), each with
-   on-court and at-home variants.
-4. These need a non-court "circuit" board — the six-corner map does not describe
-   a jump squat. Likely a simple exercise-card view driven by the same timeline.
+1. Periodised 8–12 week returning-player programs: Base → Build → Sharpen →
+   Deload, 3–5 sessions a week mixing footwork, conditioning and rest days.
+2. Enrolment tracking current week and day; "Today's session" on the home
+   screen.
+3. Volume adapted to level and court access — the `location` tag added in this
+   phase is what makes an anywhere-only program possible.
+4. Users authoring and publishing their own programs (`is_public`), which is
+   also where per-step circuit editing belongs.
 
-The `ladder` steps added for the benchmark already cover pyramid and
-progressive circuits, so the engine should need no further changes.
+The `programs`, `program_days` and `program_enrollments` tables and their RLS
+policies have been in the schema since Phase 0, so this is app work only.

@@ -93,15 +93,35 @@ export function SessionSummaryPage() {
         </p>
       </div>
 
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat icon={<Timer className="size-4" />} label="Time" value={formatDuration(session.durationSec)} />
-        <Stat icon={<RotateCcw className="size-4" />} label="Rounds" value={String(session.roundsCompleted)} />
-        <Stat icon={<Target className="size-4" />} label="Calls" value={String(calls)} />
+      {/* A circuit answers no corner calls, so "Calls: 0" and a blank average
+          would be noise. Show only the figures that mean something. */}
+      <div
+        className={`mb-5 grid gap-3 ${calls > 0 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2'}`}
+      >
         <Stat
           icon={<Timer className="size-4" />}
-          label="Avg interval"
-          value={session.avgShotIntervalMs ? `${(session.avgShotIntervalMs / 1000).toFixed(2)}s` : '—'}
+          label="Time"
+          value={formatDuration(session.durationSec)}
         />
+        <Stat
+          icon={<RotateCcw className="size-4" />}
+          label={calls > 0 ? 'Rounds' : 'Exercises'}
+          value={String(session.roundsCompleted)}
+        />
+        {calls > 0 && (
+          <>
+            <Stat icon={<Target className="size-4" />} label="Calls" value={String(calls)} />
+            <Stat
+              icon={<Timer className="size-4" />}
+              label="Avg interval"
+              value={
+                session.avgShotIntervalMs
+                  ? `${(session.avgShotIntervalMs / 1000).toFixed(2)}s`
+                  : '—'
+              }
+            />
+          </>
+        )}
       </div>
 
       {streak && (

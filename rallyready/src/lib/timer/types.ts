@@ -52,6 +52,8 @@ export interface DrillBlock {
   round?: number
   /** Total rounds in this block's set. */
   roundsInSet?: number
+  /** The exercise to perform, for circuit blocks. */
+  exerciseSlug?: string
 }
 
 export type TimelineEvent =
@@ -89,6 +91,11 @@ export interface LadderStep {
   intervalMs: number
   /** Overrides the default "Level n of m" block label. */
   label?: string
+  /**
+   * An exercise to perform instead of chasing corner calls. Set for
+   * conditioning circuits; a step carrying one issues no calls at all.
+   */
+  exerciseSlug?: string
 }
 
 /** Everything needed to generate a session. Fully serialisable. */

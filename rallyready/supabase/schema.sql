@@ -57,6 +57,9 @@ begin
   if not exists (select 1 from pg_type where typname = 'training_goal') then
     create type training_goal as enum ('stamina', 'footwork', 'match-ready', 'consistency');
   end if;
+  if not exists (select 1 from pg_type where typname = 'drill_location') then
+    create type drill_location as enum ('court', 'anywhere');
+  end if;
 end
 $$;
 
@@ -151,8 +154,24 @@ create table if not exists public.drills (
   default_warmup_sec   integer        not null default 60 check (default_warmup_sec >= 0),
   default_cooldown_sec integer        not null default 60 check (default_cooldown_sec >= 0),
   level                skill_level    not null default 'intermediate',
+  -- Phase 3. A non-null `circuit` makes this a conditioning circuit rather than
+  -- a corner-calling drill: an ordered list of
+  -- {exerciseSlug, workSec, restSec}, repeated `circuit_rounds` times. Kept as
+  -- jsonb rather than a child table because it is an ordered value object that
+  -- is always read and written whole, never queried into.
+  circuit              jsonb,
+  circuit_rounds       integer        not null default 1 check (circuit_rounds between 1 and 20),
+  location             drill_location not null default 'court',
+  equipment            text[]         not null default '{}',
   created_at           timestamptz    not null default now()
 );
+
+-- Added in Phase 3; keeps an existing database in step with a fresh one.
+alter table public.drills
+  add column if not exists circuit        jsonb,
+  add column if not exists circuit_rounds integer not null default 1,
+  add column if not exists location       drill_location not null default 'court',
+  add column if not exists equipment      text[] not null default '{}';
 
 create index if not exists drills_public_idx on public.drills (is_public) where is_public;
 create index if not exists drills_created_by_idx on public.drills (created_by);
@@ -457,121 +476,263 @@ create policy "users record their own unlocks"
 --  Mirrors src/lib/data/seed/drills.ts, keyed by slug. Kept in sync by hand;
 --  the client bundles the same catalogue so a fresh install works offline.
 
+-- >>> generated from src/lib/data/seed/drills.ts — do not edit by hand
 insert into public.drills (
-  slug, name, category, mode, description, coaching_cues, common_faults,
-  default_work_sec, default_rest_sec, default_rounds, corners,
-  default_interval_ms, default_call_mode, enabled_corners,
-  default_warmup_sec, default_cooldown_sec, level, is_public
+  slug, name, category, mode, description, coaching_cues, common_faults, default_work_sec, default_rest_sec, default_rounds, corners, default_interval_ms, default_call_mode, enabled_corners, default_warmup_sec, default_cooldown_sec, level, is_public, circuit, circuit_rounds, location, equipment
 ) values
 (
   'six-corner-shadow', 'Six-Corner Shadow', 'footwork', 'shadow',
   'The benchmark solo session. Six targets, random calls, full shadow swing at every corner. Builds the movement pattern and the engine behind it at the same time.',
   array[
-    'Split-step as the call lands — land light, weight on the balls of your feet.',
-    'Racket up and in front on every recovery; never let it drop below your waist.',
-    'Chassé to the sides and rear, lunge to the net. Running flat-footed wastes a step.',
-    'Recover through base after every corner, not around it.',
-    'Finish each movement with a shadow swing so the arm learns the timing too.'
-  ],
+      'Split-step as the call lands — land light, weight on the balls of your feet.',
+      'Racket up and in front on every recovery; never let it drop below your waist.',
+      'Chassé to the sides and rear, lunge to the net. Running flat-footed wastes a step.',
+      'Recover through base after every corner, not around it.',
+      'Finish each movement with a shadow swing so the arm learns the timing too.'
+    ],
   array[
-    'Standing tall between calls instead of staying loaded in a low ready position.',
-    'Skipping the split-step and starting late.',
-    'Crossing the feet on the way to the rear corners.',
-    'Drifting past base on the recovery and getting caught flat.'
-  ],
-  30, 30, 6, 6, 1350, 'random', null, 60, 60, 'intermediate', true
+      'Standing tall between calls instead of staying loaded in a low ready position.',
+      'Skipping the split-step and starting late.',
+      'Crossing the feet on the way to the rear corners.',
+      'Drifting past base on the recovery and getting caught flat.'
+    ],
+  30, 30, 6, 6,
+  1350, 'random',
+  null,
+  60, 60, 'intermediate', true,
+  null, 1, 'court',
+  '{}'
 ),
 (
   'four-corner-footwork', 'Four-Corner Footwork', 'footwork', 'ghosting',
   'The classic four-corner pattern: two net corners, two rear corners. Fewer targets means longer travel and a harder recovery — the best place to start if six feels frantic.',
   array[
-    'Two-step chassé to the rear, lunge to the front. Economy beats effort.',
-    'Push off the outside foot to change direction rather than shuffling round.',
-    'Keep the hips square to the net until the last step.',
-    'Land each lunge with the knee tracking over the toes, never inside them.'
-  ],
+      'Two-step chassé to the rear, lunge to the front. Economy beats effort.',
+      'Push off the outside foot to change direction rather than shuffling round.',
+      'Keep the hips square to the net until the last step.',
+      'Land each lunge with the knee tracking over the toes, never inside them.'
+    ],
   array[
-    'Over-striding to the net so there is nothing left to push back out with.',
-    'Turning the shoulders early and losing balance on the way back.',
-    'Bouncing on the spot instead of holding a stable, loaded base.'
-  ],
-  30, 30, 6, 4, 1650, 'random', null, 60, 60, 'beginner', true
+      'Over-striding to the net so there is nothing left to push back out with.',
+      'Turning the shoulders early and losing balance on the way back.',
+      'Bouncing on the spot instead of holding a stable, loaded base.'
+    ],
+  30, 30, 6, 4,
+  1650, 'random',
+  null,
+  60, 60, 'beginner', true,
+  null, 1, 'court',
+  '{}'
 ),
 (
   'net-footwork', 'Front-Court Net Footwork', 'net', 'shadow',
   'Net corners only, at a deliberate pace. This is a technique drill disguised as a fitness drill — every rep is a full lunge and a full push back to base.',
   array[
-    'The racket leg leads every lunge — right leg for right-handers.',
-    'Drive out of the lunge with the front leg. The back leg is a brake, not an engine.',
-    'Take the shuttle early and high: reach in front of the knee, not beside it.',
-    'Chest up. Bending at the waist kills the recovery before it starts.'
-  ],
+      'The racket leg leads every lunge — right leg for right-handers.',
+      'Drive out of the lunge with the front leg. The back leg is a brake, not an engine.',
+      'Take the shuttle early and high: reach in front of the knee, not beside it.',
+      'Chest up. Bending at the waist kills the recovery before it starts.'
+    ],
   array[
-    'Landing on a straight leg and jarring the knee.',
-    'Letting the racket head drop below the net tape.',
-    'Standing up out of the lunge before pushing back.'
-  ],
-  20, 25, 6, 4, 1800, 'random', array['net-left', 'net-right'], 60, 60, 'beginner', true
+      'Landing on a straight leg and jarring the knee.',
+      'Letting the racket head drop below the net tape.',
+      'Standing up out of the lunge before pushing back.'
+    ],
+  20, 25, 6, 4,
+  1800, 'random',
+  array[
+      'net-left',
+      'net-right'
+    ],
+  60, 60, 'beginner', true,
+  null, 1, 'court',
+  '{}'
 ),
 (
   'rear-court-scissor', 'Rear-Court Scissor Recovery', 'rear-court', 'shadow',
   'Rear corners only, slow calls, maximum quality. Get behind the shuttle, scissor-jump the legs, land balanced and recover. The most common place a returning player loses time.',
   array[
-    'Turn side-on early, then chassé back. Never run backwards.',
-    'Scissor the legs in the air: hitting leg back, landing leg forward.',
-    'Land on the non-racket foot first and let it absorb the drop.',
-    'Rotate hips and shoulders through the shot; the arm follows the body.'
-  ],
+      'Turn side-on early, then chassé back. Never run backwards.',
+      'Scissor the legs in the air: hitting leg back, landing leg forward.',
+      'Land on the non-racket foot first and let it absorb the drop.',
+      'Rotate hips and shoulders through the shot; the arm follows the body.'
+    ],
   array[
-    'Reaching backwards for the shuttle instead of getting behind it.',
-    'Landing flat on both feet, which stalls the recovery.',
-    'Losing the racket-up ready position on the way back to base.'
-  ],
-  20, 40, 6, 4, 2200, 'random', array['rear-left', 'rear-right'], 90, 60, 'intermediate', true
+      'Reaching backwards for the shuttle instead of getting behind it.',
+      'Landing flat on both feet, which stalls the recovery.',
+      'Losing the racket-up ready position on the way back to base.'
+    ],
+  20, 40, 6, 4,
+  2200, 'random',
+  array[
+      'rear-left',
+      'rear-right'
+    ],
+  90, 60, 'intermediate', true,
+  null, 1, 'court',
+  '{}'
 ),
 (
   'deception-reaction', 'Deception Reaction', 'footwork', 'ghosting',
   'A fake call, then the real one. Trains the second split-step — the thing that separates players who get wrong-footed from players who do not.',
   array[
-    'Split-step on the first call and again on the second. That is the whole drill.',
-    'Tall in the hips, low in the knees — you cannot redirect out of a deep squat.',
-    'Move your eyes before your feet.',
-    'Accept a slower first step in exchange for never being wrong-footed.'
-  ],
+      'Split-step on the first call and again on the second. That is the whole drill.',
+      'Tall in the hips, low in the knees — you cannot redirect out of a deep squat.',
+      'Move your eyes before your feet.',
+      'Accept a slower first step in exchange for never being wrong-footed.'
+    ],
   array[
-    'Committing full body weight to the fake and losing the second step.',
-    'Freezing on the fake instead of re-splitting.',
-    'Anticipating a pattern rather than reacting to the call.'
-  ],
-  25, 35, 5, 6, 1800, 'deception', null, 90, 60, 'advanced', true
+      'Committing full body weight to the fake and losing the second step.',
+      'Freezing on the fake instead of re-splitting.',
+      'Anticipating a pattern rather than reacting to the call.'
+    ],
+  25, 35, 5, 6,
+  1800, 'deception',
+  null,
+  90, 60, 'advanced', true,
+  null, 1, 'court',
+  '{}'
 ),
 (
   'match-rhythm-intervals', 'Match Rhythm Intervals', 'conditioning', 'ghosting',
   'Built on measured singles match data — roughly 5–6 second rallies against 11–12 seconds between them. Short, sharp work blocks at a true 1:2 ratio, so the session trains the energy system a match actually uses.',
   array[
-    'Treat every work block as a rally: full intensity, then genuinely recover.',
-    'Use the rest. Walk, breathe through the nose, let the heart rate drop.',
-    'Movement quality matters more than the number of corners covered.'
-  ],
+      'Treat every work block as a rally: full intensity, then genuinely recover.',
+      'Use the rest. Walk, breathe through the nose, let the heart rate drop.',
+      'Movement quality matters more than the number of corners covered.'
+    ],
   array[
-    'Pacing the work block like a jog because you are saving energy for later.',
-    'Standing still during rest instead of walking it off.'
-  ],
-  6, 12, 12, 6, 1100, 'random', null, 90, 90, 'intermediate', true
+      'Pacing the work block like a jog because you are saving energy for later.',
+      'Standing still during rest instead of walking it off.'
+    ],
+  6, 12, 12, 6,
+  1100, 'random',
+  null,
+  90, 90, 'intermediate', true,
+  null, 1, 'anywhere',
+  '{}'
 ),
 (
   'tabata-shadow', 'Tabata Shadow', 'conditioning', 'hiit',
   'Twenty seconds on, ten seconds off, eight times. Four minutes that will tell you exactly how much base you have — and nothing to hide behind.',
   array[
-    'Twenty seconds is short. Go from the first call, not the third.',
-    'When you tire, shorten the recovery step — never the split-step.',
-    'Hold the racket up even when your arms want to drop.'
-  ],
+      'Twenty seconds is short. Go from the first call, not the third.',
+      'When you tire, shorten the recovery step — never the split-step.',
+      'Hold the racket up even when your arms want to drop.'
+    ],
   array[
-    'Fading in rounds 5 to 8 because rounds 1 and 2 were too hard.',
-    'Letting footwork collapse into running once fatigue sets in.'
-  ],
-  20, 10, 8, 6, 1000, 'random', null, 120, 120, 'advanced', true
+      'Fading in rounds 5 to 8 because rounds 1 and 2 were too hard.',
+      'Letting footwork collapse into running once fatigue sets in.'
+    ],
+  20, 10, 8, 6,
+  1000, 'random',
+  null,
+  120, 120, 'advanced', true,
+  null, 1, 'anywhere',
+  '{}'
+),
+(
+  'multifeed-shadow', 'Multifeed Shadow Intervals', 'conditioning', 'ghosting',
+  'Ten seconds flat out, thirty to recover, over and over. Short efforts are the point: multifeed falls apart as a training tool the moment your movement gets sloppy, so the block ends before it can.',
+  array[
+      'Ten seconds is a sprint, not a pace. Empty the tank each block.',
+      'The moment your footwork turns into running, the block has done its job.',
+      'Use the full thirty seconds — this is not a work-capacity drill, it is a speed one.',
+      'Racket up throughout, even on the last round.'
+    ],
+  array[
+      'Treating the work block as a jog to preserve energy for later rounds.',
+      'Cutting the rest short and turning a speed session into a slog.'
+    ],
+  10, 30, 10, 6,
+  880, 'random',
+  null,
+  120, 120, 'advanced', true,
+  null, 1, 'anywhere',
+  '{}'
+),
+(
+  'rally-hiit', 'Rally HIIT', 'conditioning', 'hiit',
+  'Longer rallies than a match usually gives you, with match-length recovery. Fifteen seconds on, fifteen off — a 1:1 ratio that is deliberately harder than real play, so real play feels easy.',
+  array[
+      'Fifteen seconds is roughly three long rallies back to back. Pace accordingly.',
+      'Breathe through the nose in the rest; it settles the heart rate faster.',
+      'Hold your movement quality to round eight, not just round three.'
+    ],
+  array[
+      'Going out at a pace you can only hold for four rounds.',
+      'Standing still in the rest instead of walking it off.'
+    ],
+  15, 15, 10, 6,
+  1100, 'random',
+  null,
+  120, 120, 'intermediate', true,
+  null, 1, 'anywhere',
+  '{}'
+),
+(
+  'agility-ladder-circuit', 'Agility Ladder Circuit', 'agility', 'ladder',
+  'Four ladder patterns, three times through. Trains foot speed and coordination rather than lungs — go for clean feet at high cadence, not for exhaustion.',
+  array[
+      'Cadence over stride. The ladder rewards how often your feet land, not how far they travel.',
+      'Stay on the balls of the feet the whole way through.',
+      'Chest up and eyes forward — looking down slows every pattern.',
+      'Stop the block early if the pattern falls apart. Sloppy reps train sloppy feet.'
+    ],
+  array[
+      'Chasing speed before the pattern is automatic.',
+      'Letting the heels touch down and turning quick feet into running.'
+    ],
+  30, 25, 3, 4,
+  1000, 'random',
+  null,
+  0, 120, 'intermediate', true,
+  '[{"exerciseSlug":"ladder-in-out","workSec":30,"restSec":25},{"exerciseSlug":"ladder-lateral-shuffle","workSec":30,"restSec":25},{"exerciseSlug":"ladder-crossover","workSec":30,"restSec":25},{"exerciseSlug":"ladder-high-knees","workSec":25,"restSec":40}]'::jsonb, 3, 'anywhere',
+  array[
+      'agility ladder (or tape)'
+    ]
+),
+(
+  'plyometric-power-circuit', 'Plyometric Power Circuit', 'plyometric', 'custom',
+  'Five explosive movements, three rounds. This is the drive behind a jump smash and the push out of a deep lunge — power work, so quality matters far more than the count.',
+  array[
+      'Every landing is a rep too. Land soft, absorb, then go again.',
+      'Quality drops before your legs do. Stop the block when the jumps get scrappy.',
+      'Full recovery between exercises — this is power training, not conditioning.',
+      'Do this on a forgiving surface, never on concrete.'
+    ],
+  array[
+      'Rushing the reps and turning a power session into a cardio one.',
+      'Landing stiff-legged, which is where the knee and shin complaints start.',
+      'Adding rounds instead of adding height.'
+    ],
+  25, 35, 3, 4,
+  1000, 'random',
+  null,
+  0, 180, 'advanced', true,
+  '[{"exerciseSlug":"plyo-jump-squat","workSec":25,"restSec":35},{"exerciseSlug":"plyo-split-jump","workSec":25,"restSec":35},{"exerciseSlug":"plyo-lateral-bound","workSec":25,"restSec":35},{"exerciseSlug":"plyo-tuck-jump","workSec":20,"restSec":40},{"exerciseSlug":"plyo-step-jump","workSec":25,"restSec":45}]'::jsonb, 3, 'anywhere',
+  array[
+      'a low step or box (optional)'
+    ]
+),
+(
+  'home-court-circuit', 'No-Court Home Circuit', 'conditioning', 'custom',
+  'No court, no ladder, no box — two square metres and your own bodyweight. Built for the evenings when the hall is shut and doing nothing is the alternative.',
+  array[
+      'Nothing here needs equipment. If a movement hurts, halve the range, not the effort.',
+      'Keep the rest honest: forty seconds is enough to go hard again.',
+      'Two rounds done properly beats four rounds rushed.'
+    ],
+  array[
+      'Letting the lunges get shallow as the rounds add up.',
+      'Rocking the hips through the plank taps, which removes the whole point.'
+    ],
+  30, 30, 3, 4,
+  1000, 'random',
+  null,
+  0, 120, 'beginner', true,
+  '[{"exerciseSlug":"shadow-lunge","workSec":40,"restSec":25},{"exerciseSlug":"plyo-jump-squat","workSec":25,"restSec":35},{"exerciseSlug":"plyo-lateral-bound","workSec":30,"restSec":30},{"exerciseSlug":"core-plank-reach","workSec":40,"restSec":40}]'::jsonb, 3, 'anywhere',
+  '{}'
 )
 on conflict (slug) do update set
   name                 = excluded.name,
@@ -590,7 +751,12 @@ on conflict (slug) do update set
   default_warmup_sec   = excluded.default_warmup_sec,
   default_cooldown_sec = excluded.default_cooldown_sec,
   level                = excluded.level,
-  is_public            = excluded.is_public;
+  is_public            = excluded.is_public,
+  circuit              = excluded.circuit,
+  circuit_rounds       = excluded.circuit_rounds,
+  location             = excluded.location,
+  equipment            = excluded.equipment;
+-- <<< end generated drill seed
 
 --  Mirrors src/lib/data/badges.ts. Tiers are segmented on purpose: a beginner
 --  always has a bronze within reach and a returning competitor still has a

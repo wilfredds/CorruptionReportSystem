@@ -15,10 +15,13 @@ import {
 } from '@/components/ui/dialog'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useRepositories } from '@/lib/data/context'
+import { findExercise } from '@/lib/data/seed/exercises'
+import { isConditioning } from '@/lib/data/seed/drills'
 import { METRIC_CALLS, METRIC_COMPLETED, METRIC_DECEPTION } from '@/lib/data/stats'
 import type { Drill } from '@/lib/data/types'
 import { cornerIdsForLayout } from '@/lib/timer/corners'
-import { estimateDurationSec, planFromConfig } from '@/lib/timer/plan'
+import { estimateDurationSec, isCircuit, planFromConfig } from '@/lib/timer/plan'
+import { CircuitBoard } from '@/features/conditioning/components/CircuitBoard'
 import { randomSeed } from '@/lib/timer/rng'
 import type { BlockPhase } from '@/lib/timer/types'
 import { formatCompactDuration, formatDuration, pluralize } from '@/lib/utils'
@@ -133,7 +136,7 @@ function Runner({ drill }: { drill: Drill }) {
             durationSec: summary.durationSec,
             roundsCompleted: summary.roundsCompleted,
             avgShotIntervalMs: summary.avgShotIntervalMs,
-            source: drill.category === 'conditioning' ? 'conditioning' : 'timer',
+            source: isConditioning(drill) ? 'conditioning' : 'timer',
           },
           [
             { metricKey: METRIC_CALLS, metricValue: summary.callsAnswered },
@@ -164,6 +167,21 @@ function Runner({ drill }: { drill: Drill }) {
   const isIdle = state.status === 'idle'
   const isResting = phase === 'rest' || phase === 'cooldown' || phase === 'prepare'
   const enabledCorners = config?.enabledCorners ?? cornerIdsForLayout(drill.corners)
+  const circuit = config ? isCircuit(config) : false
+
+  // During a rest the card shows what is coming, which is the only thing worth
+  // knowing while you catch your breath. Before the start it previews the
+  // opening exercise rather than showing nothing.
+  const shownExercise =
+    state.block?.exerciseSlug ??
+    state.nextBlock?.exerciseSlug ??
+    (circuit ? config?.circuit?.[0]?.exerciseSlug : undefined)
+
+  /** The exercise after the rest that follows the current work block. */
+  const nextExerciseAfterRest = () =>
+    timeline.blocks.find(
+      (block) => block.index > state.blockIndex && block.exerciseSlug !== undefined,
+    )?.exerciseSlug
 
   // Space bar pauses — handy with a laptop propped on a chair.
   useEffect(() => {
@@ -187,6 +205,13 @@ function Runner({ drill }: { drill: Drill }) {
   /** The line under the digits: what is coming, or how the round is going. */
   function runnerDetail(): string {
     if (phase === 'warmup') return `Easy movement · ${pluralize(state.callsAnswered, 'call')}`
+    if (circuit) {
+      // The dial's label already carries the position and the card names the
+      // exercise, so this line answers the only remaining question.
+      if (isResting) return state.nextBlock?.label ?? 'Finishing up'
+      const upcoming = state.nextBlock?.exerciseSlug ?? nextExerciseAfterRest()
+      return upcoming ? `Then · ${findExercise(upcoming)?.name ?? 'next'}` : 'Last one'
+    }
     if (state.block && !state.block.emitsCalls) {
       return state.nextBlock ? `Up next · ${state.nextBlock.label}` : 'Finishing up'
     }
@@ -243,15 +268,19 @@ function Runner({ drill }: { drill: Drill }) {
         </div>
 
         <div className="min-h-0 w-full max-w-[20rem] flex-1 md:h-full md:max-w-[24rem] md:flex-none">
-          <CourtBoard
-            layout={config.layout}
-            enabled={enabledCorners}
-            activeCorner={state.activeCorner}
-            callProgress={state.callProgress}
-            showNumbers={config.mode === 'number'}
-            resting={isResting}
-            reducedMotion={reducedMotion}
-          />
+          {circuit ? (
+            <CircuitBoard exerciseSlug={shownExercise} resting={isResting} />
+          ) : (
+            <CourtBoard
+              layout={config.layout}
+              enabled={enabledCorners}
+              activeCorner={state.activeCorner}
+              callProgress={state.callProgress}
+              showNumbers={config.mode === 'number'}
+              resting={isResting}
+              reducedMotion={reducedMotion}
+            />
+          )}
         </div>
       </main>
 
@@ -267,11 +296,29 @@ function Runner({ drill }: { drill: Drill }) {
               className="mx-auto flex w-full max-w-md flex-col items-center gap-3"
             >
               <div className="flex flex-wrap justify-center gap-2">
-                <Badge variant="outline">{config.layout} zones</Badge>
-                <Badge variant="outline">{(config.intervalMs / 1000).toFixed(2)}s per call</Badge>
-                <Badge variant="outline">
-                  {config.workSec}s / {config.restSec}s × {config.rounds}
-                </Badge>
+                {circuit ? (
+                  <>
+                    <Badge variant="outline">
+                      {pluralize(config.circuit?.length ?? 0, 'exercise')}
+                    </Badge>
+                    <Badge variant="outline">
+                      {pluralize(config.circuitRounds, 'round')}
+                    </Badge>
+                    {drill.equipment.length > 0 && (
+                      <Badge variant="outline">{drill.equipment.join(', ')}</Badge>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Badge variant="outline">{config.layout} zones</Badge>
+                    <Badge variant="outline">
+                      {(config.intervalMs / 1000).toFixed(2)}s per call
+                    </Badge>
+                    <Badge variant="outline">
+                      {config.workSec}s / {config.restSec}s × {config.rounds}
+                    </Badge>
+                  </>
+                )}
               </div>
               <Button size="xl" className="w-full" onClick={() => void runner.start()}>
                 <Play className="fill-current" />
@@ -387,6 +434,8 @@ const FALLBACK_PLAN = planFromConfig(
     avoidImmediateRepeat: true,
     deceptionProbability: 0.35,
     deceptionGapMs: 600,
+    circuit: null,
+    circuitRounds: 1,
   },
   { splitStepLeadMs: 0, seed: 1 },
 )

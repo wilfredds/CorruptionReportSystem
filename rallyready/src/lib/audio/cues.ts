@@ -59,6 +59,12 @@ export interface CueContext {
   preferences: CuePreferences
   /** Phase of the block a `block-start` event refers to. */
   phaseOf: (blockIndex: number) => BlockPhase | undefined
+  /**
+   * Name of the exercise a circuit block calls for, if any. Announcing it is
+   * what makes a circuit followable without looking — "tuck jumps" tells you
+   * everything, where a generic "go" tells you nothing.
+   */
+  exerciseNameOf?: (blockIndex: number) => string | undefined
 }
 
 /**
@@ -106,8 +112,11 @@ export function playCue(event: TimelineEvent, context: CueContext): void {
       if (preferences.toneEnabled) {
         playPhaseTone(phase === 'rest' || phase === 'cooldown' ? 'rest' : 'work')
       }
-      const word = PHASE_SPEECH[phase]
-      if (word && preferences.voiceEnabled) speak(word, { rate: preferences.voiceRate })
+      if (!preferences.voiceEnabled) return
+
+      const exercise = context.exerciseNameOf?.(event.blockIndex)
+      const word = exercise ?? PHASE_SPEECH[phase]
+      if (word) speak(word, { rate: preferences.voiceRate })
       return
     }
 

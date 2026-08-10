@@ -20,6 +20,7 @@ import {
   MAX_INTERVAL_MS,
   MIN_INTERVAL_MS,
   STRUCTURE_PRESETS,
+  isCircuit,
   matchDifficulty,
   matchStructure,
   type DrillConfig,
@@ -27,6 +28,8 @@ import {
 import type { DrillMode } from '@/lib/timer/types'
 import { formatCompactDuration } from '@/lib/utils'
 import { useDrillConfigStore } from '@/store/drillConfigStore'
+
+import { CircuitEditor } from '@/features/conditioning/components/CircuitEditor'
 
 import { CornerPicker } from './components/CornerPicker'
 import { CueSettingsDialog } from './components/CueSettingsDialog'
@@ -112,6 +115,7 @@ export function DrillSetupPage() {
     update({ weights: { ...config.weights, [corner]: next } })
   }
 
+  const circuit = isCircuit(config)
   const difficulty = matchDifficulty(config)
   const structure = matchStructure(config)
   const durationSec = estimateDurationSec(config)
@@ -133,269 +137,275 @@ export function DrillSetupPage() {
       </div>
 
       <div className="space-y-5">
-        <Card>
-          <CardHeader>
-            <CardTitle>Caller</CardTitle>
-            <CardDescription>How the next corner gets chosen.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <Segmented
-              label="Drill mode"
-              layout="stacked"
-              value={config.mode}
-              options={MODE_OPTIONS}
-              onChange={(mode) => update({ mode })}
-            />
+        {circuit && <CircuitEditor drill={drill} config={config} onChange={update} />}
 
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <Label htmlFor="no-repeat">Never call the same zone twice</Label>
-                <p className="text-muted-foreground mt-1 text-xs">
-                  Off is harder — a repeat means you have to reset without moving.
-                </p>
-              </div>
-              <Switch
-                id="no-repeat"
-                checked={config.avoidImmediateRepeat}
-                onCheckedChange={(value) => update({ avoidImmediateRepeat: value })}
-              />
-            </div>
-
-            {config.mode === 'deception' && (
-              <div>
-                <div className="mb-2 flex items-baseline justify-between">
-                  <Label htmlFor="deception-rate">Fake calls</Label>
-                  <span className="tnum text-muted-foreground text-sm">
-                    {Math.round(config.deceptionProbability * 100)}% of calls
-                  </span>
-                </div>
-                <Slider
-                  id="deception-rate"
-                  min={0.1}
-                  max={1}
-                  step={0.05}
-                  value={[config.deceptionProbability]}
-                  onValueChange={([value]) => update({ deceptionProbability: value ?? 0.35 })}
-                  aria-label="Share of calls that start with a fake"
+        {!circuit && (
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle>Caller</CardTitle>
+                <CardDescription>How the next corner gets chosen.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <Segmented
+                  label="Drill mode"
+                  layout="stacked"
+                  value={config.mode}
+                  options={MODE_OPTIONS}
+                  onChange={(mode) => update({ mode })}
                 />
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Court</CardTitle>
-            <CardDescription>
-              {config.mode === 'weighted'
-                ? 'Tap a zone to switch it off; tap an active zone to raise how often it is called.'
-                : 'Tap a zone to switch it off.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <Segmented
-              label="Number of zones"
-              layout="stacked"
-              columns={3}
-              value={String(config.layout)}
-              options={LAYOUT_OPTIONS}
-              onChange={(value) => setLayout(Number(value) as CourtLayout)}
-            />
-            <div className="mx-auto h-64 w-full max-w-[15rem]">
-              <CornerPicker
-                layout={config.layout}
-                enabled={config.enabledCorners}
-                weights={config.weights}
-                showWeights={config.mode === 'weighted'}
-                onToggle={toggleCorner}
-                onCycleWeight={cycleWeight}
-              />
-            </div>
-            <p className="text-muted-foreground text-center text-xs">
-              {config.enabledCorners.length} of {config.layout} zones active
-            </p>
-          </CardContent>
-        </Card>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <Label htmlFor="no-repeat">Never call the same zone twice</Label>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      Off is harder — a repeat means you have to reset without moving.
+                    </p>
+                  </div>
+                  <Switch
+                    id="no-repeat"
+                    checked={config.avoidImmediateRepeat}
+                    onCheckedChange={(value) => update({ avoidImmediateRepeat: value })}
+                  />
+                </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Pace</CardTitle>
-            <CardDescription>
-              How fast the calls come, and how random the caller is.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div>
-              <div className="mb-2 flex items-baseline justify-between">
-                <Label htmlFor="interval">Shot interval</Label>
-                <span className="tnum text-muted-foreground text-sm">
-                  {(config.intervalMs / 1000).toFixed(2)}s ·{' '}
-                  {Math.round(60_000 / config.intervalMs)} calls/min
-                </span>
-              </div>
-              <Slider
-                id="interval"
-                min={MIN_INTERVAL_MS}
-                max={MAX_INTERVAL_MS}
-                step={INTERVAL_STEP_MS}
-                value={[config.intervalMs]}
-                onValueChange={([value]) => update({ intervalMs: value ?? 1400 })}
-                aria-label="Seconds between calls"
-              />
-            </div>
+                {config.mode === 'deception' && (
+                  <div>
+                    <div className="mb-2 flex items-baseline justify-between">
+                      <Label htmlFor="deception-rate">Fake calls</Label>
+                      <span className="tnum text-muted-foreground text-sm">
+                        {Math.round(config.deceptionProbability * 100)}% of calls
+                      </span>
+                    </div>
+                    <Slider
+                      id="deception-rate"
+                      min={0.1}
+                      max={1}
+                      step={0.05}
+                      value={[config.deceptionProbability]}
+                      onValueChange={([value]) => update({ deceptionProbability: value ?? 0.35 })}
+                      aria-label="Share of calls that start with a fake"
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            <div>
-              <Label className="mb-2 block">Difficulty preset</Label>
-              <Segmented
-                label="Difficulty preset"
-                layout="stacked"
-                columns={3}
-                value={difficulty?.id ?? 'custom'}
-                options={[
-                  ...DIFFICULTY_PRESETS.map((preset) => ({
-                    value: preset.id,
-                    label: preset.label,
-                    hint: `${(preset.intervalMs / 1000).toFixed(2)}s`,
-                  })),
-                  { value: 'custom', label: 'Custom', hint: 'Your own pace' },
-                ]}
-                onChange={(id) => {
-                  const preset = DIFFICULTY_PRESETS.find((p) => p.id === id)
-                  if (!preset) return
-                  update({
-                    intervalMs: preset.intervalMs,
-                    avoidImmediateRepeat: preset.avoidImmediateRepeat,
-                    deceptionProbability: preset.deceptionProbability,
-                  })
-                }}
-              />
-              {difficulty && (
-                <p className="text-muted-foreground mt-2 text-xs">{difficulty.description}</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Court</CardTitle>
+                <CardDescription>
+                  {config.mode === 'weighted'
+                    ? 'Tap a zone to switch it off; tap an active zone to raise how often it is called.'
+                    : 'Tap a zone to switch it off.'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <Segmented
+                  label="Number of zones"
+                  layout="stacked"
+                  columns={3}
+                  value={String(config.layout)}
+                  options={LAYOUT_OPTIONS}
+                  onChange={(value) => setLayout(Number(value) as CourtLayout)}
+                />
+                <div className="mx-auto h-64 w-full max-w-[15rem]">
+                  <CornerPicker
+                    layout={config.layout}
+                    enabled={config.enabledCorners}
+                    weights={config.weights}
+                    showWeights={config.mode === 'weighted'}
+                    onToggle={toggleCorner}
+                    onCycleWeight={cycleWeight}
+                  />
+                </div>
+                <p className="text-muted-foreground text-center text-xs">
+                  {config.enabledCorners.length} of {config.layout} zones active
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Structure</CardTitle>
-            <CardDescription>
-              Work and rest blocks. The default mirrors real singles: about six seconds of rally
-              against twelve of recovery.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <Segmented
-              label="Structure preset"
-              layout="stacked"
-              value={structure?.id ?? 'custom'}
-              options={[
-                ...STRUCTURE_PRESETS.map((preset) => ({
-                  value: preset.id,
-                  label: preset.label,
-                  hint: `${preset.workSec}s / ${preset.restSec}s × ${preset.rounds}`,
-                })),
-                { value: 'custom', label: 'Custom', hint: 'Set it yourself' },
-              ]}
-              onChange={(id) => {
-                const preset = STRUCTURE_PRESETS.find((p) => p.id === id)
-                if (!preset) return
-                update({
-                  workSec: preset.workSec,
-                  restSec: preset.restSec,
-                  rounds: preset.rounds,
-                })
-              }}
-            />
-
-            <NumberSlider
-              id="work"
-              label="Work"
-              value={config.workSec}
-              min={5}
-              max={120}
-              step={1}
-              suffix="s"
-              onChange={(workSec) => update({ workSec })}
-            />
-            <NumberSlider
-              id="rest"
-              label="Rest"
-              value={config.restSec}
-              min={0}
-              max={180}
-              step={5}
-              suffix="s"
-              onChange={(restSec) => update({ restSec })}
-            />
-            <NumberSlider
-              id="rounds"
-              label="Rounds"
-              value={config.rounds}
-              min={1}
-              max={30}
-              step={1}
-              onChange={(rounds) => update({ rounds })}
-            />
-
-            <div className="border-border grid gap-5 border-t pt-5 sm:grid-cols-2">
-              <NumberSlider
-                id="warmup"
-                label="Warm-up"
-                value={config.warmupSec}
-                min={0}
-                max={300}
-                step={15}
-                suffix="s"
-                onChange={(warmupSec) => update({ warmupSec })}
-              />
-              <NumberSlider
-                id="cooldown"
-                label="Cool-down"
-                value={config.cooldownSec}
-                min={0}
-                max={300}
-                step={15}
-                suffix="s"
-                onChange={(cooldownSec) => update({ cooldownSec })}
-              />
-            </div>
-
-            <div className="border-border border-t pt-5">
-              <div className="flex items-start justify-between gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Pace</CardTitle>
+                <CardDescription>
+                  How fast the calls come, and how random the caller is.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
                 <div>
-                  <Label htmlFor="sprint">Finish with a sprint set</Label>
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    Four short, faster blocks after the main work — where the session is won.
-                  </p>
+                  <div className="mb-2 flex items-baseline justify-between">
+                    <Label htmlFor="interval">Shot interval</Label>
+                    <span className="tnum text-muted-foreground text-sm">
+                      {(config.intervalMs / 1000).toFixed(2)}s ·{' '}
+                      {Math.round(60_000 / config.intervalMs)} calls/min
+                    </span>
+                  </div>
+                  <Slider
+                    id="interval"
+                    min={MIN_INTERVAL_MS}
+                    max={MAX_INTERVAL_MS}
+                    step={INTERVAL_STEP_MS}
+                    value={[config.intervalMs]}
+                    onValueChange={([value]) => update({ intervalMs: value ?? 1400 })}
+                    aria-label="Seconds between calls"
+                  />
                 </div>
-                <Switch
-                  id="sprint"
-                  checked={config.sprint !== null}
-                  onCheckedChange={(value) =>
+
+                <div>
+                  <Label className="mb-2 block">Difficulty preset</Label>
+                  <Segmented
+                    label="Difficulty preset"
+                    layout="stacked"
+                    columns={3}
+                    value={difficulty?.id ?? 'custom'}
+                    options={[
+                      ...DIFFICULTY_PRESETS.map((preset) => ({
+                        value: preset.id,
+                        label: preset.label,
+                        hint: `${(preset.intervalMs / 1000).toFixed(2)}s`,
+                      })),
+                      { value: 'custom', label: 'Custom', hint: 'Your own pace' },
+                    ]}
+                    onChange={(id) => {
+                      const preset = DIFFICULTY_PRESETS.find((p) => p.id === id)
+                      if (!preset) return
+                      update({
+                        intervalMs: preset.intervalMs,
+                        avoidImmediateRepeat: preset.avoidImmediateRepeat,
+                        deceptionProbability: preset.deceptionProbability,
+                      })
+                    }}
+                  />
+                  {difficulty && (
+                    <p className="text-muted-foreground mt-2 text-xs">{difficulty.description}</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Structure</CardTitle>
+                <CardDescription>
+                  Work and rest blocks. The default mirrors real singles: about six seconds of rally
+                  against twelve of recovery.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <Segmented
+                  label="Structure preset"
+                  layout="stacked"
+                  value={structure?.id ?? 'custom'}
+                  options={[
+                    ...STRUCTURE_PRESETS.map((preset) => ({
+                      value: preset.id,
+                      label: preset.label,
+                      hint: `${preset.workSec}s / ${preset.restSec}s × ${preset.rounds}`,
+                    })),
+                    { value: 'custom', label: 'Custom', hint: 'Set it yourself' },
+                  ]}
+                  onChange={(id) => {
+                    const preset = STRUCTURE_PRESETS.find((p) => p.id === id)
+                    if (!preset) return
                     update({
-                      sprint: value
-                        ? {
-                            rounds: 4,
-                            workSec: 10,
-                            restSec: 20,
-                            intervalMs: Math.max(MIN_INTERVAL_MS, config.intervalMs - 200),
-                          }
-                        : null,
+                      workSec: preset.workSec,
+                      restSec: preset.restSec,
+                      rounds: preset.rounds,
                     })
-                  }
+                  }}
                 />
-              </div>
-              {config.sprint && (
-                <p className="text-muted-foreground tnum mt-3 text-xs">
-                  {config.sprint.rounds} × {config.sprint.workSec}s at{' '}
-                  {(config.sprint.intervalMs / 1000).toFixed(2)}s per call, {config.sprint.restSec}s
-                  rest
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+
+                <NumberSlider
+                  id="work"
+                  label="Work"
+                  value={config.workSec}
+                  min={5}
+                  max={120}
+                  step={1}
+                  suffix="s"
+                  onChange={(workSec) => update({ workSec })}
+                />
+                <NumberSlider
+                  id="rest"
+                  label="Rest"
+                  value={config.restSec}
+                  min={0}
+                  max={180}
+                  step={5}
+                  suffix="s"
+                  onChange={(restSec) => update({ restSec })}
+                />
+                <NumberSlider
+                  id="rounds"
+                  label="Rounds"
+                  value={config.rounds}
+                  min={1}
+                  max={30}
+                  step={1}
+                  onChange={(rounds) => update({ rounds })}
+                />
+
+                <div className="border-border grid gap-5 border-t pt-5 sm:grid-cols-2">
+                  <NumberSlider
+                    id="warmup"
+                    label="Warm-up"
+                    value={config.warmupSec}
+                    min={0}
+                    max={300}
+                    step={15}
+                    suffix="s"
+                    onChange={(warmupSec) => update({ warmupSec })}
+                  />
+                  <NumberSlider
+                    id="cooldown"
+                    label="Cool-down"
+                    value={config.cooldownSec}
+                    min={0}
+                    max={300}
+                    step={15}
+                    suffix="s"
+                    onChange={(cooldownSec) => update({ cooldownSec })}
+                  />
+                </div>
+
+                <div className="border-border border-t pt-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <Label htmlFor="sprint">Finish with a sprint set</Label>
+                      <p className="text-muted-foreground mt-1 text-xs">
+                        Four short, faster blocks after the main work — where the session is won.
+                      </p>
+                    </div>
+                    <Switch
+                      id="sprint"
+                      checked={config.sprint !== null}
+                      onCheckedChange={(value) =>
+                        update({
+                          sprint: value
+                            ? {
+                                rounds: 4,
+                                workSec: 10,
+                                restSec: 20,
+                                intervalMs: Math.max(MIN_INTERVAL_MS, config.intervalMs - 200),
+                              }
+                            : null,
+                        })
+                      }
+                    />
+                  </div>
+                  {config.sprint && (
+                    <p className="text-muted-foreground tnum mt-3 text-xs">
+                      {config.sprint.rounds} × {config.sprint.workSec}s at{' '}
+                      {(config.sprint.intervalMs / 1000).toFixed(2)}s per call,{' '}
+                      {config.sprint.restSec}s rest
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
 
         {/* §1.4 — the technique lives with the drill, so you never leave to learn it. */}
         <Card>

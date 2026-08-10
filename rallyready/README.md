@@ -5,10 +5,10 @@ partner. Guided footwork drills, conditioning, progression tracking, structured
 programs and a vetted library — in one place, instead of scattered across
 YouTube tabs.
 
-**Phases 1 and 2 are complete and usable** — the guided drill trainer, accounts,
-progress tracking and the fitness benchmark. Phases 3–5 (conditioning,
-multi-week programs, and the vetted video library) are scaffolded and stated in
-the app, not yet built. See `PROGRESS.md`.
+**Phases 1–3 are complete and usable** — the guided drill trainer, accounts,
+progress tracking, the fitness benchmark, and stamina/conditioning workouts.
+Phases 4 and 5 (multi-week programs and the vetted video library) are
+scaffolded and stated in the app, not yet built. See `PROGRESS.md`.
 
 ---
 
@@ -36,6 +36,10 @@ the app, not yet built. See `PROGRESS.md`.
   levels of four-corner movement, work stepping 18s → 30s against a fixed 10s
   recovery. You go until you cannot hold the pace, and the score is charted
   over time.
+- **Conditioning that needs no court.** Badminton HIIT on real rally:rest
+  ratios, multifeed-style speed intervals, and agility-ladder and plyometric
+  circuits — each exercise with coaching cues, common faults, a no-kit
+  substitute, and an animated schematic the app draws itself.
 
 ---
 
@@ -114,11 +118,16 @@ signed-out is uploaded to the account the first time you sign in.
 | `npm run format`    | Prettier                                               |
 | `npm run verify`    | typecheck + lint + test + build, in that order         |
 
-Icons are generated, not committed by hand:
+Two things are generated rather than hand-maintained:
 
 ```bash
-node scripts/generate-icons.mjs
+node scripts/generate-icons.mjs   # the PWA icon set and favicon
+npm run seed:sql                  # the drill seed block inside schema.sql
 ```
+
+The drill catalogue lives in `src/lib/data/seed/drills.ts` so a fresh install
+works offline; `npm run seed:sql` derives the matching Postgres seed from it.
+Edit the TypeScript, then re-run the script — never the SQL block directly.
 
 > **Testing offline behaviour:** the service worker is disabled in dev on
 > purpose. Use `npm run build && npm run preview`, load the page once, then go
@@ -153,6 +162,11 @@ four small pure modules with no React in sight:
 | `timeline.ts`  | Expands a plan into absolute-timestamped events                         |
 | `cursor.ts`    | Pure playback head; `clock.ts` owns pause, resume and seek              |
 | `benchmark.ts` | The B-ENDURANCE-style protocol, expressed as a ladder of plan steps     |
+
+A plan's main set is either uniform (`rounds` × work/rest) or an explicit
+`ladder` of steps. The ladder is what lets one engine drive three different
+things: a footwork drill, the stepped benchmark, and a conditioning circuit
+where each step names an *exercise* instead of calling a corner.
 
 A session's whole event timeline is **precomputed against absolute timestamps**
 from a seed, rather than accumulated tick by tick. Three things fall out of
@@ -217,6 +231,12 @@ an installed PWA makes no network requests at all.
 - **The benchmark runner has no Skip button.** Skipping a level would
   invalidate the score, so the only way out is to stop — and stopping *is* the
   measurement.
+- **Exercise demos are drawn, not filmed.** The brief asks for short demo
+  clips; curating vetted video is Phase 5, and inventing links now would plant
+  dead ones. Instead each exercise carries a schematic the app renders itself:
+  an animated footfall pattern for ladder work, and a side-view figure driven
+  by pose parameters for everything else. Both work offline and never rot, and
+  for a ladder pattern a diagram beats video you would have to scrub.
 
 ---
 

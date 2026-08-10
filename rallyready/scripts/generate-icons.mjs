@@ -111,11 +111,12 @@ class Raster {
   }
 
   circle(cx, cy, r, rgb) {
-    this.#shade(
-      (ux, uy) => (ux - cx) ** 2 + (uy - cy) ** 2 <= r * r,
-      rgb,
-      [cx - r, cy - r, cx + r, cy + r],
-    )
+    this.#shade((ux, uy) => (ux - cx) ** 2 + (uy - cy) ** 2 <= r * r, rgb, [
+      cx - r,
+      cy - r,
+      cx + r,
+      cy + r,
+    ])
   }
 
   polygon(points, rgb) {
@@ -143,18 +144,14 @@ class Raster {
     const len2 = dx * dx + dy * dy
     this.#shade(
       (ux, uy) => {
-        const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((ux - ax) * dx + (uy - ay) * dy) / len2))
+        const t =
+          len2 === 0 ? 0 : Math.max(0, Math.min(1, ((ux - ax) * dx + (uy - ay) * dy) / len2))
         const px = ax + t * dx
         const py = ay + t * dy
         return (ux - px) ** 2 + (uy - py) ** 2 <= hw * hw
       },
       rgb,
-      [
-        Math.min(ax, bx) - hw,
-        Math.min(ay, by) - hw,
-        Math.max(ax, bx) + hw,
-        Math.max(ay, by) + hw,
-      ],
+      [Math.min(ax, bx) - hw, Math.min(ay, by) - hw, Math.max(ax, bx) + hw, Math.max(ay, by) + hw],
     )
   }
 
