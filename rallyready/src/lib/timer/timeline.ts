@@ -51,6 +51,14 @@ export function sanitizePlan(plan: DrillPlan): DrillPlan {
     cooldownSec: clampInt(plan.cooldownSec, 0, 1800),
     // A lead longer than the interval itself would tick before the previous call.
     splitStepLeadMs: clampInt(plan.splitStepLeadMs, 0, Math.max(0, intervalMs - 100)),
+    ladder: plan.ladder?.length
+      ? plan.ladder.map((step) => ({
+          workSec: clampInt(step.workSec, 1, 1800),
+          restSec: clampInt(step.restSec, 0, 1800),
+          intervalMs: clampInt(step.intervalMs, MIN_INTERVAL_MS, MAX_INTERVAL_MS),
+          ...(step.label !== undefined ? { label: step.label } : {}),
+        }))
+      : undefined,
     sprint: plan.sprint
       ? {
           rounds: clampInt(plan.sprint.rounds, 1, 100),
@@ -95,25 +103,41 @@ function draftBlocks(plan: DrillPlan): BlockDraft[] {
     })
   }
 
-  for (let round = 1; round <= plan.rounds; round++) {
+  // A ladder replaces the uniform main set: every step sets its own load.
+  const mainSet: { workSec: number; restSec: number; intervalMs: number; label: string }[] =
+    plan.ladder?.length
+      ? plan.ladder.map((step, index) => ({
+          workSec: step.workSec,
+          restSec: step.restSec,
+          intervalMs: step.intervalMs,
+          label: step.label ?? `Level ${index + 1} of ${plan.ladder?.length ?? 0}`,
+        }))
+      : Array.from({ length: plan.rounds }, (_, index) => ({
+          workSec: plan.workSec,
+          restSec: plan.restSec,
+          intervalMs: plan.intervalMs,
+          label: `Round ${index + 1} of ${plan.rounds}`,
+        }))
+
+  mainSet.forEach((step, index) => {
     drafts.push({
       phase: 'work',
-      durationMs: plan.workSec * 1000,
-      label: `Round ${round} of ${plan.rounds}`,
+      durationMs: step.workSec * 1000,
+      label: step.label,
       emitsCalls: true,
-      intervalMs: plan.intervalMs,
-      round,
-      roundsInSet: plan.rounds,
+      intervalMs: step.intervalMs,
+      round: index + 1,
+      roundsInSet: mainSet.length,
     })
-    if (plan.restSec > 0) {
+    if (step.restSec > 0) {
       drafts.push({
         phase: 'rest',
-        durationMs: plan.restSec * 1000,
+        durationMs: step.restSec * 1000,
         label: 'Rest',
         emitsCalls: false,
       })
     }
-  }
+  })
 
   if (plan.sprint) {
     const sprint = plan.sprint

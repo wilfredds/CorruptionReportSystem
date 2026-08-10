@@ -109,6 +109,86 @@ describe('block structure', () => {
   })
 })
 
+describe('ladder sets', () => {
+  const steps = [
+    { workSec: 18, restSec: 10, intervalMs: 1400 },
+    { workSec: 22, restSec: 10, intervalMs: 1400 },
+    { workSec: 30, restSec: 10, intervalMs: 1200 },
+  ]
+
+  it('replaces the uniform main set with the explicit steps', () => {
+    const { blocks } = buildTimeline(plan({ rounds: 6, workSec: 99, ladder: steps }))
+    const work = blocks.filter((b) => b.phase === 'work')
+    expect(work).toHaveLength(3)
+    expect(work.map((b) => b.durationMs)).toEqual([18_000, 22_000, 30_000])
+  })
+
+  it('gives each step its own interval', () => {
+    const timeline = buildTimeline(plan({ ladder: steps, prepareSec: 0 }))
+    const third = timeline.blocks.filter((b) => b.phase === 'work')[2]
+    const calls = kinds(timeline.events, 'call').filter(
+      (c) => c.at >= (third?.startMs ?? 0) && c.at < (third?.endMs ?? 0),
+    )
+    const gaps = calls.slice(1).map((c, i) => c.at - (calls[i]?.at ?? 0))
+    expect(new Set(gaps)).toEqual(new Set([1200]))
+  })
+
+  it('labels steps as levels and numbers them', () => {
+    const { blocks } = buildTimeline(plan({ ladder: steps }))
+    const work = blocks.filter((b) => b.phase === 'work')
+    expect(work.map((b) => b.label)).toEqual([
+      'Level 1 of 3',
+      'Level 2 of 3',
+      'Level 3 of 3',
+    ])
+    expect(work.map((b) => b.round)).toEqual([1, 2, 3])
+    expect(work.every((b) => b.roundsInSet === 3)).toBe(true)
+  })
+
+  it('honours a custom step label', () => {
+    const { blocks } = buildTimeline(
+      plan({ ladder: [{ ...steps[0]!, label: 'Opening effort' }] }),
+    )
+    expect(blocks.find((b) => b.phase === 'work')?.label).toBe('Opening effort')
+  })
+
+  it('rests between steps but not after the last one', () => {
+    const { blocks } = buildTimeline(plan({ ladder: steps, cooldownSec: 0 }))
+    expect(blocks.map((b) => b.phase)).toEqual([
+      'prepare',
+      'work',
+      'rest',
+      'work',
+      'rest',
+      'work',
+    ])
+  })
+
+  it('counts every step as working time', () => {
+    const timeline = buildTimeline(plan({ ladder: steps }))
+    expect(timeline.workMs).toBe((18 + 22 + 30) * 1000)
+  })
+
+  it('still runs a sprint set after the ladder', () => {
+    const { blocks } = buildTimeline(
+      plan({ ladder: steps, sprint: { rounds: 1, workSec: 10, restSec: 0, intervalMs: 800 } }),
+    )
+    expect(blocks.at(-1)?.phase).toBe('sprint')
+  })
+
+  it('falls back to the uniform set when the ladder is empty', () => {
+    const { blocks } = buildTimeline(plan({ rounds: 2, ladder: [] }))
+    expect(blocks.filter((b) => b.phase === 'work')).toHaveLength(2)
+  })
+
+  it('clamps nonsense inside a step', () => {
+    const sanitized = sanitizePlan(
+      plan({ ladder: [{ workSec: 0, restSec: -4, intervalMs: 10 }] }),
+    )
+    expect(sanitized.ladder?.[0]).toMatchObject({ workSec: 1, restSec: 0, intervalMs: 300 })
+  })
+})
+
 describe('call scheduling', () => {
   it('spaces calls by the shot interval from the start of each work block', () => {
     const timeline = buildTimeline(plan({ rounds: 1, workSec: 6, intervalMs: 1200 }))

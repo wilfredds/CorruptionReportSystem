@@ -5,9 +5,10 @@ partner. Guided footwork drills, conditioning, progression tracking, structured
 programs and a vetted library — in one place, instead of scattered across
 YouTube tabs.
 
-**Phase 1 (the guided drill trainer) is complete and usable.** Phases 2–5 —
-accounts and progress, conditioning, multi-week programs, and the video library
-— are scaffolded and stated in the app, not yet built. See `PROGRESS.md`.
+**Phases 1 and 2 are complete and usable** — the guided drill trainer, accounts,
+progress tracking and the fitness benchmark. Phases 3–5 (conditioning,
+multi-week programs, and the vetted video library) are scaffolded and stated in
+the app, not yet built. See `PROGRESS.md`.
 
 ---
 
@@ -27,6 +28,14 @@ accounts and progress, conditioning, multi-week programs, and the video library
   coming would train nothing.
 - **Offline.** Installable as a PWA. The timer, the drills and the coaching
   notes all work with no connection at all, and sessions still log.
+- **Real progression.** Sessions log themselves. The dashboard shows a weekly
+  streak, training load, whether your pace is actually improving, personal
+  bests per drill, and a trophy case — all derived from what you logged, none
+  of it paywalled.
+- **A number to chase.** A repeatable B-ENDURANCE-style benchmark: twelve
+  levels of four-corner movement, work stepping 18s → 30s against a fixed 10s
+  recovery. You go until you cannot hold the pace, and the score is charted
+  over time.
 
 ---
 
@@ -42,10 +51,11 @@ npm run dev
 That is genuinely all you need. With no Supabase configured the app stores
 everything in local storage and every Phase 1 feature works.
 
-### Optional: connect Supabase
+### Optional: connect Supabase for accounts and sync
 
-Accounts and cross-device sync land in Phase 2, but the schema and the client
-adapter are already written, so you can stand the database up now.
+Accounts are entirely optional — the app never blocks on one. Connect Supabase
+and you additionally get sign-in and cross-device sync; anything you logged
+signed-out is uploaded to the account the first time you sign in.
 
 1. **Create a Supabase project** at [supabase.com](https://supabase.com).
 
@@ -75,9 +85,15 @@ adapter are already written, so you can stand the database up now.
 
    Both are safe in a browser bundle — the anon key only grants what RLS allows.
 
-4. **Enable Google sign-in** (optional, for Phase 2): Supabase dashboard →
+4. **Enable Google sign-in** (optional): Supabase dashboard →
    **Authentication → Providers → Google**, then add your OAuth client ID and
-   secret and set the redirect URL to your app's origin.
+   secret and set the redirect URL to your app's origin. Email/password works
+   with no extra setup.
+
+   > If you leave **Confirm email** switched on (the default), sign-up will ask
+   > the user to confirm before their first sign-in. Turn it off under
+   > **Authentication → Providers → Email** if you want instant sign-up while
+   > developing.
 
 5. ```bash
    npm run dev
@@ -118,8 +134,9 @@ src/
     timer/        the drill engine — pure, deterministic, unit-tested
     audio/        speech, tones, haptics, wake lock (all feature-detected)
     data/         the repository layer: ports, local adapter, Supabase adapter
+    auth/         Supabase auth, wrapped so nothing else touches the client
     supabase/     the one place a Supabase client is constructed
-  features/       one folder per domain (train, profile, design-system, …)
+  features/       one folder per domain (train, progress, benchmark, …)
   components/     ui/ holds the shadcn primitives; the rest is app chrome
   store/          Zustand — cue preferences and per-drill setup
 ```
@@ -135,6 +152,7 @@ four small pure modules with no React in sight:
 | `sequencer.ts` | Picks the next zone: sequential, random, weighted, and deception feints |
 | `timeline.ts`  | Expands a plan into absolute-timestamped events                         |
 | `cursor.ts`    | Pure playback head; `clock.ts` owns pause, resume and seek              |
+| `benchmark.ts` | The B-ENDURANCE-style protocol, expressed as a ladder of plan steps     |
 
 A session's whole event timeline is **precomputed against absolute timestamps**
 from a seed, rather than accumulated tick by tick. Three things fall out of
@@ -152,10 +170,15 @@ implementations of the interfaces in `src/lib/data/ports.ts`. Two adapters exist
 `createRepositories()`. An ESLint rule fails the build if anything outside
 `src/lib/data/**` imports `@supabase/supabase-js`.
 
-Streaks are **derived** from the session history rather than stored as a
-counter, in both adapters. A projection cannot drift out of sync with reality;
-a counter can. They are counted in **weeks, not days** — missing a Tuesday
-should not wipe out two months of consistent training.
+Streaks, dashboard statistics and badge unlocks are all **derived** from the
+session history rather than stored as counters, in both adapters. A projection
+cannot drift out of sync with reality; a counter can. Badge awarding is
+therefore reconciliation, not an event: on every load the derived set is
+compared against what is stored and the difference is written, so a badge can
+never be missed because the app was closed at the wrong moment.
+
+Streaks are counted in **weeks, not days** — missing a Tuesday should not wipe
+out two months of consistent training.
 
 ### Design system
 
@@ -188,6 +211,12 @@ an installed PWA makes no network requests at all.
   warm-up/cool-down/level fields). Without them a seeded drill cannot express
   "net corners only, slower interval, deception on", and those settings would
   have to be hard-coded in the client instead of living with the drill.
+- **Accounts are never required.** Signing in adds sync and nothing else; the
+  sign-in screen says so, and with no Supabase project attached the app states
+  that plainly rather than offering a button that cannot work.
+- **The benchmark runner has no Skip button.** Skipping a level would
+  invalidate the score, so the only way out is to stop — and stopping *is* the
+  measurement.
 
 ---
 

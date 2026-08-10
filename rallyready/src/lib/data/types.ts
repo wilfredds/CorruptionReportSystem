@@ -9,6 +9,9 @@ import type { DrillMode } from '@/lib/timer/types'
 export type SkillLevel = 'beginner' | 'intermediate' | 'advanced'
 export type Discipline = 'singles' | 'doubles' | 'both'
 
+/** What the player is actually training for; steers the first recommendation. */
+export type TrainingGoal = 'stamina' | 'footwork' | 'match-ready' | 'consistency'
+
 export type DrillCategory =
   | 'footwork'
   | 'net'
@@ -28,6 +31,7 @@ export interface Profile {
   avatarUrl: string | null
   skillLevel: SkillLevel
   primaryDiscipline: Discipline
+  goal: TrainingGoal
   createdAt: string
 }
 
@@ -94,6 +98,28 @@ export interface SessionMetric {
 export interface NewSessionMetric {
   metricKey: string
   metricValue: number
+}
+
+export type BenchmarkTest = 'b_endurance_style' | 'spider_sprint'
+
+export interface Benchmark {
+  id: string
+  userId: string | null
+  testType: BenchmarkTest
+  takenAt: string
+  /** The headline number to chase — total corner touches completed. */
+  score: number
+  /** Highest level completed in full. */
+  levelReached: number | null
+  raw: Record<string, unknown>
+}
+
+export interface NewBenchmark {
+  testType: BenchmarkTest
+  takenAt: Date
+  score: number
+  levelReached: number | null
+  raw?: Record<string, unknown>
 }
 
 export interface Streak {

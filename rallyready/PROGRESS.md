@@ -7,145 +7,149 @@ the way.
 
 ## Status
 
-| Phase                                   | State                          |
-| --------------------------------------- | ------------------------------ |
-| 0 — Scaffold, design system, data layer | ✅ Done                         |
-| **1 — Guided drill trainer**            | ✅ **Done — ready for review**  |
-| 2 — Accounts, progress, benchmark       | ⬜ Not started                  |
-| 3 — Stamina & conditioning              | ⬜ Not started                  |
-| 4 — Multi-week programs                 | ⬜ Not started                  |
-| 5 — Curated library                     | ⬜ Not started                  |
+| Phase                                    | State                         |
+| ---------------------------------------- | ----------------------------- |
+| 0 — Scaffold, design system, data layer  | ✅ Done                        |
+| 1 — Guided drill trainer                 | ✅ Done                        |
+| **2 — Accounts, progress, benchmark**    | ✅ **Done — ready for review** |
+| 3 — Stamina & conditioning               | ⬜ Not started                 |
+| 4 — Multi-week programs                  | ⬜ Not started                 |
+| 5 — Curated library                      | ⬜ Not started                 |
 
-`npm run verify` is green: 0 type errors, 0 lint errors/warnings, 98 unit tests
-passing, production build clean.
+`npm run verify` is green: 0 type errors, 0 lint errors/warnings, 161 unit
+tests passing, production build clean.
 
 ---
 
-## Phase 1 — acceptance criteria
+## Phase 2 — acceptance criteria
 
-> *A user can start a footwork session in ≤2 taps from home, complete it
-> entirely by ear without looking at the screen, and see it logged afterward.
-> Audio, tone, and haptics all fire on each call. Works installed as a PWA
-> offline.*
+> *Sessions auto-log to the user's account; dashboard shows real trends; a user
+> can take the benchmark test and see their score history.*
 
-| Criterion                        | Status | How                                                                                                                |
-| -------------------------------- | :----: | ------------------------------------------------------------------------------------------------------------------ |
-| Start in ≤2 taps                 |   ✅   | Home → **Start** on a drill card (1) → **Start drill** (2). The second tap is required: browsers only unlock audio inside a user gesture. |
-| Completable by ear               |   ✅   | Speech + tone + haptics on every call; 3-2-1 countdown into each work block; spoken phase changes.                   |
-| Audio, tone, haptics on each call|   ✅   | `src/lib/audio/cues.ts` fans one timeline event out to all three channels.                                            |
-| Session logged afterwards        |   ✅   | Auto-creates a session row on finish, then routes to a permalinked summary; streak updates.                          |
-| Works offline as a PWA           |   ✅   | Verified in a real browser: SW registered, went fully offline, deep-linked into a drill, ran it, logged the session.  |
+| Criterion                     | Status | How                                                                                                                     |
+| ----------------------------- | :----: | ------------------------------------------------------------------------------------------------------------------------ |
+| Sessions log to the account   |   ✅   | Signing in swaps the repository bundle to Supabase; a signed-out history is uploaded on first sign-in.                     |
+| Dashboard shows real trends   |   ✅   | Weekly streak calendar, training-load bars, pace line, personal bests, trophy case — every figure derived from real rows.  |
+| Benchmark and score history   |   ✅   | Twelve-level protocol, score charted over time, per-attempt result pages.                                                  |
 
 ### Built
 
-**The court board.** Real half-court proportions (5.18m × 6.70m). 4, 6 or 8
-zones, optional numbering. The live target lights up with a countdown pip that
-drains as its slot runs out, and a base marker travels out to the corner and
-back to reinforce recovery. Legible across a room; scales from a 375px phone to
-a 1280px desktop, and lays the dial and board side by side in landscape.
+**Auth.** Email/password and Google OAuth through Supabase, wrapped so nothing
+outside `src/lib/auth` and `src/lib/data` ever touches the client. `unavailable`
+is a first-class state: with no Supabase project configured the sign-in screen
+explains that plainly instead of offering a button that cannot work, and the
+whole app carries on against local storage.
 
-**The dial.** Seconds left in the current interval as the largest element on
-screen, ringed by a thin overall-progress arc. A colour per phase — volt for
-work, cool blue for rest, amber for sprint — washed behind the whole screen.
+**Migration.** Signing in for the first time uploads the local history —
+sessions, their metrics, benchmarks and badges — resolving drill slugs to uuids
+on the way through. It runs once per account, and the local copy is deliberately
+left in place: it is still the offline fallback, so a failed upload loses
+nothing and simply retries next time.
 
-**Cueing.** Speech via `speechSynthesis`; a Web Audio tone whose *pitch* encodes
-the row (front high, back low) and whose *stereo position* encodes the side, so
-the tone alone is enough after a couple of rounds; a distinct vibration pattern
-per row. Configurable split-step tick 200–700ms ahead of each call. Wake Lock
-so the phone does not sleep mid-drill.
+**Onboarding.** Three questions — level, discipline, goal — then straight into
+a drill chosen for those answers, with the reason shown so the pick does not
+look arbitrary, plus a day-one badge. Available signed-out too; it is a
+training profile, not an account feature.
 
-**Modes.** Sequential, Random, Deception, Number and Weighted, plus per-zone
-enable/disable, per-zone weighting, no-immediate-repeat, and Beginner → Pro
-difficulty presets.
+**Progress dashboard.** Weekly streak calendar over twelve weeks, training load
+in minutes per week, a pace trend, personal bests per drill, and the trophy
+case. Recharts throughout, wired to the same CSS custom properties as the rest
+of the app, so switching theme recolours every chart with no React involvement.
 
-**Structure.** Prepare → warm-up → work/rest rounds → optional sprint set →
-cool-down. Structure presets: Match rhythm (6s/12s × 12), Long rally, Classic
-shadow (30/30 × 6) and Tabata (20/10 × 8).
+**Badges.** Nine achievements across bronze, silver and gold, so a beginner
+always has one within reach and a returning competitor still has one to chase.
+Locked badges show live progress towards the unlock.
 
-**Seven seeded drills** — the five from the brief plus Match Rhythm Intervals
-and Tabata Shadow — each with real coaching cues and common faults shown right
-on the setup screen, so you never leave to learn the technique.
+**Benchmark.** Twelve levels of four-corner movement, work stepping 18s → 30s
+against a fixed 10s recovery. Score is total corner touches — finer-grained than
+the level alone, so two players who both fail in level 7 are still separated by
+how far in they got. Charted over time, with each attempt compared against the
+one before.
 
-**Supporting work.** Repository layer with local and Supabase adapters; full
-Postgres schema with RLS for every table in the model; `/design-system` route;
-bottom nav with the five sections; dark mode; installable PWA.
+**Engine.** `DrillPlan` gained `ladder`: explicit per-step work/rest/interval
+that replaces the uniform main set. The benchmark needs it, and Phase 3's
+pyramid and ladder conditioning will too.
 
 ---
 
 ## Decisions and their reasons
 
-**The timeline is precomputed from a seed, not accumulated tick by tick.**
-Playback cannot drift, a session can be previewed before it starts, and the
-engine is assertable in a test with no clock involved. The cost is that changing
-the interval mid-drill would need a rebuild of the remainder — worth it.
+**Everything derived, nothing counted.** Streaks, statistics and badges are all
+projections over the session history. Badge awarding is reconciliation rather
+than an event: each load compares the derived set against what is stored and
+writes the difference. A badge cannot be missed because the app was closed at
+the wrong moment, and cannot be awarded twice.
 
-**A feint sounds exactly like a real call.** Distinguishable fakes train
-nothing: you would learn to ignore them. Only the summary knows the difference.
+**The shot interval is fixed across the benchmark.** The load rises because the
+work grows while the rest does not — 1.8:1 at level 1, 3:1 at level 12. Moving
+the interval as well would confound endurance with reaction time, and the test
+is meant to measure one thing.
 
-**Streaks are weekly and derived, not daily and stored.** The brief asks for a
-non-punishing cadence; deriving from history means the number can never drift
-out of sync with the sessions that produced it.
+**No warm-up inside the benchmark, and no split-step tick.** A folded-in warm-up
+would change the score depending on how tired it left you; the metronome would
+pace the athlete through a test of their own pacing.
 
-**Number mode is a display choice, not a selection algorithm.** Internally the
-five UI modes decompose into three orthogonal knobs (selection, deception,
-announce style). The UI still shows exactly the five the brief lists.
+**The benchmark runner has no Skip.** Skipping a level would invalidate the
+score. Stopping is the measurement, and the confirmation dialog says so — "this
+is the test, not a failure".
 
-**The warm-up calls at 1.6× the working interval and never feints.** A warm-up
-that opens with a deception drill is not a warm-up.
+**The pace chart's Y axis is inverted.** Faster is a smaller number, and a chart
+where improvement points downwards gets misread every time.
 
-**No rest block after the final round.** Sessions end on work or cool-down.
-
-**Two seeded drills had their default interval nudged by 50ms** (1400→1350,
-1600→1650) so they land exactly on a named difficulty preset. Same training
-effect, and the setup screen can say "Intermediate" instead of "Custom".
-
-**`videoUrl` is null on every seeded drill.** Curating vetted clips is Phase 5;
-inventing links now would just plant dead ones.
+**Weekly streak calendar, two axis labels.** Twelve week-labels collide under
+24px cells on a phone, so the calendar shows the first week and "This week" and
+puts the rest in tooltips and screen-reader text.
 
 ### Deviations from the brief's data model
 
-Three additions, all in `drills`, all necessary:
+Beyond the Phase 1 additions to `drills`, Phase 2 adds:
 
-- `default_interval_ms`, `default_call_mode`, `enabled_corners` — without these
-  a seeded drill cannot express what §4 asks for ("net corners only", "slower
-  interval", "deception on"), and the settings would have to be hard-coded in
-  the client instead of living with the drill.
-- `default_warmup_sec`, `default_cooldown_sec`, `level` — session structure and
-  card metadata.
-- `sessions.drill_name` is denormalised: a training log should record what you
-  actually did, even after a drill is renamed, deleted, or was a custom setup
-  with no `drill_id` at all.
+- `profiles.goal` — onboarding asks what the player is training for, and the
+  recommendation and (later) program adaptation both need it.
+- `sessions.drill_name` (Phase 1) continues to earn its place: benchmark
+  sessions have no `drill_id` at all and still need a name in the log.
+
+### Fixed while verifying in a browser
+
+- The Slider's `aria-label` sat on the Radix root, but the *thumb* is what
+  carries `role="slider"` — so every slider in the app was anonymous to a
+  screen reader. Now forwarded to the thumb.
+- The benchmark's rest screen announced the level just finished rather than the
+  one coming up.
+- The pace chart clipped its own axis labels, and one decimal place collapsed
+  distinct sessions onto the same tick.
+- The quoted benchmark duration omitted the lead-in; it now comes from one
+  helper that the test asserts against the built timeline.
 
 ### Known limitations
 
-- **iOS backgrounding.** Wake Lock keeps the screen on, but if the user
-  switches apps, iOS suspends `speechSynthesis`. Nothing a web app can do; the
-  drill catches up correctly on return and suppresses the stale callouts.
-- **Web Audio and other apps.** Short beeps mix with background audio on
-  Android and desktop. iOS may duck it — the browser gives no control over the
-  audio session category.
-- **The Supabase adapter is written but not yet exercised**, because Phase 1
-  ships without sign-in, so `createRepositories()` always resolves to the local
-  backend. It is fully typed against the schema and switches on with one
-  argument the moment auth lands.
-- **Local sessions do not migrate to an account yet.** Phase 2 will resolve
-  drill slugs to uuids and upload the backlog.
-- **One JS bundle, ~170KB gzipped.** Fine for now; route-level code splitting
-  is the obvious first move if it grows.
+- **The Supabase path is written and fully typed but has not been run against a
+  live project** in this environment — there is no Supabase instance to point
+  at. The local backend is exercised end to end. The schema is idempotent and
+  the adapter is typed against it, so the first real connection is the
+  remaining unknown.
+- **Session metrics are fetched whole** for the dashboard (one query, not
+  N+1), which is fine at hundreds of sessions and would want pagination at
+  tens of thousands.
+- **Local sessions upload but do not sync back down.** Sign in on a second
+  device and you see the account's history, not that device's local rows; those
+  stay put as the offline fallback.
+- **iOS backgrounding** still suspends `speechSynthesis` when the user switches
+  apps. Unchanged from Phase 1, and not something a web app can fix.
 
 ---
 
-## Next: Phase 2
+## Next: Phase 3 — stamina and conditioning
 
-1. Supabase auth — email/password and Google — and flip `DataProvider` to pass
-   a real `userId`.
-2. Migrate local sessions into the account on first sign-in.
-3. Two-minute onboarding: skill level, discipline, goal → straight into a
-   recommended drill → day-one badge.
-4. Progress dashboard: streak calendar, sessions per week, personal bests,
-   Recharts trends, trophy case.
-5. The B-ENDURANCE-style benchmark: 4-corner sequences stepping 18s→30s with
-   ~10s recovery, recording the level reached, charted over time.
+1. Badminton-specific HIIT on real rally:rest ratios, and Tabata — both already
+   expressible as plans; mostly a content and UI job.
+2. Multifeed-style shadow intervals, favouring short sharp efforts so movement
+   quality holds.
+3. Agility-ladder circuits (in-out, lateral shuffle, crossover, high knees) and
+   plyometric circuits (jump squats, tuck jumps, box/step jumps), each with
+   on-court and at-home variants.
+4. These need a non-court "circuit" board — the six-corner map does not describe
+   a jump squat. Likely a simple exercise-card view driven by the same timeline.
 
-Phase 2 needs no new engine work — the benchmark is a `DrillPlan` with a
-stepped structure, and conditioning in Phase 3 reuses the same timer.
+The `ladder` steps added for the benchmark already cover pyramid and
+progressive circuits, so the engine should need no further changes.

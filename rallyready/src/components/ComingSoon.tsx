@@ -27,7 +27,8 @@ export function ComingSoon({ title, description, phase, icon: Icon, planned }: C
           <div>
             <p className="font-semibold">Arriving in {phase}</p>
             <p className="text-muted-foreground mt-1 text-sm">
-              Phase 1 — the drill trainer — is complete and ready to use now.
+              The drill trainer, progress tracking and the fitness benchmark are complete and
+              ready to use now.
             </p>
           </div>
           <ul className="text-muted-foreground w-full max-w-sm space-y-2 text-left text-sm">

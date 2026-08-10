@@ -1,6 +1,13 @@
 import type { CornerId } from '@/lib/timer/corners'
 import type { DrillMode } from '@/lib/timer/types'
-import type { DrillCategory, DrillStyle, SessionSource, SkillLevel, Discipline } from '../types'
+import type {
+  DrillCategory,
+  DrillStyle,
+  SessionSource,
+  SkillLevel,
+  Discipline,
+  TrainingGoal,
+} from '../types'
 
 /**
  * Hand-maintained mirror of the Phase-1 tables in `supabase/schema.sql`.
@@ -16,6 +23,7 @@ export interface ProfileRow {
   avatar_url: string | null
   skill_level: SkillLevel
   primary_discipline: Discipline
+  goal: TrainingGoal
   created_at: string
 }
 
@@ -65,6 +73,33 @@ export interface SessionMetricRow {
   metric_value: number
 }
 
+export interface BenchmarkRow {
+  id: string
+  user_id: string
+  test_type: 'b_endurance_style' | 'spider_sprint'
+  taken_at: string
+  score: number
+  level_reached: number | null
+  raw: Record<string, unknown>
+}
+
+export interface BadgeRow {
+  id: string
+  slug: string
+  name: string
+  description: string
+  icon: string
+  tier: string
+  created_at: string
+}
+
+export interface UserBadgeRow {
+  id: string
+  user_id: string
+  badge_id: string
+  awarded_at: string
+}
+
 export interface StreakRow {
   id: string
   user_id: string
@@ -100,6 +135,12 @@ export interface Database {
         Omit<SessionRow, 'id' | 'created_at'> & { id?: string; created_at?: string }
       >
       session_metrics: Table<SessionMetricRow, Omit<SessionMetricRow, 'id'> & { id?: string }>
+      benchmarks: Table<BenchmarkRow, Omit<BenchmarkRow, 'id'> & { id?: string }>
+      badges: Table<BadgeRow>
+      user_badges: Table<
+        UserBadgeRow,
+        Omit<UserBadgeRow, 'id' | 'awarded_at'> & { id?: string; awarded_at?: string }
+      >
       streaks: Table<
         StreakRow,
         Omit<StreakRow, 'id' | 'updated_at'> & { id?: string; updated_at?: string }

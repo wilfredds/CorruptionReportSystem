@@ -41,6 +41,23 @@ export function weekIndex(date: Date): number {
 }
 
 /**
+ * The Monday that opens a given week, as `YYYY-MM-DD`. Read back with UTC
+ * getters because the index was built from calendar dates treated as UTC.
+ */
+export function weekStartKey(index: number): string {
+  const date = new Date(WEEK_ORIGIN_UTC + index * 7 * MS_PER_DAY)
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
+  return `${date.getUTCFullYear()}-${month}-${day}`
+}
+
+/** Short axis label for a week, e.g. "4 Aug". */
+export function weekLabel(index: number): string {
+  const date = new Date(WEEK_ORIGIN_UTC + index * 7 * MS_PER_DAY)
+  return `${date.getUTCDate()} ${date.toLocaleString('en', { month: 'short', timeZone: 'UTC' })}`
+}
+
+/**
  * Recomputes a streak from the full session history. Deriving it rather than
  * incrementing a counter means it can never drift out of sync with reality.
  *

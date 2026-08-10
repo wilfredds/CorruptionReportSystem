@@ -1,5 +1,7 @@
 import type {
+  Benchmark,
   Drill,
+  NewBenchmark,
   NewSession,
   NewSessionMetric,
   Profile,
@@ -28,8 +30,26 @@ export interface SessionRepository {
   getById(id: string): Promise<Session | null>
   listRecent(limit?: number): Promise<Session[]>
   listMetrics(sessionId: string): Promise<SessionMetric[]>
+  /**
+   * Every metric the user owns, in one call. The dashboard needs metrics for
+   * the whole history; fetching them per session would be N+1.
+   */
+  listAllMetrics(): Promise<SessionMetric[]>
   /** Every session date, oldest first — the basis for streaks and trends. */
   listSessionDates(): Promise<string[]>
+}
+
+export interface BenchmarkRepository {
+  create(input: NewBenchmark): Promise<Benchmark>
+  list(testType?: Benchmark['testType']): Promise<Benchmark[]>
+  getById(id: string): Promise<Benchmark | null>
+}
+
+export interface BadgeRepository {
+  /** Slugs the user has already been awarded. */
+  listEarned(): Promise<string[]>
+  /** Records newly-earned slugs; already-held ones are ignored. */
+  award(slugs: string[]): Promise<void>
 }
 
 export interface StreakRepository {
@@ -46,6 +66,8 @@ export interface Repositories {
   sessions: SessionRepository
   streaks: StreakRepository
   profiles: ProfileRepository
+  benchmarks: BenchmarkRepository
+  badges: BadgeRepository
   /** Which backend is actually serving this bundle. */
   readonly backend: 'local' | 'supabase'
 }

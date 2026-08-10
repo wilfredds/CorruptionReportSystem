@@ -46,6 +46,10 @@ export const STORAGE_KEYS = {
   sessions: 'sessions',
   metrics: 'session-metrics',
   profile: 'profile',
+  benchmarks: 'benchmarks',
+  badges: 'badges',
+  /** Set once a local history has been uploaded, so it uploads only once. */
+  migratedAt: 'migrated-at',
   drillSettings: 'drill-settings',
   cuePreferences: 'cue-preferences',
 } as const

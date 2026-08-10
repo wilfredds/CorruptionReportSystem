@@ -2,6 +2,8 @@ import type { RallyReadyClient } from '@/lib/supabase/client'
 import type { CourtLayout } from '@/lib/timer/corners'
 
 import type {
+  BadgeRepository,
+  BenchmarkRepository,
   DrillRepository,
   ProfileRepository,
   Repositories,
@@ -10,14 +12,22 @@ import type {
 } from '../ports'
 import { computeStreak, localDateKey } from '../streaks'
 import type {
+  Benchmark,
   Drill,
+  NewBenchmark,
   NewSession,
   NewSessionMetric,
   Profile,
   Session,
   SessionMetric,
 } from '../types'
-import type { DrillRow, ProfileRow, SessionMetricRow, SessionRow } from './database.types'
+import type {
+  BenchmarkRow,
+  DrillRow,
+  ProfileRow,
+  SessionMetricRow,
+  SessionRow,
+} from './database.types'
 
 /**
  * The signed-in backend. Row-Level Security (see `supabase/schema.sql`) is what
@@ -73,6 +83,7 @@ function toProfile(row: ProfileRow): Profile {
     avatarUrl: row.avatar_url,
     skillLevel: row.skill_level,
     primaryDiscipline: row.primary_discipline,
+    goal: row.goal,
     createdAt: row.created_at,
   }
 }
@@ -83,6 +94,18 @@ function toMetric(row: SessionMetricRow): SessionMetric {
     sessionId: row.session_id,
     metricKey: row.metric_key,
     metricValue: row.metric_value,
+  }
+}
+
+function toBenchmark(row: BenchmarkRow): Benchmark {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    testType: row.test_type,
+    takenAt: row.taken_at,
+    score: Number(row.score),
+    levelReached: row.level_reached,
+    raw: row.raw ?? {},
   }
 }
 
@@ -181,6 +204,14 @@ export function createSupabaseRepositories(
       return (data ?? []).map(toMetric)
     },
 
+    async listAllMetrics() {
+      // RLS scopes session_metrics through its parent session, so this is
+      // already limited to rows this user owns.
+      const { data, error } = await client.from('session_metrics').select('*')
+      fail('Could not load session metrics', error)
+      return (data ?? []).map(toMetric)
+    },
+
     async listSessionDates() {
       const { data, error } = await client
         .from('sessions')
@@ -189,6 +220,78 @@ export function createSupabaseRepositories(
         .order('started_at', { ascending: true })
       fail('Could not load session history', error)
       return (data ?? []).map((row) => localDateKey(new Date(row.started_at)))
+    },
+  }
+
+  const benchmarks: BenchmarkRepository = {
+    async create(input: NewBenchmark) {
+      const { data, error } = await client
+        .from('benchmarks')
+        .insert({
+          user_id: userId,
+          test_type: input.testType,
+          taken_at: input.takenAt.toISOString(),
+          score: input.score,
+          level_reached: input.levelReached,
+          raw: input.raw ?? {},
+        })
+        .select('*')
+        .single()
+      fail('Could not save benchmark', error)
+      if (!data) throw new Error('Could not save benchmark: no row returned')
+      return toBenchmark(data)
+    },
+
+    async list(testType) {
+      let query = client
+        .from('benchmarks')
+        .select('*')
+        .eq('user_id', userId)
+        .order('taken_at', { ascending: false })
+      if (testType) query = query.eq('test_type', testType)
+      const { data, error } = await query
+      fail('Could not load benchmarks', error)
+      return (data ?? []).map(toBenchmark)
+    },
+
+    async getById(id) {
+      const { data, error } = await client
+        .from('benchmarks')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle()
+      fail('Could not load benchmark', error)
+      return data ? toBenchmark(data) : null
+    },
+  }
+
+  const badges: BadgeRepository = {
+    async listEarned() {
+      const { data, error } = await client
+        .from('user_badges')
+        .select('badge_id, badges(slug)')
+        .eq('user_id', userId)
+      fail('Could not load badges', error)
+      // The embedded row comes back as an object (or null for a broken fk).
+      return (data ?? [])
+        .map((row) => (row as { badges?: { slug?: string } | null }).badges?.slug)
+        .filter((slug): slug is string => typeof slug === 'string')
+    },
+
+    async award(slugs) {
+      if (slugs.length === 0) return
+      const { data: definitions, error: lookupError } = await client
+        .from('badges')
+        .select('id, slug')
+        .in('slug', slugs)
+      fail('Could not look up badges', lookupError)
+      if (!definitions || definitions.length === 0) return
+
+      const { error } = await client.from('user_badges').upsert(
+        definitions.map((definition) => ({ user_id: userId, badge_id: definition.id })),
+        { onConflict: 'user_id,badge_id', ignoreDuplicates: true },
+      )
+      fail('Could not award badges', error)
     },
   }
 
@@ -223,14 +326,18 @@ export function createSupabaseRepositories(
       return data ? toProfile(data) : null
     },
     async save(patch) {
+      // The signup trigger already created the row, so merge rather than
+      // clobber: an update that only changes the goal must keep the name.
+      const existing = await this.get()
       const { data, error } = await client
         .from('profiles')
         .upsert({
           id: userId,
-          display_name: patch.displayName ?? 'Player',
-          avatar_url: patch.avatarUrl ?? null,
-          skill_level: patch.skillLevel ?? 'intermediate',
-          primary_discipline: patch.primaryDiscipline ?? 'both',
+          display_name: patch.displayName ?? existing?.displayName ?? 'Player',
+          avatar_url: patch.avatarUrl ?? existing?.avatarUrl ?? null,
+          skill_level: patch.skillLevel ?? existing?.skillLevel ?? 'intermediate',
+          primary_discipline: patch.primaryDiscipline ?? existing?.primaryDiscipline ?? 'both',
+          goal: patch.goal ?? existing?.goal ?? 'footwork',
         })
         .select('*')
         .single()
@@ -240,5 +347,5 @@ export function createSupabaseRepositories(
     },
   }
 
-  return { drills, sessions, streaks, profiles, backend: 'supabase' }
+  return { drills, sessions, streaks, profiles, benchmarks, badges, backend: 'supabase' }
 }

@@ -78,6 +78,19 @@ export interface SprintSet {
   intervalMs: number
 }
 
+/**
+ * One explicitly-specified step of a progressive set, where every step differs.
+ * The benchmark test uses these to step work periods from 18s up to 30s;
+ * pyramid and ladder conditioning will use them too.
+ */
+export interface LadderStep {
+  workSec: number
+  restSec: number
+  intervalMs: number
+  /** Overrides the default "Level n of m" block label. */
+  label?: string
+}
+
 /** Everything needed to generate a session. Fully serialisable. */
 export interface DrillPlan {
   /** Silent lead-in before the first work block. */
@@ -88,6 +101,11 @@ export interface DrillPlan {
   workSec: number
   restSec: number
   intervalMs: number
+  /**
+   * Replaces the uniform `rounds × (work, rest)` main set with explicit steps.
+   * When present, `rounds`/`workSec`/`restSec` are ignored.
+   */
+  ladder?: LadderStep[]
   sprint?: SprintSet
   cooldownSec: number
   /** Metronome tick this far before each call. 0 disables. */

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useRepositories } from '@/lib/data/context'
+import { METRIC_CALLS, METRIC_COMPLETED, METRIC_DECEPTION } from '@/lib/data/stats'
 import type { Drill } from '@/lib/data/types'
 import { cornerIdsForLayout } from '@/lib/timer/corners'
 import { estimateDurationSec, planFromConfig } from '@/lib/timer/plan'
@@ -75,14 +76,17 @@ function Runner({ drill }: { drill: Drill }) {
   const repositories = useRepositories()
   const reducedMotion = useReducedMotion()
   const config = useDrillConfig(drill)
+  // Pulled out of the optional chain so hook dependency arrays stay plain
+  // identifiers — the React Compiler cannot track `config?.mode` as a dep.
+  const drillMode = config?.mode ?? null
 
   const cues = useCueStore()
   const setAnnounceNumbers = useCueStore((state) => state.set)
 
   // Number mode is a property of the drill, not a saved cue preference.
   useEffect(() => {
-    setAnnounceNumbers('announceNumbers', config?.mode === 'number')
-  }, [config?.mode, setAnnounceNumbers])
+    setAnnounceNumbers('announceNumbers', drillMode === 'number')
+  }, [drillMode, setAnnounceNumbers])
 
   const [quitOpen, setQuitOpen] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -132,8 +136,11 @@ function Runner({ drill }: { drill: Drill }) {
             source: drill.category === 'conditioning' ? 'conditioning' : 'timer',
           },
           [
-            { metricKey: 'calls_answered', metricValue: summary.callsAnswered },
-            { metricKey: 'completed', metricValue: summary.completed ? 1 : 0 },
+            { metricKey: METRIC_CALLS, metricValue: summary.callsAnswered },
+            { metricKey: METRIC_COMPLETED, metricValue: summary.completed ? 1 : 0 },
+            // Recorded per session so the badge engine can count Deception work
+            // without having to know what the drill is configured like today.
+            { metricKey: METRIC_DECEPTION, metricValue: drillMode === 'deception' ? 1 : 0 },
           ],
         )
         navigate(`/session/${session.id}`, { replace: true })
@@ -143,7 +150,7 @@ function Runner({ drill }: { drill: Drill }) {
         navigate('/', { replace: true })
       }
     },
-    [drill, navigate, repositories],
+    [drillMode, drill, navigate, repositories],
   )
 
   const runner = useDrillRunner({

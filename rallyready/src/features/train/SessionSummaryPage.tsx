@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
+import { useEffect } from 'react'
 import { CheckCircle2, Flame, RotateCcw, Timer, Target, Trophy } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -14,6 +15,16 @@ export function SessionSummaryPage() {
   const { id = '' } = useParams()
   const repositories = useRepositories()
   const reducedMotion = useReducedMotion()
+  const queryClient = useQueryClient()
+
+  // The session that just finished invalidates every derived figure — streak,
+  // weekly load, personal bests, badges.
+  useEffect(() => {
+    void queryClient.invalidateQueries({ queryKey: ['sessions'] })
+    void queryClient.invalidateQueries({ queryKey: ['metrics'] })
+    void queryClient.invalidateQueries({ queryKey: ['streak'] })
+    void queryClient.invalidateQueries({ queryKey: ['badges'] })
+  }, [id, queryClient])
 
   const { data: session, isLoading } = useQuery({
     queryKey: ['session', id],

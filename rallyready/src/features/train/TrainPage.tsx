@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Flame, Play, SlidersHorizontal, Zap } from 'lucide-react'
+import { Flame, Play, SlidersHorizontal, Sparkles, Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { PageHeader } from '@/components/PageHeader'
@@ -7,11 +7,11 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useRepositories } from '@/lib/data/context'
+import { resolveRecommendation } from '@/lib/data/recommend'
 import type { Drill } from '@/lib/data/types'
-import { estimateDurationSec } from '@/lib/timer/plan'
+import { configFromDrill, estimateDurationSec } from '@/lib/timer/plan'
 import { formatCompactDuration, pluralize } from '@/lib/utils'
 import { useDrillConfigStore } from '@/store/drillConfigStore'
-import { configFromDrill } from '@/lib/timer/plan'
 
 import { CueSettingsDialog } from './components/CueSettingsDialog'
 
@@ -44,8 +44,16 @@ export function TrainPage() {
     queryFn: () => repositories.streaks.get(),
   })
 
-  const featured = drills[0]
-  const rest = drills.slice(1)
+  const { data: profile, isLoading: profileLoading } = useQuery({
+    queryKey: ['profile'],
+    queryFn: () => repositories.profiles.get(),
+  })
+
+  // With a profile the headline drill is chosen for this player; without one it
+  // is simply the first in the catalogue.
+  const recommendation = profile ? resolveRecommendation(profile, drills) : null
+  const featured = recommendation?.drill ?? drills[0]
+  const rest = drills.filter((drill) => drill.slug !== featured?.slug)
 
   const durationOf = (drill: Drill) =>
     estimateDurationSec(overrides[drill.slug] ?? configFromDrill(drill))
@@ -60,10 +68,13 @@ export function TrainPage() {
 
       {streak && streak.currentStreak > 0 && (
         <div className="text-muted-foreground mb-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-          <span className="text-foreground inline-flex items-center gap-1.5 font-medium">
+          <Link
+            to="/progress"
+            className="text-foreground inline-flex items-center gap-1.5 font-medium hover:underline"
+          >
             <Flame className="text-primary size-4" aria-hidden />
             {pluralize(streak.currentStreak, 'week')} in a row
-          </span>
+          </Link>
           <span>
             {streak.weeklySessionsCount === 0
               ? 'Nothing logged this week yet'
@@ -72,22 +83,39 @@ export function TrainPage() {
         </div>
       )}
 
+      {!profileLoading && !profile && (
+        <Card className="mb-6">
+          <CardContent className="flex items-center gap-4 p-4">
+            <div className="bg-accent text-accent-foreground grid size-11 shrink-0 place-items-center rounded-xl">
+              <Sparkles className="size-5" aria-hidden />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">Get drills picked for you</p>
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                Three questions, under two minutes.
+              </p>
+            </div>
+            <Button asChild size="sm" className="shrink-0">
+              <Link to="/onboarding">Set up</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {isLoading && <p className="text-muted-foreground text-sm">Loading drills…</p>}
 
       {featured && (
         <Card className="border-primary/40 from-accent/60 mb-8 overflow-hidden bg-gradient-to-br to-transparent">
           <CardContent className="flex flex-col gap-4 p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <Badge variant="accent" className="mb-2">
-                  <Zap className="size-3" aria-hidden />
-                  Start here
-                </Badge>
-                <h2 className="text-2xl font-bold tracking-tight">{featured.name}</h2>
-                <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
-                  {featured.description}
-                </p>
-              </div>
+            <div>
+              <Badge variant="accent" className="mb-2">
+                <Zap className="size-3" aria-hidden />
+                {recommendation ? 'Picked for you' : 'Start here'}
+              </Badge>
+              <h2 className="text-2xl font-bold tracking-tight">{featured.name}</h2>
+              <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                {recommendation?.reason ?? featured.description}
+              </p>
             </div>
             <div className="text-muted-foreground flex flex-wrap gap-2 text-xs">
               <Badge variant="outline">{CATEGORY_LABEL[featured.category]}</Badge>

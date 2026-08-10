@@ -54,6 +54,9 @@ begin
   if not exists (select 1 from pg_type where typname = 'benchmark_test') then
     create type benchmark_test as enum ('b_endurance_style', 'spider_sprint');
   end if;
+  if not exists (select 1 from pg_type where typname = 'training_goal') then
+    create type training_goal as enum ('stamina', 'footwork', 'match-ready', 'consistency');
+  end if;
 end
 $$;
 
@@ -62,10 +65,15 @@ create table if not exists public.profiles (
   id                 uuid primary key references auth.users (id) on delete cascade,
   display_name       text        not null default 'Player',
   avatar_url         text,
-  skill_level        skill_level not null default 'intermediate',
-  primary_discipline discipline  not null default 'both',
-  created_at         timestamptz not null default now()
+  skill_level        skill_level   not null default 'intermediate',
+  primary_discipline discipline    not null default 'both',
+  goal               training_goal not null default 'footwork',
+  created_at         timestamptz   not null default now()
 );
+
+-- Added in Phase 2; keeps an existing database in step with a fresh one.
+alter table public.profiles
+  add column if not exists goal training_goal not null default 'footwork';
 
 alter table public.profiles enable row level security;
 
@@ -584,13 +592,19 @@ on conflict (slug) do update set
   level                = excluded.level,
   is_public            = excluded.is_public;
 
+--  Mirrors src/lib/data/badges.ts. Tiers are segmented on purpose: a beginner
+--  always has a bronze within reach and a returning competitor still has a
+--  gold to chase.
 insert into public.badges (slug, name, description, icon, tier) values
-  ('first-session',  'First Steps',      'Completed your first session.',                   'footprints', 'bronze'),
-  ('week-one',       'Week One Down',    'Trained at least twice in a single week.',        'calendar',   'bronze'),
-  ('streak-4',       'Four in a Row',    'Four consecutive weeks with a session.',          'flame',      'silver'),
-  ('streak-12',      'Season Builder',   'Twelve consecutive weeks with a session.',        'trophy',     'gold'),
-  ('thousand-calls', 'A Thousand Corners','Answered 1,000 corner calls.',                   'target',     'silver'),
-  ('deception-pro',  'Never Wrong-Footed','Completed ten deception sessions.',              'shuffle',    'gold')
+  ('getting-started', 'Getting Started',    'Set your level and discipline.',              'flag',           'bronze'),
+  ('first-session',   'First Steps',        'Complete your first session.',                'footprints',     'bronze'),
+  ('week-one',        'Week One Down',      'Train twice in a single week.',               'calendar-check', 'bronze'),
+  ('benchmarked',     'Know Your Number',   'Take the fitness benchmark.',                 'gauge',          'silver'),
+  ('streak-4',        'Four in a Row',      'Four consecutive weeks with a session.',      'flame',          'silver'),
+  ('thousand-calls',  'A Thousand Corners', 'Answer 1,000 corner calls.',                  'target',         'silver'),
+  ('streak-12',       'Season Builder',     'Twelve consecutive weeks with a session.',    'trophy',         'gold'),
+  ('deception-pro',   'Never Wrong-Footed', 'Complete ten Deception sessions.',            'shuffle',        'gold'),
+  ('ten-hours',       'Ten Hours In',       'Ten hours of logged training.',               'hourglass',      'gold')
 on conflict (slug) do update set
   name        = excluded.name,
   description = excluded.description,

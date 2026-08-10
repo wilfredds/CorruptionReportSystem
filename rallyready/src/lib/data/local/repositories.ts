@@ -1,4 +1,6 @@
 import type {
+  BadgeRepository,
+  BenchmarkRepository,
   DrillRepository,
   ProfileRepository,
   Repositories,
@@ -8,6 +10,8 @@ import type {
 import { SEED_DRILLS, findSeedDrill } from '../seed/drills'
 import { computeStreak, localDateKey } from '../streaks'
 import type {
+  Benchmark,
+  NewBenchmark,
   NewSession,
   NewSessionMetric,
   Profile,
@@ -90,10 +94,53 @@ const sessions: SessionRepository = {
     return loadMetrics()[sessionId] ?? []
   },
 
+  async listAllMetrics() {
+    return Object.values(loadMetrics()).flat()
+  },
+
   async listSessionDates() {
     return loadSessions()
       .map((session) => localDateKey(new Date(session.startedAt)))
       .sort()
+  },
+}
+
+const benchmarks: BenchmarkRepository = {
+  async create(input: NewBenchmark) {
+    const benchmark: Benchmark = {
+      id: newId(),
+      userId: null,
+      testType: input.testType,
+      takenAt: input.takenAt.toISOString(),
+      score: input.score,
+      levelReached: input.levelReached,
+      raw: input.raw ?? {},
+    }
+    writeJson(STORAGE_KEYS.benchmarks, [
+      benchmark,
+      ...readJson<Benchmark[]>(STORAGE_KEYS.benchmarks, []),
+    ])
+    return benchmark
+  },
+
+  async list(testType) {
+    const all = readJson<Benchmark[]>(STORAGE_KEYS.benchmarks, [])
+    return testType ? all.filter((entry) => entry.testType === testType) : all
+  },
+
+  async getById(id) {
+    return readJson<Benchmark[]>(STORAGE_KEYS.benchmarks, []).find((b) => b.id === id) ?? null
+  },
+}
+
+const badges: BadgeRepository = {
+  async listEarned() {
+    return readJson<string[]>(STORAGE_KEYS.badges, [])
+  },
+  async award(slugs) {
+    if (slugs.length === 0) return
+    const existing = readJson<string[]>(STORAGE_KEYS.badges, [])
+    writeJson(STORAGE_KEYS.badges, [...new Set([...existing, ...slugs])])
   },
 }
 
@@ -115,6 +162,7 @@ const profiles: ProfileRepository = {
       avatarUrl: patch.avatarUrl ?? existing?.avatarUrl ?? null,
       skillLevel: patch.skillLevel ?? existing?.skillLevel ?? 'intermediate',
       primaryDiscipline: patch.primaryDiscipline ?? existing?.primaryDiscipline ?? 'both',
+      goal: patch.goal ?? existing?.goal ?? 'footwork',
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     }
     writeJson(STORAGE_KEYS.profile, profile)
@@ -123,5 +171,5 @@ const profiles: ProfileRepository = {
 }
 
 export function createLocalRepositories(): Repositories {
-  return { drills, sessions, streaks, profiles, backend: 'local' }
+  return { drills, sessions, streaks, profiles, benchmarks, badges, backend: 'local' }
 }

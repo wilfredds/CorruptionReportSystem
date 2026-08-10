@@ -1,12 +1,21 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Loader2 } from 'lucide-react'
 import { Link, Route, Routes } from 'react-router-dom'
 
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/button'
+import { AuthProvider } from '@/lib/auth/AuthProvider'
+import { useAuth } from '@/lib/auth/context'
 import { DataProvider } from '@/lib/data/DataProvider'
+import { SignInPage } from '@/features/auth/SignInPage'
+import { BenchmarkPage } from '@/features/benchmark/BenchmarkPage'
+import { BenchmarkResultPage } from '@/features/benchmark/BenchmarkResultPage'
+import { BenchmarkRunPage } from '@/features/benchmark/BenchmarkRunPage'
 import { DesignSystemPage } from '@/features/design-system/DesignSystemPage'
-import { LibraryPage, ProgramsPage, ProgressPage } from '@/features/placeholders/pages'
+import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
+import { LibraryPage, ProgramsPage } from '@/features/placeholders/pages'
 import { ProfilePage } from '@/features/profile/ProfilePage'
+import { ProgressPage } from '@/features/progress/ProgressPage'
 import { DrillRunPage } from '@/features/train/DrillRunPage'
 import { DrillSetupPage } from '@/features/train/DrillSetupPage'
 import { SessionSummaryPage } from '@/features/train/SessionSummaryPage'
@@ -36,28 +45,56 @@ function NotFound() {
   )
 }
 
+/**
+ * Holds the app back until the session is resolved, so the data layer mounts
+ * against the right backend once instead of flipping from local to account and
+ * re-fetching everything.
+ */
+function AppRoutes() {
+  const auth = useAuth()
+
+  if (auth.status === 'loading') {
+    return (
+      <div className="grid min-h-dvh place-items-center">
+        <Loader2 className="text-muted-foreground size-6 animate-spin" aria-label="Loading" />
+      </div>
+    )
+  }
+
+  return (
+    <DataProvider>
+      <Routes>
+        {/* Full-bleed runners live outside the shell: nothing competes with the
+            board while a drill or a test is running. */}
+        <Route path="/run/:slug" element={<DrillRunPage />} />
+        <Route path="/benchmark/run" element={<BenchmarkRunPage />} />
+
+        <Route element={<AppShell />}>
+          <Route path="/" element={<TrainPage />} />
+          <Route path="/train/:slug" element={<DrillSetupPage />} />
+          <Route path="/session/:id" element={<SessionSummaryPage />} />
+          <Route path="/progress" element={<ProgressPage />} />
+          <Route path="/benchmark" element={<BenchmarkPage />} />
+          <Route path="/benchmark/result/:id" element={<BenchmarkResultPage />} />
+          <Route path="/programs" element={<ProgramsPage />} />
+          <Route path="/library" element={<LibraryPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/signin" element={<SignInPage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/design-system" element={<DesignSystemPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Routes>
+    </DataProvider>
+  )
+}
+
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <DataProvider>
-        <Routes>
-          {/* The runner is deliberately outside the shell: nothing competes
-              with the board while a drill is running. */}
-          <Route path="/run/:slug" element={<DrillRunPage />} />
-
-          <Route element={<AppShell />}>
-            <Route path="/" element={<TrainPage />} />
-            <Route path="/train/:slug" element={<DrillSetupPage />} />
-            <Route path="/session/:id" element={<SessionSummaryPage />} />
-            <Route path="/progress" element={<ProgressPage />} />
-            <Route path="/programs" element={<ProgramsPage />} />
-            <Route path="/library" element={<LibraryPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/design-system" element={<DesignSystemPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </DataProvider>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </QueryClientProvider>
   )
 }

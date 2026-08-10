@@ -1,24 +1,6 @@
-import { BookOpen, CalendarRange, LineChart } from 'lucide-react'
+import { BookOpen, CalendarRange } from 'lucide-react'
 
 import { ComingSoon } from '@/components/ComingSoon'
-
-export function ProgressPage() {
-  return (
-    <ComingSoon
-      title="Progress"
-      description="Streaks, personal bests and trends over time."
-      phase="Phase 2"
-      icon={LineChart}
-      planned={[
-        'Streak calendar on a weekly cadence, so one missed day costs you nothing',
-        'Sessions per week, and personal bests per drill',
-        'Trend charts for circuit times and endurance',
-        'The B-ENDURANCE-style benchmark test, with a score to chase',
-        'A trophy case of badges',
-      ]}
-    />
-  )
-}
 
 export function ProgramsPage() {
   return (
