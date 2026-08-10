@@ -49,6 +49,12 @@ export default tseslint.config(
     rules: { 'no-restricted-imports': 'off' },
   },
   {
+    // shadcn/ui primitives ship their variant helpers alongside the component.
+    // The rule is a hot-reload ergonomics hint, not a correctness one.
+    files: ['src/components/ui/**/*.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
+  {
     files: ['**/*.{test,spec}.{ts,tsx}', 'src/test/**'],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
   },
