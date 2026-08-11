@@ -1,0 +1,262 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+/* ---------------------------------------------------------------- typeface */
+/* Inter variable, self-hosted so the PWA has zero network dependencies. */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('./assets/fonts/inter-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('./assets/fonts/inter-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+/* ------------------------------------------------------------------ tokens */
+/*
+ * Neutral graphite base + one energetic accent (volt), per §5.
+ * Phase colours carry meaning during a drill and are legible across a room:
+ *   work = volt · rest = cool cyan · sprint = amber · warmup/cooldown = calm
+ */
+:root {
+  --radius: 0.875rem;
+
+  --background: oklch(0.99 0.002 250);
+  --foreground: oklch(0.19 0.015 255);
+
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
+
+  --primary: oklch(0.83 0.19 124);
+  --primary-foreground: oklch(0.22 0.04 130);
+
+  --secondary: oklch(0.96 0.004 250);
+  --secondary-foreground: oklch(0.26 0.016 255);
+
+  --muted: oklch(0.965 0.004 250);
+  --muted-foreground: oklch(0.5 0.014 255);
+
+  --accent: oklch(0.95 0.02 128);
+  --accent-foreground: oklch(0.26 0.04 130);
+
+  --destructive: oklch(0.58 0.21 27);
+  --destructive-foreground: oklch(0.99 0.005 27);
+
+  --border: oklch(0.915 0.006 255);
+  --input: oklch(0.9 0.008 255);
+  --ring: oklch(0.72 0.17 128);
+
+  /* Drill phase palette */
+  --work: oklch(0.7 0.18 128);
+  --work-foreground: oklch(0.99 0.01 128);
+  --rest: oklch(0.62 0.13 232);
+  --rest-foreground: oklch(0.99 0.01 232);
+  --sprint: oklch(0.66 0.18 48);
+  --sprint-foreground: oklch(0.99 0.01 48);
+  --warmup: oklch(0.62 0.1 190);
+  --warmup-foreground: oklch(0.99 0.01 190);
+  --cooldown: oklch(0.6 0.09 292);
+  --cooldown-foreground: oklch(0.99 0.01 292);
+
+  /* Court board */
+  --court-line: oklch(0.82 0.008 255);
+  --court-surface: oklch(0.97 0.004 250);
+}
+
+.dark {
+  --background: oklch(0.16 0.012 255);
+  --foreground: oklch(0.97 0.004 250);
+
+  --card: oklch(0.205 0.014 255);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.225 0.014 255);
+  --popover-foreground: var(--foreground);
+
+  --primary: oklch(0.88 0.2 122);
+  --primary-foreground: oklch(0.2 0.04 130);
+
+  --secondary: oklch(0.26 0.014 255);
+  --secondary-foreground: oklch(0.96 0.004 250);
+
+  --muted: oklch(0.25 0.014 255);
+  --muted-foreground: oklch(0.72 0.012 255);
+
+  --accent: oklch(0.3 0.03 128);
+  --accent-foreground: oklch(0.93 0.06 124);
+
+  --destructive: oklch(0.65 0.2 25);
+  --destructive-foreground: oklch(0.16 0.02 25);
+
+  --border: oklch(0.3 0.014 255);
+  --input: oklch(0.33 0.016 255);
+  --ring: oklch(0.75 0.16 126);
+
+  --work: oklch(0.88 0.2 122);
+  --work-foreground: oklch(0.18 0.04 130);
+  --rest: oklch(0.78 0.13 228);
+  --rest-foreground: oklch(0.16 0.03 228);
+  --sprint: oklch(0.82 0.16 62);
+  --sprint-foreground: oklch(0.18 0.04 62);
+  --warmup: oklch(0.8 0.11 186);
+  --warmup-foreground: oklch(0.16 0.03 186);
+  --cooldown: oklch(0.78 0.09 292);
+  --cooldown-foreground: oklch(0.16 0.03 292);
+
+  --court-line: oklch(0.42 0.014 255);
+  --court-surface: oklch(0.22 0.016 255);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-work: var(--work);
+  --color-work-foreground: var(--work-foreground);
+  --color-rest: var(--rest);
+  --color-rest-foreground: var(--rest-foreground);
+  --color-sprint: var(--sprint);
+  --color-sprint-foreground: var(--sprint-foreground);
+  --color-warmup: var(--warmup);
+  --color-warmup-foreground: var(--warmup-foreground);
+  --color-cooldown: var(--cooldown);
+  --color-cooldown-foreground: var(--cooldown-foreground);
+
+  --color-court-line: var(--court-line);
+  --color-court-surface: var(--court-surface);
+
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji';
+
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
+  --radius-2xl: calc(var(--radius) + 12px);
+
+  --animate-pip: pip 1s linear infinite;
+  --animate-breathe: breathe 3.2s ease-in-out infinite;
+
+  @keyframes pip {
+    from {
+      stroke-dashoffset: 0;
+    }
+    to {
+      stroke-dashoffset: var(--pip-circumference, 100);
+    }
+  }
+  @keyframes breathe {
+    0%,
+    100% {
+      opacity: 0.55;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.04);
+    }
+  }
+}
+
+/* ------------------------------------------------------------------- base */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings:
+      'cv11',
+      'ss01' on;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    /* Nothing in a drill should ever rubber-band or pull-to-refresh. */
+    overscroll-behavior-y: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  /* §5 accessibility: honour the OS reduced-motion setting everywhere. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Oversized timer numerals never reflow as digits change width. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* Screen-reader-only, but focusable (skip links). */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}

@@ -1,0 +1,210 @@
+import { useQuery } from '@tanstack/react-query'
+import { Flame, Home, Play, SlidersHorizontal, Sparkles, X, Zap } from 'lucide-react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+
+import { PageHeader } from '@/components/PageHeader'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Segmented } from '@/components/ui/segmented'
+import { useRepositories } from '@/lib/data/context'
+import { resolveRecommendation } from '@/lib/data/recommend'
+import { isConditioning } from '@/lib/data/seed/drills'
+import type { Drill } from '@/lib/data/types'
+import { configFromDrill, estimateDurationSec } from '@/lib/timer/plan'
+import { formatCompactDuration, pluralize } from '@/lib/utils'
+import { useDrillConfigStore } from '@/store/drillConfigStore'
+import { useUiStore } from '@/store/uiStore'
+
+import { TodayCard } from '../programs/components/TodayCard'
+import { CueSettingsDialog } from './components/CueSettingsDialog'
+import { DrillCard } from './components/DrillCard'
+import { CATEGORY_LABEL, LEVEL_LABEL } from './drillLabels'
+
+type Tab = 'drills' | 'conditioning'
+
+export function TrainPage() {
+  const repositories = useRepositories()
+  const overrides = useDrillConfigStore((state) => state.overrides)
+  const setupDismissed = useUiStore((state) => state.setupPromptDismissed)
+  const dismissSetup = useUiStore((state) => state.dismissSetupPrompt)
+  const [tab, setTab] = useState<Tab>('drills')
+  const [homeOnly, setHomeOnly] = useState(false)
+
+  const { data: drills = [], isLoading } = useQuery({
+    queryKey: ['drills'],
+    queryFn: () => repositories.drills.list(),
+  })
+
+  const { data: streak } = useQuery({
+    queryKey: ['streak'],
+    queryFn: () => repositories.streaks.get(),
+  })
+
+  const { data: profile, isLoading: profileLoading } = useQuery({
+    queryKey: ['profile'],
+    queryFn: () => repositories.profiles.get(),
+  })
+
+  // With a profile the headline drill is chosen for this player; without one it
+  // is simply the first in the catalogue.
+  const recommendation = profile ? resolveRecommendation(profile, drills) : null
+  const featured = recommendation?.drill ?? drills[0]
+
+  const inTab = drills.filter((drill) =>
+    tab === 'conditioning' ? isConditioning(drill) : !isConditioning(drill),
+  )
+  const visible = inTab
+    .filter((drill) => !homeOnly || drill.location === 'anywhere')
+    .filter((drill) => drill.slug !== featured?.slug)
+
+  const configFor = (drill: Drill) => overrides[drill.slug] ?? configFromDrill(drill)
+
+  return (
+    <>
+      <PageHeader
+        title="Train"
+        description="Pick a drill and go. Every call is spoken, so you never need to look at the screen."
+        action={<CueSettingsDialog />}
+      />
+
+      {streak && streak.currentStreak > 0 && (
+        <div className="text-muted-foreground mb-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+          <Link
+            to="/progress"
+            className="text-foreground inline-flex items-center gap-1.5 font-medium hover:underline"
+          >
+            <Flame className="text-primary size-4" aria-hidden />
+            {pluralize(streak.currentStreak, 'week')} in a row
+          </Link>
+          <span>
+            {streak.weeklySessionsCount === 0
+              ? 'Nothing logged this week yet'
+              : `${pluralize(streak.weeklySessionsCount, 'session')} this week`}
+          </span>
+        </div>
+      )}
+
+      <TodayCard />
+
+      {isLoading && <p className="text-muted-foreground text-sm">Loading drills…</p>}
+
+      {featured && (
+        <Card className="border-primary/40 from-accent/60 mb-6 overflow-hidden bg-gradient-to-br to-transparent">
+          <CardContent className="flex flex-col gap-4 p-5">
+            <div>
+              <Badge variant="accent" className="mb-2">
+                <Zap className="size-3" aria-hidden />
+                {recommendation ? 'Picked for you' : 'Start here'}
+              </Badge>
+              <h2 className="text-3xl font-bold tracking-tight text-balance">{featured.name}</h2>
+              <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                {recommendation?.reason ?? featured.description}
+              </p>
+            </div>
+            <div className="text-muted-foreground flex flex-wrap gap-2 text-xs">
+              <Badge variant="outline">{CATEGORY_LABEL[featured.category]}</Badge>
+              <Badge variant="outline">
+                {featured.circuit
+                  ? pluralize(featured.circuit.length, 'exercise')
+                  : `${featured.corners} zones`}
+              </Badge>
+              <Badge variant="outline">
+                {formatCompactDuration(estimateDurationSec(configFor(featured)))}
+              </Badge>
+              <Badge variant="outline">{LEVEL_LABEL[featured.level]}</Badge>
+            </div>
+            <div className="flex gap-2">
+              <Button asChild size="lg" className="flex-1">
+                <Link to={`/run/${featured.slug}`}>
+                  <Play className="fill-current" />
+                  Start
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link to={`/train/${featured.slug}`} aria-label={`Adjust ${featured.name}`}>
+                  <SlidersHorizontal />
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Below the drill it is offering to improve, and dismissible. Above it,
+          an unclosable prompt outranked the content it was advertising. */}
+      {!profileLoading && !profile && !setupDismissed && (
+        <div className="border-border mb-8 flex items-center gap-3 rounded-xl border border-dashed p-3">
+          <Sparkles className="text-primary size-4 shrink-0" aria-hidden />
+          <p className="text-muted-foreground min-w-0 flex-1 text-xs leading-relaxed">
+            <span className="text-foreground font-medium">Get drills picked for you.</span> Four
+            questions, under two minutes.
+          </p>
+          <Button asChild size="sm" variant="outline" className="shrink-0">
+            <Link to="/onboarding">Set up</Link>
+          </Button>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            className="shrink-0"
+            onClick={dismissSetup}
+            title="Dismiss"
+          >
+            <X />
+            <span className="sr-only">Dismiss this prompt</span>
+          </Button>
+        </div>
+      )}
+
+      <section aria-labelledby="catalogue">
+        <h2 id="catalogue" className="sr-only">
+          Drill catalogue
+        </h2>
+
+        <Segmented
+          label="Workout type"
+          value={tab}
+          options={[
+            { value: 'drills', label: 'Drills' },
+            { value: 'conditioning', label: 'Conditioning' },
+          ]}
+          onChange={(next) => setTab(next as Tab)}
+        />
+
+        <div className="mt-3 mb-4 flex items-center justify-between gap-3">
+          <p className="text-muted-foreground text-xs">
+            {tab === 'drills'
+              ? 'Corner-calling footwork, called out loud.'
+              : 'Intervals and circuits. Most need no court at all.'}
+          </p>
+          <Button
+            variant={homeOnly ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setHomeOnly((current) => !current)}
+            aria-pressed={homeOnly}
+          >
+            <Home />
+            No court
+          </Button>
+        </div>
+
+        {visible.length === 0 ? (
+          <p className="text-muted-foreground py-6 text-center text-sm">
+            {homeOnly
+              ? 'Nothing here works without a court. Turn the filter off to see the rest.'
+              : 'Nothing here yet.'}
+          </p>
+        ) : (
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {visible.map((drill) => (
+              <li key={drill.slug}>
+                <DrillCard drill={drill} config={configFor(drill)} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </>
+  )
+}

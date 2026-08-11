@@ -1,0 +1,6 @@
+# Dependency and build caches, wherever a tool happens to create them.
+# Each project keeps its own .gitignore for anything project-specific.
+node_modules/
+.vite/
+.DS_Store
+*.log

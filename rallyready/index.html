@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0b0f14" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fbfcfd" media="(prefers-color-scheme: light)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="RallyReady" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta
+      name="description"
+      content="Audio-first badminton footwork drills, conditioning and progress tracking. Train solo, at home, with no coach and no partner."
+    />
+    <title>RallyReady — Badminton Training</title>
+    <script>
+      // Applied before first paint so the app never flashes the wrong theme.
+      // Mirrors the logic in src/lib/theme.ts — keep the storage key in sync.
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('rallyready.theme')
+          var mode = stored === 'light' || stored === 'dark' ? stored : null
+          var dark = mode
+            ? mode === 'dark'
+            : window.matchMedia('(prefers-color-scheme: dark)').matches
+          document.documentElement.classList.toggle('dark', dark)
+        } catch (_) {
+          /* private mode / storage disabled — fall back to the dark default */
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

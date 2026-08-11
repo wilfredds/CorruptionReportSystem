@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="RallyReady">
+  <rect width="64" height="64" rx="14" fill="#0B0F14"/>
+  <polygon points="24.00,42.56 13.76,13.76 13.76,13.76 15.28,13.20 16.80,12.68 18.32,12.22 19.84,11.80 21.36,11.44 22.88,11.12 24.40,10.85 25.92,10.63 27.44,10.46 28.96,10.34 30.48,10.26 32.00,10.24 33.52,10.26 35.04,10.34 36.56,10.46 38.08,10.63 39.60,10.85 41.12,11.12 42.64,11.44 44.16,11.80 45.68,12.22 47.20,12.68 48.72,13.20 50.24,13.76 50.24,13.76 40.00,42.56" fill="#C6F24E"/>
+  <circle cx="32.00" cy="45.76" r="9.28" fill="#C6F24E"/>
+  <line x1="32.00" y1="36.16" x2="20.69" y2="15.68" stroke="#0B0F14" stroke-width="1.79" stroke-linecap="round"/>
+  <line x1="32.00" y1="36.16" x2="28.17" y2="15.68" stroke="#0B0F14" stroke-width="1.79" stroke-linecap="round"/>
+  <line x1="32.00" y1="36.16" x2="35.83" y2="15.68" stroke="#0B0F14" stroke-width="1.79" stroke-linecap="round"/>
+  <line x1="32.00" y1="36.16" x2="43.31" y2="15.68" stroke="#0B0F14" stroke-width="1.79" stroke-linecap="round"/>
+</svg>
