@@ -13,18 +13,16 @@ export type Discipline = 'singles' | 'doubles' | 'both'
 export type TrainingGoal = 'stamina' | 'footwork' | 'match-ready' | 'consistency'
 
 export type DrillCategory =
-  | 'footwork'
-  | 'net'
-  | 'rear-court'
-  | 'conditioning'
-  | 'agility'
-  | 'plyometric'
+  'footwork' | 'net' | 'rear-court' | 'conditioning' | 'agility' | 'plyometric'
 
 /** How the drill is performed, as opposed to how calls are chosen. */
 export type DrillStyle = 'shadow' | 'ghosting' | 'ladder' | 'hiit' | 'custom'
 
 /** Whether the workout needs a court, or can be done in a garage. */
 export type DrillLocation = 'court' | 'anywhere'
+
+/** What a program day is for. */
+export type ProgramFocus = 'footwork' | 'conditioning' | 'rest' | 'matchplay'
 
 /**
  * One exercise in a conditioning circuit. A drill carrying these runs as a
@@ -45,6 +43,8 @@ export interface Profile {
   skillLevel: SkillLevel
   primaryDiscipline: Discipline
   goal: TrainingGoal
+  /** Whether they can get on a court, which decides which programs suit. */
+  courtAccess: DrillLocation
   createdAt: string
 }
 
@@ -142,6 +142,61 @@ export interface NewBenchmark {
   score: number
   levelReached: number | null
   raw?: Record<string, unknown>
+}
+
+/* ------------------------------------------------- Programs (Phase 4) */
+
+export type EnrollmentStatus = 'active' | 'paused' | 'completed' | 'abandoned'
+
+export interface Program {
+  id: string
+  slug: string
+  name: string
+  description: string
+  totalWeeks: number
+  level: SkillLevel
+  /** Whether the plan assumes court access. */
+  location: DrillLocation
+  sessionsPerWeek: number
+  isPublic: boolean
+  createdBy: string | null
+  createdAt: string
+}
+
+export interface ProgramDay {
+  id: string
+  programId: string
+  weekNo: number
+  /** 1 = Monday … 7 = Sunday. */
+  dayNo: number
+  title: string
+  focus: ProgramFocus
+  /**
+   * Drills by slug rather than id. Slugs are stable across re-seeding and
+   * identical on both backends, where a uuid would have to be resolved twice.
+   */
+  drillSlugs: string[]
+  notes: string | null
+}
+
+export interface NewProgram {
+  name: string
+  description: string
+  totalWeeks: number
+  level: SkillLevel
+  location: DrillLocation
+  sessionsPerWeek: number
+  isPublic: boolean
+}
+
+export interface ProgramEnrollment {
+  id: string
+  userId: string | null
+  programId: string
+  startedOn: string
+  currentWeek: number
+  currentDay: number
+  status: EnrollmentStatus
 }
 
 export interface Streak {
