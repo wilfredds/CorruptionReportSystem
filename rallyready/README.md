@@ -64,6 +64,32 @@ npm run dev
 That is genuinely all you need. With no Supabase configured the app stores
 everything in local storage and every Phase 1 feature works.
 
+### Put it on a phone
+
+The app is a root-scoped PWA (`start_url: '/'`), so it needs its own domain
+rather than a subpath. `vercel.json` here covers the two things a Vite PWA needs
+from a host: a catch-all rewrite to `index.html`, so a deep link like
+`/library/technique/the-split-step` still resolves on a cold load from the home
+screen, and a `no-cache` header on `sw.js`, so a stale service worker cannot pin
+an old build forever.
+
+This app lives in a subdirectory of the repo, so when importing set:
+
+| Setting        | Value                  |
+| -------------- | ---------------------- |
+| Root Directory | `rallyready`           |
+| Framework      | Vite (auto-detected)   |
+| Build command  | `npm run build` (auto) |
+| Output         | `dist` (auto)          |
+
+No environment variables are needed. Without `VITE_SUPABASE_*` the app runs on
+the local backend, which is the right default for a device test: accounts are
+off, everything is stored on the phone, and every drill still works.
+
+Once it is open on the phone, use the browser's **Add to Home Screen**. Wake
+lock, vibration and speech all behave differently in an installed PWA than in a
+tab, and installed is how the app is meant to be used.
+
 ### Optional: connect Supabase for accounts and sync
 
 Accounts are entirely optional — the app never blocks on one. Connect Supabase
