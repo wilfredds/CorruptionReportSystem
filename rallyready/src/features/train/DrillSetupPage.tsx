@@ -1,5 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, ArrowLeft, Lightbulb, Play, RotateCcw } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowLeft,
+  BookOpen,
+  ChevronRight,
+  Lightbulb,
+  Play,
+  RotateCcw,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
@@ -11,6 +19,7 @@ import { Segmented } from '@/components/ui/segmented'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { useRepositories } from '@/lib/data/context'
+import { topicsForDrill } from '@/lib/data/seed/technique'
 import { cornerIdsForLayout, type CornerId, type CourtLayout } from '@/lib/timer/corners'
 import {
   configFromDrill,
@@ -442,6 +451,53 @@ export function DrillSetupPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* §1.4 again — the cues above are the summary; this is where the
+            technique behind them is actually explained. */}
+        {topicsForDrill(drill.slug).length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="text-primary size-4" aria-hidden />
+                Learn the technique
+              </CardTitle>
+              <CardDescription>The reference behind this drill, in a few minutes.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0 pb-2">
+              <ul className="divide-border divide-y">
+                {/* Three at most. Half the catalogue touches a four-corner
+                    drill somehow, and a list that long stops being a pointer. */}
+                {topicsForDrill(drill.slug)
+                  .slice(0, 3)
+                  .map((topic) => (
+                    <li key={topic.slug}>
+                      <Link
+                        to={`/library/technique/${topic.slug}`}
+                        className="hover:bg-secondary/50 focus-visible:ring-ring flex items-center gap-3 px-5 py-3 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-semibold">{topic.title}</span>
+                          <span className="text-muted-foreground block text-xs">
+                            {topic.readMinutes} min read
+                          </span>
+                        </span>
+                        <ChevronRight
+                          className="text-muted-foreground size-4 shrink-0"
+                          aria-hidden
+                        />
+                      </Link>
+                    </li>
+                  ))}
+              </ul>
+              <Button asChild variant="ghost" size="sm" className="mx-2 mt-1">
+                <Link to={`/library/drill/${drill.slug}`}>
+                  All the reference for this drill
+                  <ChevronRight />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex items-center justify-between gap-3">
           <Button

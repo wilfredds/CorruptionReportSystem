@@ -13,7 +13,8 @@ import { BenchmarkResultPage } from '@/features/benchmark/BenchmarkResultPage'
 import { BenchmarkRunPage } from '@/features/benchmark/BenchmarkRunPage'
 import { DesignSystemPage } from '@/features/design-system/DesignSystemPage'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
-import { LibraryPage } from '@/features/placeholders/pages'
+import { LibraryEntryPage } from '@/features/library/LibraryEntryPage'
+import { LibraryPage } from '@/features/library/LibraryPage'
 import { ProfilePage } from '@/features/profile/ProfilePage'
 import { ProgressPage } from '@/features/progress/ProgressPage'
 import { ProgramBuilderPage } from '@/features/programs/ProgramBuilderPage'
@@ -85,6 +86,7 @@ function AppRoutes() {
           <Route path="/programs/:slug" element={<ProgramDetailPage />} />
           <Route path="/programs/:slug/edit" element={<ProgramBuilderPage />} />
           <Route path="/library" element={<LibraryPage />} />
+          <Route path="/library/:kind/:slug" element={<LibraryEntryPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
