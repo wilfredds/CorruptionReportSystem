@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { useSessionGuard } from '@/hooks/useSessionGuard'
 import { useRepositories } from '@/lib/data/context'
 import { findExercise } from '@/lib/data/seed/exercises'
 import { isConditioning } from '@/lib/data/seed/drills'
@@ -165,6 +166,12 @@ function Runner({ drill }: { drill: Drill }) {
 
   const phase: BlockPhase = state.block?.phase ?? 'prepare'
   const isIdle = state.status === 'idle'
+
+  // A refresh or a back gesture used to bin the session outright.
+  useSessionGuard({
+    active: state.status === 'running' || state.status === 'paused',
+    onLeaveAttempt: () => setQuitOpen(true),
+  })
   const isResting = phase === 'rest' || phase === 'cooldown' || phase === 'prepare'
   const enabledCorners = config?.enabledCorners ?? cornerIdsForLayout(drill.corners)
   const circuit = config ? isCircuit(config) : false

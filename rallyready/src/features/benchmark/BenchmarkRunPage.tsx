@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { useSessionGuard } from '@/hooks/useSessionGuard'
 import { useRepositories } from '@/lib/data/context'
 import { METRIC_BENCHMARK_LEVEL, METRIC_CALLS } from '@/lib/data/stats'
 import {
@@ -118,6 +119,13 @@ export function BenchmarkRunPage() {
   const phase: BlockPhase = state.block?.phase ?? 'prepare'
   const isIdle = state.status === 'idle'
   const isResting = phase === 'rest' || phase === 'prepare'
+
+  // Losing a benchmark to a stray back gesture is worse than losing a drill:
+  // the whole point is that it is a measurement you only take occasionally.
+  useSessionGuard({
+    active: state.status === 'running' || state.status === 'paused',
+    onLeaveAttempt: () => setStopOpen(true),
+  })
   // A rest block carries no round number of its own, so the level coming up is
   // derived from how many are already banked.
   const nextLevel = Math.min(state.roundsCompleted + 1, BENCHMARK_LEVELS)
