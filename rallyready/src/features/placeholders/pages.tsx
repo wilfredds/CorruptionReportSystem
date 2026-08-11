@@ -1,24 +1,6 @@
-import { BookOpen, CalendarRange } from 'lucide-react'
+import { BookOpen } from 'lucide-react'
 
 import { ComingSoon } from '@/components/ComingSoon'
-
-export function ProgramsPage() {
-  return (
-    <ComingSoon
-      title="Programs"
-      description="Periodised multi-week plans for getting back to match fitness."
-      phase="Phase 4"
-      icon={CalendarRange}
-      planned={[
-        '8–12 week returning-player programs: Base → Build → Sharpen → Deload',
-        '3–5 sessions a week mixing footwork, conditioning and genuine rest days',
-        '“Today’s session” surfaced on the home screen',
-        'Volume adapted to your level and whether you have court access',
-        'Publish your own program for other players to follow',
-      ]}
-    />
-  )
-}
 
 export function LibraryPage() {
   return (

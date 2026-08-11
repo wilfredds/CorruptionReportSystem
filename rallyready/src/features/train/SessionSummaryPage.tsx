@@ -11,6 +11,8 @@ import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useRepositories } from '@/lib/data/context'
 import { formatDuration, pluralize } from '@/lib/utils'
 
+import { ProgramDayPrompt } from '../programs/components/ProgramDayPrompt'
+
 export function SessionSummaryPage() {
   const { id = '' } = useParams()
   const repositories = useRepositories()
@@ -123,6 +125,8 @@ export function SessionSummaryPage() {
           </>
         )}
       </div>
+
+      <ProgramDayPrompt drillSlug={drill?.slug} />
 
       {streak && (
         <Card className="mb-5">

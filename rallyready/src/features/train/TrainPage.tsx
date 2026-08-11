@@ -16,6 +16,7 @@ import { configFromDrill, estimateDurationSec } from '@/lib/timer/plan'
 import { formatCompactDuration, pluralize } from '@/lib/utils'
 import { useDrillConfigStore } from '@/store/drillConfigStore'
 
+import { TodayCard } from '../programs/components/TodayCard'
 import { CueSettingsDialog } from './components/CueSettingsDialog'
 import { DrillCard } from './components/DrillCard'
 import { CATEGORY_LABEL, LEVEL_LABEL } from './drillLabels'
@@ -82,6 +83,8 @@ export function TrainPage() {
         </div>
       )}
 
+      <TodayCard />
+
       {!profileLoading && !profile && (
         <Card className="mb-6">
           <CardContent className="flex items-center gap-4 p-4">
@@ -91,7 +94,7 @@ export function TrainPage() {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold">Get drills picked for you</p>
               <p className="text-muted-foreground text-xs leading-relaxed">
-                Three questions, under two minutes.
+                Four questions, under two minutes.
               </p>
             </div>
             <Button asChild size="sm" className="shrink-0">

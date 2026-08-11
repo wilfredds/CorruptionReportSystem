@@ -13,9 +13,12 @@ import { BenchmarkResultPage } from '@/features/benchmark/BenchmarkResultPage'
 import { BenchmarkRunPage } from '@/features/benchmark/BenchmarkRunPage'
 import { DesignSystemPage } from '@/features/design-system/DesignSystemPage'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
-import { LibraryPage, ProgramsPage } from '@/features/placeholders/pages'
+import { LibraryPage } from '@/features/placeholders/pages'
 import { ProfilePage } from '@/features/profile/ProfilePage'
 import { ProgressPage } from '@/features/progress/ProgressPage'
+import { ProgramBuilderPage } from '@/features/programs/ProgramBuilderPage'
+import { ProgramDetailPage } from '@/features/programs/ProgramDetailPage'
+import { ProgramsPage } from '@/features/programs/ProgramsPage'
 import { DrillRunPage } from '@/features/train/DrillRunPage'
 import { DrillSetupPage } from '@/features/train/DrillSetupPage'
 import { SessionSummaryPage } from '@/features/train/SessionSummaryPage'
@@ -77,6 +80,10 @@ function AppRoutes() {
           <Route path="/benchmark" element={<BenchmarkPage />} />
           <Route path="/benchmark/result/:id" element={<BenchmarkResultPage />} />
           <Route path="/programs" element={<ProgramsPage />} />
+          {/* `new` before `:slug` so the builder is not read as a program. */}
+          <Route path="/programs/new" element={<ProgramBuilderPage />} />
+          <Route path="/programs/:slug" element={<ProgramDetailPage />} />
+          <Route path="/programs/:slug/edit" element={<ProgramBuilderPage />} />
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/signin" element={<SignInPage />} />
