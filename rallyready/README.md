@@ -5,10 +5,11 @@ partner. Guided footwork drills, conditioning, progression tracking, structured
 programs and a vetted library — in one place, instead of scattered across
 YouTube tabs.
 
-**Phases 1–4 are complete and usable** — the guided drill trainer, accounts,
-progress tracking, the fitness benchmark, stamina/conditioning workouts, and
-periodised multi-week programs. Phase 5 (the vetted video library) is scaffolded
-and stated in the app, not yet built. See `PROGRESS.md`.
+**All five phases are complete** — the guided drill trainer, accounts, progress
+tracking, the fitness benchmark, stamina/conditioning workouts, periodised
+multi-week programs, and the reference library. One thing the brief asked for is
+deliberately absent: curated third-party video. See
+[the library](#the-library) and `PROGRESS.md` for why.
 
 ---
 
@@ -44,6 +45,10 @@ and stated in the app, not yet built. See `PROGRESS.md`.
   Sharpen, a deload every fourth week and a taper at the end — generated from
   four choices rather than hand-assembled. Today's session is the first card on
   the home screen. Write your own and publish it for other players to follow.
+- **A reference that is actually written.** Every drill, exercise and technique
+  in one filterable list, each with coaching cues, the faults that spoil it, how
+  much of it to do, and one tap to start it pre-configured. Search reads the
+  cues, so "knee" finds the lunge.
 
 ---
 
@@ -212,6 +217,29 @@ serve up the hardest thing in the catalogue.
 It is pure and deterministic, which is what lets a published program look
 identical to everyone following it, and lets the whole thing be tested without a
 database or a browser.
+
+### The library
+
+`src/lib/library/entries.ts` derives one browsable list from three catalogues —
+drills, conditioning exercises, and written technique topics — rather than
+holding a fourth copy of the same content. A cue fixed on a drill is fixed in
+the library on the next render. Entries are identified by `kind/slug` because a
+drill and a topic can legitimately share a slug, and the filtering is pure and
+unit-tested.
+
+**On the missing videos.** The brief asks for short reference clips from
+reputable coaches and federations. Curating those means vouching for each one:
+that the link resolves, that the channel is who it claims to be, and that the
+coaching is sound. None of that is checkable from the environment this was built
+in — outbound access to YouTube, the BWF and the national federations is blocked
+— so shipping a list of plausible-looking links would be presenting guesses as
+vetted, which is worse than shipping none.
+
+The reference is therefore written rather than linked: ten technique topics with
+the same cues-and-faults structure as the drills. The seam for clips is real and
+tested — `ExternalReference` on a topic, `videoUrl` on a drill, both rendered
+with attribution the moment either is filled in — so a curator with network
+access can add them without touching a component.
 
 ### Design system
 

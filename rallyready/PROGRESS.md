@@ -13,140 +13,144 @@ the way.
 | 1 — Guided drill trainer                | ✅ Done                        |
 | 2 — Accounts, progress, benchmark       | ✅ Done                        |
 | 3 — Stamina & conditioning              | ✅ Done                        |
-| **4 — Multi-week programs**             | ✅ **Done — ready for review** |
-| 5 — Curated library                     | ⬜ Not started                 |
+| 4 — Multi-week programs                 | ✅ Done                        |
+| **5 — Curated library**                 | ✅ **Done — ready for review** |
 
-`npm run verify` is green: 0 type errors, 0 lint errors/warnings, 205 unit
-tests passing, production build clean.
+All five phases are built. `npm run verify` is green: 0 type errors, 0 lint
+errors/warnings, 226 unit tests passing, production build clean.
+
+Earlier phases, one line each — the detail is in the git history:
+
+- **1** — the timer engine, court board, audio-first cue layer and offline PWA.
+- **2** — Supabase auth with local-to-account migration, the derived progress
+  dashboard, and the B-ENDURANCE-style benchmark.
+- **3** — conditioning circuits on the same engine, an eleven-exercise
+  catalogue, and drawn demos.
+- **4** — the periodiser, four built-in programs, and today's session on Train.
 
 ---
 
-## Phase 4 — what the brief asked for
+## Phase 5 — what the brief asked for
 
-> _8–12 week returning-player programs: Base → Build → Sharpen → Deload. 3–5
-> sessions a week mixing footwork, conditioning and rest. Enrolment tracking the
-> current week and day, with "today's session" surfaced on the home screen.
-> Volume adapted to level and court access. Users can publish their own._
+> _A curated, vetted library of drills and short reference clips from reputable
+> coaches and federations. Filter by category, level, solo or partner, court or
+> home, and duration. Coaching cues, common faults and recommended reps on every
+> entry. One tap to start any entry as a timed drill, pre-configured._
 
-| Item                              | Status | How                                                                                     |
-| --------------------------------- | :----: | --------------------------------------------------------------------------------------- |
-| Periodised 8–12 week programs     |   ✅   | 4–16 weeks supported; deload every fourth week plus a taper, then base/build/sharpen.   |
-| 3–5 sessions a week               |   ✅   | 2–6, spread across fixed weekdays; deload weeks train one session fewer.                |
-| Footwork, conditioning, rest      |   ✅   | Each phase has its own week pattern, including genuine rest days and match play.        |
-| Enrolment tracks week and day     |   ✅   | One active enrolment; advance, jump to any day, leave, and a completion state.          |
-| Today's session on the home screen |   ✅   | First card on Train: the day, its drill, one tap to run it, and progress through plan.  |
-| Adapted to level and court access |   ✅   | Beginners skip reaction work; an anywhere program never names a court drill.            |
-| Publish your own                  |   ✅   | Builder with a live phase preview; publish/unpublish; built-ins are read-only.          |
+| Item                                 | Status | How                                                                               |
+| ------------------------------------ | :----: | --------------------------------------------------------------------------------- |
+| One browsable reference              |   ✅   | 33 entries: 10 technique topics, 12 drills, 11 exercises, in one filterable list. |
+| Filter by category                   |   ✅   | Only categories that exist are offered, derived from the entries themselves.      |
+| Filter by level                      |   ✅   | Beginner / Intermediate / Advanced.                                               |
+| Filter by solo or partner            |   ✅   | Everything trains solo except the two topics that honestly need a feeder.         |
+| Filter by court or home              |   ✅   | Same `location` tag the drills and programs already use.                          |
+| Filter by duration                   |   ✅   | Under 10 / 10–20 / over 20 minutes — run time for a drill, read time for a topic. |
+| Cues, faults, recommended reps       |   ✅   | On every entry. Reps were added to the exercise catalogue, where they belong.     |
+| One tap to start, pre-configured     |   ✅   | Every drill, and every topic that has a drill training it.                        |
+| Short clips from coaches/federations |   ⬜   | Not shipped. The field exists and renders; nothing goes in it. See below.         |
 
 ### Built
 
-**A periodiser, not a calendar editor.** `src/lib/programs/periodise.ts` turns
-four numbers — weeks, sessions a week, level, location — into a full plan. Every
-fourth week is a deload and so is the last; the loading weeks left over split
-base → build → sharpen, remainder to base. Deterministic, so a published program
-looks identical to everyone who follows it, and testable without a UI (19 tests).
+**One list over three catalogues.** `src/lib/library/entries.ts` derives a
+single `LibraryEntry` list from the drills, the exercises and the new technique
+topics. Derived rather than copied: a cue fixed on a drill is fixed in the
+library on the next render, and the two can never disagree. Pure, so the
+filtering is unit-tested (21 tests) and the whole library works offline.
 
-Hand-placing 84 days is not a task anyone finishes, and a plan assembled by hand
-tends not to periodise at all. So the builder asks for the shape and generates
-the rest.
+**Ten technique topics.** The split step, base and recovery, chassé versus
+crossover, the net lunge, the scissor jump, grips, net play, deception, warming
+up and the injuries to avoid, and how to train solo without wasting the time.
+Each explains one thing a solo player can act on, names the faults that make it
+go wrong, and links to the drills that train it.
 
-**Intensity is gated by phase.** Each drill pool is ordered easiest first, and a
-phase only draws from the part it has earned: base and deload weeks stay in the
-gentler half, sharpen weeks in the harder half, build weeks use everything.
-Without this, week one of a base block handed a returning player a plyometric
-circuit under the heading "Easy conditioning".
+**Search that reads the cues.** Searching "knee" finds the net-lunge topic,
+whose title does not contain the word but whose cues do. Every word in the query
+has to match, so adding a word narrows rather than widens.
 
-**Today, on Train.** The active enrolment's current day is the first card on the
-home screen: what today is, which drill it wants, and a single button that
-starts it. Rest days get "Rested — next day" instead.
+**Integrated learning, both directions.** A drill's setup screen now links to
+the technique behind it — three topics and a link to the rest — and every
+technique topic has a Drill it button that starts the matching drill.
 
-**Ticking a day off from the session summary.** Advancing is deliberate rather
-than automatic — a session can be logged from anywhere, and the same summary can
-be reopened days later. When the drill you just ran is the one the plan asked
-for, the prompt says so; otherwise it offers the day as a choice.
+### The one thing not shipped, and why
 
-**Four built-in programs.** Return to Court (8wk, beginner, court), Rebuild the
-Engine (12wk, club, court), No-Court Comeback (10wk, club, anywhere) and Sharpen
-for the Season (8wk, competitive, court) — 266 generated days, all derived from
-the same periodiser and written into `schema.sql` by `npm run seed:sql`.
+The brief asks for short reference clips from reputable coaches and federations.
+That means vouching for each link: that it resolves, that the channel is who it
+claims to be, and that the coaching is sound. From this environment none of that
+can be checked — outbound access to YouTube, the BWF, the national federations
+and even Wikipedia is blocked by the egress proxy, so a curated list would be a
+list of guesses formatted to look vetted. That is worse than none.
 
-**Court access on the profile.** A fourth onboarding question, and the Programs
-list puts plans you can actually train first.
+So the reference is written instead of linked, and it is the app's own: ten
+topics with the same cues-and-faults structure as everything else. The seam for
+clips is real rather than hypothetical — `ExternalReference` on a topic and
+`videoUrl` on a drill, both rendered with attribution the moment either is
+filled in, and a test asserting that nothing currently is. A curator with
+network access can populate it without touching a component.
 
 ---
 
 ## Decisions and their reasons
 
-**Programs are generated, not stored day by day — locally.** The local backend
-keeps only the program's shape and any day the user has actually edited, as a
-sparse override; the days themselves are generated on read. The Supabase adapter
-does the opposite and writes every day out as a row, because a published program
-must look the same to every reader, including readers on a future version of the
-periodiser.
+**Entries are namespaced by kind, not by slug.** `rear-court-scissor` is both a
+drill and a technique topic, and would have silently shadowed itself. Ids are
+`kind/slug` and the route is `/library/:kind/:slug`, which is also a more
+readable URL than a synthetic composite would have been.
 
-**Editing the shape rebuilds the plan.** Changing the length or the sessions per
-week regenerates the days and discards day-level edits. The alternative —
-reconciling hand-edits against a new periodisation — produces a plan that is
-neither what the user wrote nor what the periodiser would produce. The builder
-says so on the create screen.
+**Technique sorts above drills.** The library exists so you can learn the thing
+before drilling it; a list that opens with twelve drills buries the teaching
+under the training.
 
-**One active enrolment at a time.** Enrolling in a second program pauses the
-first rather than running both. Two periodised plans at once is not a training
-programme, it is twice the volume with none of the structure.
+**Recommended reps live with the exercise, not the library.** Adding a field to
+eleven exercise records is more code than a lookup table in the library module,
+and it is the right home: the exercise knows how much of itself to do.
 
-**Progress is measured in days, not sessions.** A 56-day plan advances ~1.8% per
-day, including rest days. Rest days are part of the plan, so skipping them in the
-denominator would make the bar lie about how far through you are.
+**An exercise is not runnable on its own.** Tuck jumps are a component of a
+circuit, not a session, so an exercise entry has cues, a demo and reps but no
+Start button. The circuit that contains it is one tap away instead.
 
-**Drills are referenced by slug, not id.** Slugs are stable across re-seeding and
-identical on both backends; a uuid would have to be resolved twice and would
-break the generated SQL seed.
+**The duration filter measures reading too.** "How long will this take me" is a
+fair question about an article as well as a drill, so a topic's reading time
+goes through the same buckets rather than being exempt from them.
 
 ### Deviations from the brief's data model
 
-`programs` gains `location` and `sessions_per_week`; `profiles` gains
-`court_access`; `program_days.drill_ids uuid[]` became `drill_slugs text[]` for
-the reason above. `programs.total_weeks` is constrained to 4–16.
+None. The library needs no table: it is derived from content already bundled
+with the app, and technique topics are reference material like the exercises,
+not user data. `drills.video_url` has been in the schema since Phase 0 and is
+where a vetted clip would go.
 
 ### Fixed while verifying in a browser
 
-- The Today card's primary button read "Start Four-Corner Footwork" and pushed
-  the second action off a 414px screen. The drill is named in the card body now
-  and the button just says "Start".
-- A day row at 360px truncated its title to "Fo…" — two actions were eating the
-  width. The actions are icon-only with labels, and the title wraps.
-- Ticking a day off showed no confirmation whenever the next day was a rest day,
-  because the confirmation was rendered below the guard that hides the prompt on
-  rest days.
-- Finishing a program was completely silent: the enrolment completed and the
-  button quietly reverted to "Start this program". There is a completion banner
-  now, and the CTA reads "Start it again".
-- Base weeks off court opened with Rally HIIT and a plyometric circuit. See
-  intensity gating above.
+- A ladder diagram on a 360px screen filled the entire viewport — the demo is
+  1.5× as tall as it is wide and nothing capped its height. It is boxed now.
+- The drill setup screen listed six technique topics, because half the
+  catalogue touches a four-corner drill somehow. Three, plus a link to the rest.
+- Durations read "4 mins" in the library and "4 min" everywhere else.
 
 ### Known limitations
 
-- **Days can be retitled but not re-planned.** You can jump to any day and skip
-  it, but not swap the drill a specific day asks for. The shape controls are the
-  intended lever; per-day authoring is a bigger surface than it is worth here.
-- **No calendar dates.** Day 1 is whenever you start, and the plan tracks
-  position rather than dates, so a missed week does not leave a hole. The cost is
-  that "week 3, day 2" never means a particular Tuesday.
-- **Demos are schematic, not filmed.** Phase 5 adds vetted clips alongside them.
-- **The Supabase path is still unexercised against a live project** — no instance
-  to point at here. Fully typed against the schema; the local backend is
-  exercised end to end.
+- **No vetted clips.** Explained above. Everything else in the library is
+  written, drawn or derived, and works offline.
+- **The technique topics are text and diagrams.** They convey the what and the
+  why well; timing and touch are the parts that genuinely want video.
+- **Search is substring matching, not a real index.** Correct and instant across
+  33 entries; it would want stemming and ranking at ten times the size.
+- **The Supabase path is still unexercised against a live project** — no
+  instance to point at here. Fully typed against the schema; the local backend
+  is exercised end to end.
 
 ---
 
-## Next: Phase 5 — curated drill and video library
+## Where this could go next
 
-1. Filter by category, level, solo or partner, court or home, and duration.
-2. Short reference clips from reputable coaches and federations, vetted rather
-   than scraped, with attribution.
-3. Coaching cues, common faults and recommended reps on every entry — most of
-   this already exists on the drill and exercise records.
-4. One tap to start any entry as a timed drill, pre-configured.
+Nothing in the brief remains. If it were carried on:
 
-The `drills` table already carries `video_url`, cues and faults, so the work is
-curation plus a browsing surface rather than new plumbing.
+1. **Vet and add the clips** from an environment with network access — the seam
+   is built and tested.
+2. **Session-linked notes**, so a player can record what actually went wrong in
+   a session against the fault it matches.
+3. **Exercise-level circuit authoring**, the one thing Phase 3 deferred and
+   Phase 4 did not pick up: swapping a single exercise inside a circuit.
+4. **Real device testing.** Everything has been verified in Chromium at phone
+   and desktop widths, but wake lock, vibration and speech behave differently on
+   actual iOS and Android hardware.
