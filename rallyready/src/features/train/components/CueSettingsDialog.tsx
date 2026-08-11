@@ -30,15 +30,7 @@ interface ToggleRowProps {
   disabledHint?: string
 }
 
-function ToggleRow({
-  id,
-  label,
-  hint,
-  checked,
-  onChange,
-  disabled,
-  disabledHint,
-}: ToggleRowProps) {
+function ToggleRow({ id, label, hint, checked, onChange, disabled, disabledHint }: ToggleRowProps) {
   return (
     <div className="flex items-start justify-between gap-4 py-3">
       <div className="min-w-0">
@@ -49,7 +41,12 @@ function ToggleRow({
           {disabled ? disabledHint : hint}
         </p>
       </div>
-      <Switch id={id} checked={checked && !disabled} onCheckedChange={onChange} disabled={disabled} />
+      <Switch
+        id={id}
+        checked={checked && !disabled}
+        onCheckedChange={onChange}
+        disabled={disabled}
+      />
     </div>
   )
 }
@@ -84,8 +81,8 @@ export function CueSettingsDialog() {
         <DialogHeader>
           <DialogTitle>Cues</DialogTitle>
           <DialogDescription>
-            How the drill reaches you. Keep voice and tone on and you never need to look at
-            the screen.
+            How the drill reaches you. Keep voice and tone on and you never need to look at the
+            screen.
           </DialogDescription>
         </DialogHeader>
 

@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import { EXERCISES, findExercise } from '@/lib/data/seed/exercises'
 import type { CircuitStep, Drill } from '@/lib/data/types'
 
-
 import {
   circuitToLadder,
   configFromDrill,

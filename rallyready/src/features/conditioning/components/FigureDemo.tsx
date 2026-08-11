@@ -104,10 +104,7 @@ function skeleton(p: Omit<FigurePose, 'label'>): Skeleton {
 
   const handX = neckX + p.arms * 25
   const handY = neckY - p.arms * 20 + (1 - Math.abs(p.arms)) * 10
-  const elbow: [number, number] = [
-    (neckX + handX) / 2 + 4,
-    (neckY + handY) / 2 + 5,
-  ]
+  const elbow: [number, number] = [(neckX + handX) / 2 + 4, (neckY + handY) / 2 + 5]
 
   return {
     head: [neckX + 1, headY],

@@ -251,8 +251,8 @@ export function BenchmarkRunPage() {
             <DialogTitle>Record your score?</DialogTitle>
             <DialogDescription>
               You have completed {pluralize(state.roundsCompleted, 'level')} and{' '}
-              {pluralize(state.callsAnswered, 'corner')}. Stopping now records that as your
-              result — this is the test, not a failure.
+              {pluralize(state.callsAnswered, 'corner')}. Stopping now records that as your result —
+              this is the test, not a failure.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

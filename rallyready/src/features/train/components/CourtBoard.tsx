@@ -131,7 +131,12 @@ export function CourtBoard({
 
       {/* Markings: tramlines, service lines, centre line */}
       <g className="stroke-court-line" strokeWidth="0.6" fill="none" opacity="0.85">
-        <line x1={PAD_X + TRAMLINE_INSET} y1={PAD_Y} x2={PAD_X + TRAMLINE_INSET} y2={PAD_Y + COURT_H} />
+        <line
+          x1={PAD_X + TRAMLINE_INSET}
+          y1={PAD_Y}
+          x2={PAD_X + TRAMLINE_INSET}
+          y2={PAD_Y + COURT_H}
+        />
         <line
           x1={PAD_X + COURT_W - TRAMLINE_INSET}
           y1={PAD_Y}
@@ -198,7 +203,6 @@ export function CourtBoard({
                 opacity="0.75"
               />
             )}
-
           </g>
         )
       })}

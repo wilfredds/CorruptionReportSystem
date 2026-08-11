@@ -70,13 +70,12 @@ export function SignInPage() {
             <h1 className="text-xl font-semibold">Accounts are not configured</h1>
             <p className="text-muted-foreground text-sm leading-relaxed">
               This build has no Supabase project attached, so there is nothing to sign in to.
-              Everything still works — your sessions, streaks and badges are saved on this
-              device.
+              Everything still works — your sessions, streaks and badges are saved on this device.
             </p>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              To enable accounts, set <code className="text-foreground">VITE_SUPABASE_URL</code>{' '}
-              and <code className="text-foreground">VITE_SUPABASE_ANON_KEY</code>. The README has
-              the full walkthrough.
+              To enable accounts, set <code className="text-foreground">VITE_SUPABASE_URL</code> and{' '}
+              <code className="text-foreground">VITE_SUPABASE_ANON_KEY</code>. The README has the
+              full walkthrough.
             </p>
             <Button asChild>
               <Link to="/">Back to Train</Link>
@@ -92,7 +91,11 @@ export function SignInPage() {
     const ok =
       mode === 'signin'
         ? await auth.signInWithPassword(email, password)
-        : await auth.signUpWithPassword(email, password, displayName || email.split('@')[0] || 'Player')
+        : await auth.signUpWithPassword(
+            email,
+            password,
+            displayName || email.split('@')[0] || 'Player',
+          )
     if (ok) navigate('/onboarding', { replace: true })
   }
 
@@ -109,8 +112,8 @@ export function SignInPage() {
         {mode === 'signin' ? 'Welcome back' : 'Create an account'}
       </h1>
       <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-        An account syncs your sessions across devices. Everything you have already logged on
-        this device comes with you.
+        An account syncs your sessions across devices. Everything you have already logged on this
+        device comes with you.
       </p>
 
       <div className="mt-6">
@@ -193,8 +196,8 @@ export function SignInPage() {
       </Button>
 
       <p className="text-muted-foreground mt-6 text-center text-xs leading-relaxed">
-        You never have to sign in. RallyReady works fully offline without an account — signing
-        in only adds sync.
+        You never have to sign in. RallyReady works fully offline without an account — signing in
+        only adds sync.
       </p>
     </div>
   )

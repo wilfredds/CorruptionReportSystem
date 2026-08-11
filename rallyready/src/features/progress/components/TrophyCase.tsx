@@ -30,7 +30,8 @@ const ICONS: Record<string, LucideIcon> = {
 
 const TIER_STYLE: Record<BadgeTier, string> = {
   bronze: 'bg-[oklch(0.72_0.11_58)]/18 text-[oklch(0.55_0.12_58)] dark:text-[oklch(0.8_0.11_58)]',
-  silver: 'bg-[oklch(0.72_0.02_250)]/20 text-[oklch(0.5_0.02_250)] dark:text-[oklch(0.85_0.02_250)]',
+  silver:
+    'bg-[oklch(0.72_0.02_250)]/20 text-[oklch(0.5_0.02_250)] dark:text-[oklch(0.85_0.02_250)]',
   gold: 'bg-[oklch(0.82_0.15_88)]/20 text-[oklch(0.58_0.14_88)] dark:text-[oklch(0.86_0.15_88)]',
 }
 
@@ -67,9 +68,7 @@ export function TrophyCase({ badges }: { badges: BadgeState[] }) {
             >
               {badge.name}
             </span>
-            <span className="text-muted-foreground text-xs leading-snug">
-              {badge.description}
-            </span>
+            <span className="text-muted-foreground text-xs leading-snug">{badge.description}</span>
 
             {!badge.earned && badge.progressLabel && (
               <span className="w-full">

@@ -136,32 +136,19 @@ describe('ladder sets', () => {
   it('labels steps as levels and numbers them', () => {
     const { blocks } = buildTimeline(plan({ ladder: steps }))
     const work = blocks.filter((b) => b.phase === 'work')
-    expect(work.map((b) => b.label)).toEqual([
-      'Level 1 of 3',
-      'Level 2 of 3',
-      'Level 3 of 3',
-    ])
+    expect(work.map((b) => b.label)).toEqual(['Level 1 of 3', 'Level 2 of 3', 'Level 3 of 3'])
     expect(work.map((b) => b.round)).toEqual([1, 2, 3])
     expect(work.every((b) => b.roundsInSet === 3)).toBe(true)
   })
 
   it('honours a custom step label', () => {
-    const { blocks } = buildTimeline(
-      plan({ ladder: [{ ...steps[0]!, label: 'Opening effort' }] }),
-    )
+    const { blocks } = buildTimeline(plan({ ladder: [{ ...steps[0]!, label: 'Opening effort' }] }))
     expect(blocks.find((b) => b.phase === 'work')?.label).toBe('Opening effort')
   })
 
   it('rests between steps but not after the last one', () => {
     const { blocks } = buildTimeline(plan({ ladder: steps, cooldownSec: 0 }))
-    expect(blocks.map((b) => b.phase)).toEqual([
-      'prepare',
-      'work',
-      'rest',
-      'work',
-      'rest',
-      'work',
-    ])
+    expect(blocks.map((b) => b.phase)).toEqual(['prepare', 'work', 'rest', 'work', 'rest', 'work'])
   })
 
   it('counts every step as working time', () => {
@@ -182,9 +169,7 @@ describe('ladder sets', () => {
   })
 
   it('clamps nonsense inside a step', () => {
-    const sanitized = sanitizePlan(
-      plan({ ladder: [{ workSec: 0, restSec: -4, intervalMs: 10 }] }),
-    )
+    const sanitized = sanitizePlan(plan({ ladder: [{ workSec: 0, restSec: -4, intervalMs: 10 }] }))
     expect(sanitized.ladder?.[0]).toMatchObject({ workSec: 1, restSec: 0, intervalMs: 300 })
   })
 })

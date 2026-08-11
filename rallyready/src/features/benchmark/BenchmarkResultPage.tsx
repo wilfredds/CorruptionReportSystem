@@ -80,7 +80,11 @@ export function BenchmarkResultPage() {
           <CardContent className="flex items-center gap-3 p-4">
             <div
               className={`grid size-10 shrink-0 place-items-center rounded-xl ${
-                delta > 0 ? 'bg-work/15 text-work' : delta < 0 ? 'bg-rest/15 text-rest' : 'bg-secondary'
+                delta > 0
+                  ? 'bg-work/15 text-work'
+                  : delta < 0
+                    ? 'bg-rest/15 text-rest'
+                    : 'bg-secondary'
               }`}
             >
               {delta > 0 ? (
@@ -118,9 +122,7 @@ export function BenchmarkResultPage() {
         <Card>
           <CardContent className="p-4">
             <p className="text-muted-foreground text-xs font-medium">Time on the test</p>
-            <p className="tnum mt-1 text-2xl font-bold">
-              {formatDuration(raw.durationSec ?? 0)}
-            </p>
+            <p className="tnum mt-1 text-2xl font-bold">{formatDuration(raw.durationSec ?? 0)}</p>
           </CardContent>
         </Card>
       </div>

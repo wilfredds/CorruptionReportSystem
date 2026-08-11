@@ -76,8 +76,7 @@ export function CircuitEditor({ drill, config, onChange }: CircuitEditorProps) {
           {drill.equipment.length > 0 && (
             <p className="text-muted-foreground flex items-start gap-2 text-xs leading-relaxed">
               <Dumbbell className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-              Needs {drill.equipment.join(', ')}. Every exercise below lists what to do without
-              it.
+              Needs {drill.equipment.join(', ')}. Every exercise below lists what to do without it.
             </p>
           )}
         </CardContent>

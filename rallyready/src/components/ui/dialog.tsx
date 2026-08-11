@@ -43,7 +43,10 @@ export function DialogHeader({ className, ...props }: HTMLAttributes<HTMLDivElem
 
 export function DialogFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)} {...props} />
+    <div
+      className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
+      {...props}
+    />
   )
 }
 

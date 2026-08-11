@@ -54,8 +54,8 @@ export function ProgressPage() {
             <div>
               <p className="font-semibold">No sessions yet</p>
               <p className="text-muted-foreground mt-1 max-w-sm text-sm leading-relaxed">
-                Complete a drill and this fills in: a weekly streak, your training load, your
-                pace over time, and the badges you have earned along the way.
+                Complete a drill and this fills in: a weekly streak, your training load, your pace
+                over time, and the badges you have earned along the way.
               </p>
             </div>
             <Button asChild size="lg">
@@ -143,8 +143,8 @@ export function ProgressPage() {
               <CardHeader>
                 <CardTitle className="text-base">Pace</CardTitle>
                 <CardDescription>
-                  Average seconds between calls, per session. The axis is inverted so a rising
-                  line means a faster caller — improvement always reads as up.
+                  Average seconds between calls, per session. The axis is inverted so a rising line
+                  means a faster caller — improvement always reads as up.
                 </CardDescription>
               </CardHeader>
               <CardContent>

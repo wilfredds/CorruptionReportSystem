@@ -54,8 +54,8 @@ export function BenchmarkPage() {
       <p className="text-muted-foreground mt-2 max-w-prose text-sm leading-relaxed">
         A repeatable test of badminton-specific endurance, modelled on the B-ENDURANCE protocol.
         Twelve levels of four-corner movement: work steps up from 18 to 30 seconds while the
-        recovery stays at ten. You go until you cannot hold the pace, and how far you got is
-        your score.
+        recovery stays at ten. You go until you cannot hold the pace, and how far you got is your
+        score.
       </p>
 
       {latest && (
@@ -121,12 +121,10 @@ export function BenchmarkPage() {
               <Gauge className="text-primary size-5" aria-hidden />
             </div>
             <div>
-              <p className="font-semibold">
-                {latest ? 'Test again' : 'Take your first benchmark'}
-              </p>
+              <p className="font-semibold">{latest ? 'Test again' : 'Take your first benchmark'}</p>
               <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-                Warm up properly first — the test assumes you are ready to move. Expect it to
-                take up to {formatDuration(benchmarkDurationSec())}.
+                Warm up properly first — the test assumes you are ready to move. Expect it to take
+                up to {formatDuration(benchmarkDurationSec())}.
               </p>
             </div>
           </div>

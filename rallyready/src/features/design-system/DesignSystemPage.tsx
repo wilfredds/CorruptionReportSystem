@@ -112,8 +112,8 @@ export function DesignSystemPage() {
             <p className="text-2xl font-bold tracking-tight">Heading · 24/700</p>
             <p className="text-base font-semibold">Subheading · 16/600</p>
             <p className="text-sm leading-relaxed">
-              Body · 14/400. Long-form guidance sits at this size with generous leading, so
-              coaching cues stay readable on a phone at arm&rsquo;s length.
+              Body · 14/400. Long-form guidance sits at this size with generous leading, so coaching
+              cues stay readable on a phone at arm&rsquo;s length.
             </p>
             <p className="text-muted-foreground text-xs">Caption · 12/400</p>
             <p className="tnum text-5xl font-extrabold tracking-tighter">01:23:45</p>

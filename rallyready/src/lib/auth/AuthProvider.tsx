@@ -25,7 +25,7 @@ function toAuthUser(user: SupabaseUserLike): AuthUser {
   return {
     id: user.id,
     email: user.email ?? null,
-    displayName: pick('full_name') ?? pick('name') ?? (user.email?.split('@')[0] ?? null),
+    displayName: pick('full_name') ?? pick('name') ?? user.email?.split('@')[0] ?? null,
     avatarUrl: pick('avatar_url') ?? pick('picture'),
   }
 }

@@ -255,21 +255,15 @@ export function matchStructure(config: DrillConfig): StructurePreset | undefined
 /** Total wall-clock length of a configured drill, in seconds. */
 export function estimateDurationSec(config: DrillConfig): number {
   if (isCircuit(config) && config.circuit) {
-    const perRound = config.circuit.reduce(
-      (total, step) => total + step.workSec + step.restSec,
-      0,
-    )
+    const perRound = config.circuit.reduce((total, step) => total + step.workSec + step.restSec, 0)
     // The very last rest is dropped by the timeline builder.
     const lastRest = config.circuit.at(-1)?.restSec ?? 0
-    return (
-      config.prepareSec + perRound * config.circuitRounds - lastRest + config.cooldownSec
-    )
+    return config.prepareSec + perRound * config.circuitRounds - lastRest + config.cooldownSec
   }
 
   const main = config.rounds * config.workSec + Math.max(0, config.rounds - 1) * config.restSec
   const sprint = config.sprint
-    ? config.sprint.rounds * config.sprint.workSec +
-      config.sprint.rounds * config.sprint.restSec
+    ? config.sprint.rounds * config.sprint.workSec + config.sprint.rounds * config.sprint.restSec
     : 0
   return config.prepareSec + config.warmupSec + main + sprint + config.cooldownSec
 }

@@ -251,7 +251,9 @@ function Runner({ drill }: { drill: Drill }) {
 
       {/* Announced for screen readers instead of the per-second digits. */}
       <p aria-live="polite" className="sr-only">
-        {isIdle ? 'Ready to start' : `${state.block?.label ?? ''}, ${secondsRemaining} seconds left`}
+        {isIdle
+          ? 'Ready to start'
+          : `${state.block?.label ?? ''}, ${secondsRemaining} seconds left`}
       </p>
 
       {/* Portrait stacks the dial over the board; landscape and desktop put them
@@ -259,7 +261,9 @@ function Runner({ drill }: { drill: Drill }) {
       <main className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-4 py-2 md:flex-row md:gap-8 md:px-8">
         <div className="w-full max-w-[min(20rem,38dvh)] shrink-0 md:max-w-[min(26rem,58dvh)]">
           <TimerDial
-            display={isIdle ? formatDuration(estimateDurationSec(config)) : String(secondsRemaining)}
+            display={
+              isIdle ? formatDuration(estimateDurationSec(config)) : String(secondsRemaining)
+            }
             overallProgress={state.overallProgress}
             phase={phase}
             phaseLabel={isIdle ? 'Ready' : (state.block?.label ?? 'Ready')}
@@ -301,9 +305,7 @@ function Runner({ drill }: { drill: Drill }) {
                     <Badge variant="outline">
                       {pluralize(config.circuit?.length ?? 0, 'exercise')}
                     </Badge>
-                    <Badge variant="outline">
-                      {pluralize(config.circuitRounds, 'round')}
-                    </Badge>
+                    <Badge variant="outline">{pluralize(config.circuitRounds, 'round')}</Badge>
                     {drill.equipment.length > 0 && (
                       <Badge variant="outline">{drill.equipment.join(', ')}</Badge>
                     )}
