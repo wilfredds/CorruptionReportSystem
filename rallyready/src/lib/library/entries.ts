@@ -79,6 +79,8 @@ const EXERCISE_CATEGORY: Record<Exercise['kind'], DrillCategory> = {
   ladder: 'agility',
   plyometric: 'plyometric',
   bodyweight: 'conditioning',
+  mobility: 'warmup',
+  stretch: 'cooldown',
 }
 
 /**
@@ -90,6 +92,10 @@ const EXERCISE_LEVEL: Record<Exercise['kind'], SkillLevel> = {
   ladder: 'beginner',
   plyometric: 'advanced',
   bodyweight: 'beginner',
+  // Warming up and stretching are for everyone, and filing them any higher
+  // would hide them behind a level filter from the players who skip them most.
+  mobility: 'beginner',
+  stretch: 'beginner',
 }
 
 /** A single practice block of the exercise on its own, in minutes. */

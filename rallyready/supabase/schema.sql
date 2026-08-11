@@ -34,7 +34,8 @@ begin
   end if;
   if not exists (select 1 from pg_type where typname = 'drill_category') then
     create type drill_category as enum
-      ('footwork', 'net', 'rear-court', 'conditioning', 'agility', 'plyometric');
+      ('footwork', 'net', 'rear-court', 'conditioning', 'agility', 'plyometric',
+       'warmup', 'cooldown');
   end if;
   if not exists (select 1 from pg_type where typname = 'drill_style') then
     create type drill_style as enum ('shadow', 'ghosting', 'ladder', 'hiit', 'custom');
@@ -62,6 +63,16 @@ begin
   end if;
 end
 $$;
+
+-- `warmup` and `cooldown` arrived after the first release. A fresh database
+-- gets them from the create above and these two lines do nothing.
+--
+-- UPGRADING AN EXISTING DATABASE: Postgres refuses to *use* a new enum value in
+-- the same transaction that adds it, so if your client wraps this whole file in
+-- one transaction the warm-up rows further down will fail with "unsafe use of
+-- new value". Run these two statements on their own first, then run the file.
+alter type drill_category add value if not exists 'warmup';
+alter type drill_category add value if not exists 'cooldown';
 
 -- ================================================================== profiles
 create table if not exists public.profiles (
@@ -751,6 +762,67 @@ insert into public.drills (
   null,
   0, 120, 'beginner', true,
   '[{"exerciseSlug":"shadow-lunge","workSec":40,"restSec":25},{"exerciseSlug":"plyo-jump-squat","workSec":25,"restSec":35},{"exerciseSlug":"plyo-lateral-bound","workSec":30,"restSec":30},{"exerciseSlug":"core-plank-reach","workSec":40,"restSec":40}]'::jsonb, 3, 'anywhere',
+  '{}'
+),
+(
+  'warmup-full', 'Full Warm-Up', 'warmup', 'custom',
+  'Six and a half minutes, RAMP structure: raise the heart rate, mobilise every joint badminton punishes, then two minutes of sharp, court-specific movement. Do this before anything hard.',
+  array[
+      'Nothing here should be hard. If you are out of breath, you are going too fast.',
+      'The joints get warm in the order they get loaded: ankles, hips, shoulders.',
+      'The last two minutes are the ones that matter — that is where you actually get fast.',
+      'Never skip it because you are short of time. Do the three-minute version instead.'
+    ],
+  array[
+      'Static stretching before playing, which does not prevent injury and briefly costs you power.',
+      'Starting at full pace, which is just an unwarmed sprint.',
+      'Skipping the potentiate phase, so the first real effort of the day is cold.'
+    ],
+  30, 0, 1, 4,
+  1000, 'sequential',
+  null,
+  0, 0, 'beginner', true,
+  '[{"exerciseSlug":"mob-march","workSec":50,"restSec":0},{"exerciseSlug":"mob-side-shuffle","workSec":40,"restSec":0},{"exerciseSlug":"mob-ankle-rolls","workSec":30,"restSec":0},{"exerciseSlug":"mob-leg-swings-front","workSec":30,"restSec":0},{"exerciseSlug":"mob-leg-swings-side","workSec":30,"restSec":0},{"exerciseSlug":"mob-hip-openers","workSec":30,"restSec":0},{"exerciseSlug":"mob-arm-circles","workSec":30,"restSec":0},{"exerciseSlug":"mob-torso-twists","workSec":30,"restSec":0},{"exerciseSlug":"mob-split-steps","workSec":30,"restSec":0},{"exerciseSlug":"mob-corner-walk","workSec":45,"restSec":0},{"exerciseSlug":"mob-shadow-swings","workSec":35,"restSec":0}]'::jsonb, 1, 'anywhere',
+  '{}'
+),
+(
+  'warmup-quick', 'Quick Warm-Up', 'warmup', 'custom',
+  'Three minutes when that is genuinely all you have. Keeps the raise and the sharp work, trims the joint-by-joint mobility. Better than nothing by a very large margin.',
+  array[
+      'This is the compromise version. Use the full one when you have the time.',
+      'Still build gradually — three minutes is not permission to start flat out.',
+      'If one joint is stiff today, spend the shuffle block on that instead.'
+    ],
+  array[
+      'Treating this as the default rather than the fallback.',
+      'Skipping the split-steps, which are the most valuable thirty seconds in it.'
+    ],
+  30, 0, 1, 4,
+  1000, 'sequential',
+  null,
+  0, 0, 'beginner', true,
+  '[{"exerciseSlug":"mob-march","workSec":45,"restSec":0},{"exerciseSlug":"mob-side-shuffle","workSec":30,"restSec":0},{"exerciseSlug":"mob-leg-swings-side","workSec":30,"restSec":0},{"exerciseSlug":"mob-arm-circles","workSec":25,"restSec":0},{"exerciseSlug":"mob-split-steps","workSec":30,"restSec":0},{"exerciseSlug":"mob-corner-walk","workSec":40,"restSec":0}]'::jsonb, 1, 'anywhere',
+  '{}'
+),
+(
+  'cooldown-stretch', 'Cool-Down and Stretch', 'cooldown', 'custom',
+  'Five minutes of walking your breathing down and then holding the five stretches that badminton actually shortens. This is where static stretching belongs — afterwards, never before.',
+  array[
+      'Keep moving first. Stopping dead after hard work is what makes you feel faint.',
+      'Hold each stretch still. Bouncing is not stretching.',
+      'Breathe out as you settle into each one, and never stretch into pain.',
+      'The hip flexors are the ones to keep if you only do one — every lunge shortened them.'
+    ],
+  array[
+      'Sitting straight down when the drill timer stops.',
+      'Bouncing to push deeper into a stretch.',
+      'Rushing through so nothing is held long enough to matter.'
+    ],
+  45, 0, 1, 4,
+  1000, 'sequential',
+  null,
+  0, 0, 'beginner', true,
+  '[{"exerciseSlug":"cool-walk","workSec":60,"restSec":0},{"exerciseSlug":"cool-calf-stretch","workSec":45,"restSec":0},{"exerciseSlug":"cool-quad-stretch","workSec":45,"restSec":0},{"exerciseSlug":"cool-hamstring-stretch","workSec":45,"restSec":0},{"exerciseSlug":"cool-hip-flexor-stretch","workSec":45,"restSec":0},{"exerciseSlug":"cool-shoulder-stretch","workSec":45,"restSec":0}]'::jsonb, 1, 'anywhere',
   '{}'
 )
 on conflict (slug) do update set

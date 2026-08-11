@@ -13,7 +13,14 @@ export type Discipline = 'singles' | 'doubles' | 'both'
 export type TrainingGoal = 'stamina' | 'footwork' | 'match-ready' | 'consistency'
 
 export type DrillCategory =
-  'footwork' | 'net' | 'rear-court' | 'conditioning' | 'agility' | 'plyometric'
+  | 'footwork'
+  | 'net'
+  | 'rear-court'
+  | 'conditioning'
+  | 'agility'
+  | 'plyometric'
+  | 'warmup'
+  | 'cooldown'
 
 /** How the drill is performed, as opposed to how calls are chosen. */
 export type DrillStyle = 'shadow' | 'ghosting' | 'ladder' | 'hiit' | 'custom'

@@ -7,6 +7,8 @@ export const CATEGORY_LABEL: Record<Drill['category'], string> = {
   conditioning: 'Conditioning',
   agility: 'Agility',
   plyometric: 'Plyometric',
+  warmup: 'Warm-up',
+  cooldown: 'Cool-down',
 }
 
 export const LEVEL_LABEL: Record<Drill['level'], string> = {

@@ -466,6 +466,154 @@ export const SEED_DRILLS: Drill[] = [
     location: 'anywhere',
     equipment: [],
   },
+
+  /* ------------------------------------------------- warm-ups and cool-downs */
+
+  /*
+   * Structured as RAMP — Raise, Activate, Mobilise, Potentiate — which is the
+   * standard the sport actually uses: get warm, take the joints through their
+   * range, then do something fast so the first sharp movement of the session is
+   * not the first sharp movement of the day.
+   *
+   * Every step rests for zero seconds. A warm-up should flow from one movement
+   * to the next; the timeline drops zero-length rests, so the voice simply
+   * announces the next movement and you keep going.
+   */
+  {
+    id: 'warmup-full',
+    slug: 'warmup-full',
+    name: 'Full Warm-Up',
+    category: 'warmup',
+    style: 'custom',
+    description:
+      'Six and a half minutes, RAMP structure: raise the heart rate, mobilise every joint badminton punishes, then two minutes of sharp, court-specific movement. Do this before anything hard.',
+    coachingCues: [
+      'Nothing here should be hard. If you are out of breath, you are going too fast.',
+      'The joints get warm in the order they get loaded: ankles, hips, shoulders.',
+      'The last two minutes are the ones that matter — that is where you actually get fast.',
+      'Never skip it because you are short of time. Do the three-minute version instead.',
+    ],
+    commonFaults: [
+      'Static stretching before playing, which does not prevent injury and briefly costs you power.',
+      'Starting at full pace, which is just an unwarmed sprint.',
+      'Skipping the potentiate phase, so the first real effort of the day is cold.',
+    ],
+    defaultWorkSec: 30,
+    defaultRestSec: 0,
+    defaultRounds: 1,
+    corners: 4,
+    videoUrl: null,
+    isPublic: true,
+    createdBy: null,
+    defaultIntervalMs: 1000,
+    defaultCallMode: 'sequential',
+    enabledCorners: null,
+    defaultWarmupSec: 0,
+    defaultCooldownSec: 0,
+    level: 'beginner',
+    circuit: [
+      { exerciseSlug: 'mob-march', workSec: 50, restSec: 0 },
+      { exerciseSlug: 'mob-side-shuffle', workSec: 40, restSec: 0 },
+      { exerciseSlug: 'mob-ankle-rolls', workSec: 30, restSec: 0 },
+      { exerciseSlug: 'mob-leg-swings-front', workSec: 30, restSec: 0 },
+      { exerciseSlug: 'mob-leg-swings-side', workSec: 30, restSec: 0 },
+      { exerciseSlug: 'mob-hip-openers', workSec: 30, restSec: 0 },
+      { exerciseSlug: 'mob-arm-circles', workSec: 30, restSec: 0 },
+      { exerciseSlug: 'mob-torso-twists', workSec: 30, restSec: 0 },
+      { exerciseSlug: 'mob-split-steps', workSec: 30, restSec: 0 },
+      { exerciseSlug: 'mob-corner-walk', workSec: 45, restSec: 0 },
+      { exerciseSlug: 'mob-shadow-swings', workSec: 35, restSec: 0 },
+    ],
+    circuitRounds: 1,
+    location: 'anywhere',
+    equipment: [],
+  },
+  {
+    id: 'warmup-quick',
+    slug: 'warmup-quick',
+    name: 'Quick Warm-Up',
+    category: 'warmup',
+    style: 'custom',
+    description:
+      'Three minutes when that is genuinely all you have. Keeps the raise and the sharp work, trims the joint-by-joint mobility. Better than nothing by a very large margin.',
+    coachingCues: [
+      'This is the compromise version. Use the full one when you have the time.',
+      'Still build gradually — three minutes is not permission to start flat out.',
+      'If one joint is stiff today, spend the shuffle block on that instead.',
+    ],
+    commonFaults: [
+      'Treating this as the default rather than the fallback.',
+      'Skipping the split-steps, which are the most valuable thirty seconds in it.',
+    ],
+    defaultWorkSec: 30,
+    defaultRestSec: 0,
+    defaultRounds: 1,
+    corners: 4,
+    videoUrl: null,
+    isPublic: true,
+    createdBy: null,
+    defaultIntervalMs: 1000,
+    defaultCallMode: 'sequential',
+    enabledCorners: null,
+    defaultWarmupSec: 0,
+    defaultCooldownSec: 0,
+    level: 'beginner',
+    circuit: [
+      { exerciseSlug: 'mob-march', workSec: 45, restSec: 0 },
+      { exerciseSlug: 'mob-side-shuffle', workSec: 30, restSec: 0 },
+      { exerciseSlug: 'mob-leg-swings-side', workSec: 30, restSec: 0 },
+      { exerciseSlug: 'mob-arm-circles', workSec: 25, restSec: 0 },
+      { exerciseSlug: 'mob-split-steps', workSec: 30, restSec: 0 },
+      { exerciseSlug: 'mob-corner-walk', workSec: 40, restSec: 0 },
+    ],
+    circuitRounds: 1,
+    location: 'anywhere',
+    equipment: [],
+  },
+  {
+    id: 'cooldown-stretch',
+    slug: 'cooldown-stretch',
+    name: 'Cool-Down and Stretch',
+    category: 'cooldown',
+    style: 'custom',
+    description:
+      'Five minutes of walking your breathing down and then holding the five stretches that badminton actually shortens. This is where static stretching belongs — afterwards, never before.',
+    coachingCues: [
+      'Keep moving first. Stopping dead after hard work is what makes you feel faint.',
+      'Hold each stretch still. Bouncing is not stretching.',
+      'Breathe out as you settle into each one, and never stretch into pain.',
+      'The hip flexors are the ones to keep if you only do one — every lunge shortened them.',
+    ],
+    commonFaults: [
+      'Sitting straight down when the drill timer stops.',
+      'Bouncing to push deeper into a stretch.',
+      'Rushing through so nothing is held long enough to matter.',
+    ],
+    defaultWorkSec: 45,
+    defaultRestSec: 0,
+    defaultRounds: 1,
+    corners: 4,
+    videoUrl: null,
+    isPublic: true,
+    createdBy: null,
+    defaultIntervalMs: 1000,
+    defaultCallMode: 'sequential',
+    enabledCorners: null,
+    defaultWarmupSec: 0,
+    defaultCooldownSec: 0,
+    level: 'beginner',
+    circuit: [
+      { exerciseSlug: 'cool-walk', workSec: 60, restSec: 0 },
+      { exerciseSlug: 'cool-calf-stretch', workSec: 45, restSec: 0 },
+      { exerciseSlug: 'cool-quad-stretch', workSec: 45, restSec: 0 },
+      { exerciseSlug: 'cool-hamstring-stretch', workSec: 45, restSec: 0 },
+      { exerciseSlug: 'cool-hip-flexor-stretch', workSec: 45, restSec: 0 },
+      { exerciseSlug: 'cool-shoulder-stretch', workSec: 45, restSec: 0 },
+    ],
+    circuitRounds: 1,
+    location: 'anywhere',
+    equipment: [],
+  },
 ]
 
 export function findSeedDrill(slug: string): Drill | undefined {
@@ -473,7 +621,13 @@ export function findSeedDrill(slug: string): Drill | undefined {
 }
 
 /** Conditioning workouts and circuits, as opposed to corner-calling drills. */
+/** Warm-ups and cool-downs bracket a session rather than being one. */
+export function isPrepOrRecovery(drill: Drill): boolean {
+  return drill.category === 'warmup' || drill.category === 'cooldown'
+}
+
 export function isConditioning(drill: Drill): boolean {
+  if (isPrepOrRecovery(drill)) return false
   return (
     drill.circuit !== null ||
     drill.category === 'conditioning' ||

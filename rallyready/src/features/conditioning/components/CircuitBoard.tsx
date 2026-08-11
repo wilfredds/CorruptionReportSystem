@@ -28,6 +28,8 @@ export function CircuitBoard({ exerciseSlug, resting, className }: CircuitBoardP
     )
   }
 
+  const hasDemo = Boolean(exercise.pattern ?? exercise.poses)
+
   return (
     <div className={cn('flex h-full w-full flex-col items-center gap-2', className)}>
       {resting && (
@@ -45,13 +47,29 @@ export function CircuitBoard({ exerciseSlug, resting, className }: CircuitBoardP
         {exercise.name}
       </p>
 
-      <div className={cn('min-h-0 w-full flex-1', resting && 'opacity-45')}>
-        <ExerciseDemo exercise={exercise} animated={!resting} />
+      <div className={cn('grid min-h-0 w-full flex-1 place-items-center', resting && 'opacity-45')}>
+        {hasDemo ? (
+          <ExerciseDemo exercise={exercise} animated={!resting} />
+        ) : (
+          /* Mobility and stretching carry no schematic — the pose model cannot
+             draw an arm circle honestly. The cues fill the space instead, which
+             is the thing you would actually read mid-warm-up. */
+          <ul className="max-w-sm space-y-2.5 px-2 text-left">
+            {exercise.cues.slice(0, 3).map((cue) => (
+              <li key={cue} className="flex gap-2.5 text-base leading-snug">
+                <span className="bg-primary mt-2 size-1.5 shrink-0 rounded-full" />
+                {cue}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
-      <p className="text-muted-foreground max-w-xs text-center text-sm leading-snug text-balance">
-        {exercise.cues[0]}
-      </p>
+      {hasDemo && (
+        <p className="text-muted-foreground max-w-xs text-center text-sm leading-snug text-balance">
+          {exercise.cues[0]}
+        </p>
+      )}
     </div>
   )
 }

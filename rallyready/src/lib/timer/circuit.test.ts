@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { SEED_DRILLS } from '@/lib/data/seed/drills'
 import { EXERCISES, findExercise } from '@/lib/data/seed/exercises'
 import type { CircuitStep, Drill } from '@/lib/data/types'
 
@@ -185,14 +186,27 @@ describe('the exercise catalogue', () => {
     expect(new Set(slugs).size).toBe(slugs.length)
   })
 
-  it('gives every exercise cues, faults and a demo to draw', () => {
+  it('gives every exercise cues, faults and a summary', () => {
     for (const exercise of EXERCISES) {
       expect(exercise.cues.length).toBeGreaterThan(1)
       expect(exercise.faults.length).toBeGreaterThan(0)
       expect(exercise.summary.length).toBeGreaterThan(20)
-      // Ladder work is shown as a footfall pattern, everything else as poses.
+    }
+  })
+
+  it('draws the exercises the figure can honestly represent', () => {
+    for (const exercise of EXERCISES) {
+      // Ladder work is a footfall pattern; trained movement is drawn as poses.
       if (exercise.kind === 'ladder') expect(exercise.pattern?.length).toBeGreaterThan(2)
-      else expect(exercise.poses?.length).toBeGreaterThan(1)
+      if (exercise.kind === 'plyometric' || exercise.kind === 'bodyweight') {
+        expect(exercise.poses?.length).toBeGreaterThan(1)
+      }
+      // Mobility and stretching are deliberately allowed to have no diagram.
+      // The pose model is squat/air/tuck/arms/split — it cannot express an arm
+      // circle or a hamstring stretch, and a drawing that says something other
+      // than the cue does is worse than no drawing. The board falls back to the
+      // cues, which is what you would read anyway.
+      if (exercise.poses) expect(exercise.poses.length).toBeGreaterThan(1)
     }
   })
 
@@ -221,5 +235,70 @@ describe('the exercise catalogue', () => {
     for (const step of STEPS) {
       expect(findExercise(step.exerciseSlug)).toBeDefined()
     }
+  })
+})
+
+describe('the warm-up and cool-down routines', () => {
+  const routines = SEED_DRILLS.filter(
+    (drill) => drill.category === 'warmup' || drill.category === 'cooldown',
+  )
+
+  it('ships a full warm-up, a quick one, and a cool-down', () => {
+    expect(routines.map((drill) => drill.slug).sort()).toEqual([
+      'cooldown-stretch',
+      'warmup-full',
+      'warmup-quick',
+    ])
+  })
+
+  it('only names exercises that exist', () => {
+    for (const drill of routines) {
+      for (const step of drill.circuit ?? []) {
+        expect(findExercise(step.exerciseSlug), step.exerciseSlug).toBeDefined()
+      }
+    }
+  })
+
+  it('flows continuously, with no rest blocks between movements', () => {
+    // A warm-up that stops between every movement is a warm-up that cools you
+    // down. Zero-length rests are dropped by the timeline entirely.
+    for (const drill of routines) {
+      for (const step of drill.circuit ?? []) expect(step.restSec).toBe(0)
+    }
+  })
+
+  it('runs for about as long as it claims to', () => {
+    const lengthOf = (slug: string) => {
+      const drill = SEED_DRILLS.find((candidate) => candidate.slug === slug)
+      const { totalMs } = buildTimeline(
+        planFromConfig(configFromDrill(drill!), { splitStepLeadMs: 0, seed: 1 }),
+      )
+      return totalMs / 1000
+    }
+    // Named "6 min", "3 min" and "5 min" in the UI — keep the copy honest.
+    expect(lengthOf('warmup-full')).toBeGreaterThan(5.5 * 60)
+    expect(lengthOf('warmup-full')).toBeLessThan(7 * 60)
+    expect(lengthOf('warmup-quick')).toBeGreaterThan(2.5 * 60)
+    expect(lengthOf('warmup-quick')).toBeLessThan(3.75 * 60)
+    expect(lengthOf('cooldown-stretch')).toBeLessThan(6 * 60)
+  })
+
+  it('needs no kit and no court, so there is never an excuse', () => {
+    for (const drill of routines) {
+      expect(drill.location).toBe('anywhere')
+      expect(drill.equipment).toEqual([])
+      for (const step of drill.circuit ?? []) {
+        expect(findExercise(step.exerciseSlug)?.equipment).toBe('none')
+      }
+    }
+  })
+
+  it('builds up rather than opening with the sharp work', () => {
+    const full = SEED_DRILLS.find((drill) => drill.slug === 'warmup-full')
+    const slugs = (full?.circuit ?? []).map((step) => step.exerciseSlug)
+    // Split-steps and corner movement are the potentiate phase — they belong
+    // at the end, once everything is warm.
+    expect(slugs.indexOf('mob-split-steps')).toBeGreaterThan(slugs.indexOf('mob-march'))
+    expect(slugs.indexOf('mob-corner-walk')).toBeGreaterThan(slugs.indexOf('mob-ankle-rolls'))
   })
 })

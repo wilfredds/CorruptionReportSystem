@@ -12,7 +12,13 @@
  * for ladder patterns a diagram is arguably clearer than video anyway.
  */
 
-export type ExerciseKind = 'ladder' | 'plyometric' | 'bodyweight'
+/**
+ * `mobility` and `stretch` arrived with the warm-up. They are separated because
+ * they belong at opposite ends of a session: mobility work is done warm and
+ * moving, stretching is done afterwards and held still. Filing them together
+ * would let the library offer a hamstring stretch as a way to warm up.
+ */
+export type ExerciseKind = 'ladder' | 'plyometric' | 'bodyweight' | 'mobility' | 'stretch'
 export type Equipment = 'none' | 'ladder' | 'step'
 
 /**
@@ -371,6 +377,361 @@ export const EXERCISES: Exercise[] = [
       pose('Tap', 0.95, 0, 0.15, 0.85, 0.7),
       pose('Return', 0.95, 0, 0.15, -0.35, 0.7),
     ],
+  },
+
+  /* ------------------------------------------------- warm-up: raise the heart rate */
+
+  {
+    slug: 'mob-march',
+    name: 'March on the spot',
+    kind: 'mobility',
+    equipment: 'none',
+    summary: 'Easy marching, knees to hip height, arms swinging naturally.',
+    cues: [
+      'Start genuinely easy. This is the first minute of the day for your legs.',
+      'Land on the ball of the foot, not the heel.',
+      'Let the arms swing — the shoulders need warming as much as the legs.',
+      'Build the pace gradually across the block rather than starting fast.',
+    ],
+    faults: [
+      'Going hard immediately, which defeats the point of a raise phase.',
+      'Stiff arms pinned to the sides.',
+    ],
+    substitute: 'Walk briskly on the spot if the knees are cold or complaining.',
+    recommendedReps: '45–60 seconds, building from easy to brisk.',
+    poses: [
+      pose('Left up', 0.12, 0.02, 0.35, 0.55, 0.25, 1),
+      pose('Down', 0.15, 0, 0, 0, 0.2),
+      pose('Right up', 0.12, 0.02, 0.35, -0.55, 0.25, -1),
+      pose('Down', 0.15, 0, 0, 0, 0.2),
+    ],
+  },
+  {
+    slug: 'mob-side-shuffle',
+    name: 'Side shuffle',
+    kind: 'mobility',
+    equipment: 'none',
+    summary: 'Low shuffle a few steps each way, staying in a ready position.',
+    cues: [
+      'Stay low the whole way — this is the stance you will play in.',
+      'Feet never cross. Push off the trailing foot.',
+      'Two or three steps each direction is plenty in a small space.',
+      'Chest up, hands in front, as if waiting to receive.',
+    ],
+    faults: [
+      'Bobbing up and down between steps instead of staying low.',
+      'Crossing the feet, which is the habit you are trying not to build.',
+    ],
+    substitute: 'Shuffle on the spot, one step each way, if the room is tight.',
+    recommendedReps: '45 seconds, changing direction every two or three steps.',
+    poses: [
+      pose('Load left', 0.45, 0, 0, 0.25, 0.85, 0.35),
+      pose('Centre', 0.4, 0, 0, 0.3, 0.5),
+      pose('Load right', 0.45, 0, 0, 0.25, 0.85, -0.35),
+      pose('Centre', 0.4, 0, 0, 0.3, 0.5),
+    ],
+  },
+
+  /* --------------------------------------------- warm-up: mobilise the joints */
+
+  {
+    slug: 'mob-ankle-rolls',
+    name: 'Ankle rolls and calf pumps',
+    kind: 'mobility',
+    equipment: 'none',
+    summary: 'Circle each ankle both ways, then rise onto the toes and lower.',
+    cues: [
+      'Ankles first — they take the landing on every single lunge you will do.',
+      'Full circles, slowly, both directions on each foot.',
+      'Then ten slow calf raises, all the way up and all the way down.',
+      'Hold a wall if balance is the limiting factor rather than the ankle.',
+    ],
+    faults: [
+      'Rushing the circles so the joint never reaches end of range.',
+      'Bouncing the calf raises instead of controlling them down.',
+    ],
+    substitute: null,
+    recommendedReps: '30 seconds: ten circles each ankle, then ten calf raises.',
+  },
+  {
+    slug: 'mob-leg-swings-front',
+    name: 'Leg swings, front to back',
+    kind: 'mobility',
+    equipment: 'none',
+    summary: 'Hold something steady and swing one leg forwards and back, relaxed.',
+    cues: [
+      'Swing from the hip with a loose leg — do not force the height.',
+      'Range grows over the set. The first swings should be small.',
+      'Keep the torso upright rather than folding forward to gain height.',
+      'Ten each leg is enough.',
+    ],
+    faults: [
+      'Kicking hard for maximum height on the first rep.',
+      'Twisting the lower back to swing higher.',
+    ],
+    substitute: 'Hold a wall or a chair back if balance is awkward.',
+    recommendedReps: '30 seconds, ten swings each leg.',
+  },
+  {
+    slug: 'mob-leg-swings-side',
+    name: 'Leg swings, side to side',
+    kind: 'mobility',
+    equipment: 'none',
+    summary: 'Same idea across the body — this is the direction badminton actually uses.',
+    cues: [
+      'Across the body and out, relaxed, from the hip.',
+      'This one matters: almost every court movement is sideways.',
+      'Stay square to the front — let the leg move, not the hips.',
+      'Ten each leg.',
+    ],
+    faults: [
+      'Rotating the whole body instead of moving at the hip.',
+      'Going for range before the joint is warm.',
+    ],
+    substitute: 'Hold a wall for balance and reduce the range.',
+    recommendedReps: '30 seconds, ten swings each leg.',
+  },
+  {
+    slug: 'mob-hip-openers',
+    name: 'Hip openers',
+    kind: 'mobility',
+    equipment: 'none',
+    summary: 'Knee to chest, then open it out to the side. Alternate legs, walking or on the spot.',
+    cues: [
+      'Knee up and hug it briefly, then open the knee out to the side and step down.',
+      'Slow and deliberate — this is the joint that does the lunging.',
+      'Stand tall throughout; do not lean back to lift the knee higher.',
+      'Five each side.',
+    ],
+    faults: [
+      'Rushing so the hip never actually reaches its range.',
+      'Leaning backwards to fake a higher knee.',
+    ],
+    substitute: null,
+    recommendedReps: '30 seconds, five each side.',
+    poses: [
+      pose('Knee up', 0.15, 0, 0.55, 0.3, 0.2, 1),
+      pose('Open out', 0.2, 0, 0.4, 0.15, 0.75, 0.8),
+      pose('Step down', 0.25, 0, 0, 0.1, 0.35),
+    ],
+  },
+  {
+    slug: 'mob-arm-circles',
+    name: 'Arm circles and shoulder rolls',
+    kind: 'mobility',
+    equipment: 'none',
+    summary: 'Big circles forwards and back, then loose shoulder rolls.',
+    cues: [
+      'Big, slow circles — ten forwards, ten backwards.',
+      'The racket shoulder does every overhead you play. Do not skip it.',
+      'Finish with loose shoulder rolls to settle everything down.',
+      'Stay relaxed; this is not a strength exercise.',
+    ],
+    faults: [
+      'Small, tense circles that never reach overhead.',
+      'Shrugging the shoulders up towards the ears.',
+    ],
+    substitute: null,
+    recommendedReps: '30 seconds: ten circles each way, then shoulder rolls.',
+  },
+  {
+    slug: 'mob-torso-twists',
+    name: 'Torso twists',
+    kind: 'mobility',
+    equipment: 'none',
+    summary: 'Feet planted, rotate the upper body side to side with loose arms.',
+    cues: [
+      'Rotate from the middle of the back, not the lower back.',
+      'Let the arms hang and follow — do not swing them for momentum.',
+      'Hips stay facing forward while the shoulders turn.',
+      'Smooth and controlled, no bouncing at the end of the turn.',
+    ],
+    faults: [
+      'Whipping round using arm momentum, which strains rather than warms.',
+      'Turning the hips with the shoulders, which removes the rotation.',
+    ],
+    substitute: null,
+    recommendedReps: '30 seconds of slow, controlled rotations.',
+  },
+
+  /* ------------------------------------ warm-up: potentiate, badminton-specific */
+
+  {
+    slug: 'mob-split-steps',
+    name: 'Shadow split-steps',
+    kind: 'mobility',
+    equipment: 'none',
+    summary: 'Small hops landing wide and loaded, as if your opponent were about to strike.',
+    cues: [
+      'Land wide, low, on the balls of the feet — knees soft.',
+      'Absorb the landing. You are loading a spring, not jumping a rope.',
+      'Push off immediately in a random direction after each landing.',
+      'This is the single most transferable thing in the whole warm-up.',
+    ],
+    faults: [
+      'Hopping high instead of landing wide and low.',
+      'Landing with the feet together, which gives nothing to push against.',
+    ],
+    substitute: null,
+    recommendedReps: '30 seconds of continuous split-steps and pushes.',
+    poses: [
+      pose('Ready', 0.25, 0, 0, 0.2, 0.3),
+      pose('Hop', 0.1, 0.35, 0.1, 0.5, 0.3),
+      pose('Land loaded', 0.55, 0, 0, 0.15, 0.9),
+    ],
+  },
+  {
+    slug: 'mob-corner-walk',
+    name: 'Half-pace corner movement',
+    kind: 'mobility',
+    equipment: 'none',
+    summary: 'Move to each corner at roughly half speed, with the proper footwork.',
+    cues: [
+      'Half pace, full technique. Chassé to the sides, lunge to the net.',
+      'Recover through your base every time — build the habit while it is easy.',
+      'Turn the hips before travelling to the rear corners.',
+      'If a corner feels tight, spend an extra rep there rather than pushing it.',
+    ],
+    faults: [
+      'Going full speed, which is a drill and not a warm-up.',
+      'Skipping the recovery because it is "only a warm-up".',
+    ],
+    substitute: 'No court? Move to four imagined corners in whatever space you have.',
+    recommendedReps: '45 seconds, covering every corner at least twice.',
+  },
+  {
+    slug: 'mob-shadow-swings',
+    name: 'Shadow swings',
+    kind: 'mobility',
+    equipment: 'none',
+    summary: 'Overhead, drop and net swings with no shuttle, building to full speed.',
+    cues: [
+      'Start slow and small, finish at close to full speed.',
+      'Full rotation through the body on the overheads, not arm-only swings.',
+      'Mix them: clear, drop, a couple of net shots, a backhand.',
+      'Racket in hand if you have one — the weight changes the movement.',
+    ],
+    faults: [
+      'Swinging hard from the first rep with a cold shoulder.',
+      'Arm-only swings, which warm up the one joint most likely to complain.',
+    ],
+    substitute: 'No racket to hand? The pattern still works empty-handed.',
+    recommendedReps: '30 seconds, building from easy to sharp.',
+  },
+
+  /* ------------------------------------------------------------ cool-down */
+
+  {
+    slug: 'cool-walk',
+    name: 'Walk it off',
+    kind: 'stretch',
+    equipment: 'none',
+    summary: 'Easy walking or marching while your breathing comes back down.',
+    cues: [
+      'Keep moving — stopping dead after hard work is what makes you feel faint.',
+      'Breathe in through the nose, out slowly through the mouth.',
+      'Shake the arms and legs out as you go.',
+      'You should be able to hold a conversation by the end of this.',
+    ],
+    faults: [
+      'Sitting straight down the moment the timer stops.',
+      'Rushing this so you can get to the stretching.',
+    ],
+    substitute: null,
+    recommendedReps: '60 seconds, until your breathing has settled.',
+    poses: [pose('Step', 0.1, 0, 0.15, 0.3, 0.3, 0.6), pose('Step', 0.1, 0, 0.15, -0.3, 0.3, -0.6)],
+  },
+  {
+    slug: 'cool-calf-stretch',
+    name: 'Calf stretch',
+    kind: 'stretch',
+    equipment: 'none',
+    summary: 'Back leg straight, heel pressed down, leaning into a wall.',
+    cues: [
+      'Back heel stays flat on the floor — that is the whole stretch.',
+      'Hold steadily. No bouncing.',
+      'Then bend the back knee slightly to reach the lower calf too.',
+      'Roughly 20 seconds each side.',
+    ],
+    faults: ['Letting the back heel lift, which stretches nothing.', 'Bouncing to push deeper.'],
+    substitute: 'Use a step edge, or press against any wall.',
+    recommendedReps: '45 seconds, about 20 each side.',
+  },
+  {
+    slug: 'cool-quad-stretch',
+    name: 'Quad stretch',
+    kind: 'stretch',
+    equipment: 'none',
+    summary: 'Heel to backside, knees together, standing tall.',
+    cues: [
+      'Keep the knees level with each other — do not let the knee drift out.',
+      'Squeeze the glute on the stretching side and stand tall.',
+      'Hold a wall for balance rather than wobbling through it.',
+      'Roughly 20 seconds each side.',
+    ],
+    faults: [
+      'Arching the lower back to pull the heel higher.',
+      'Letting the knee swing forward, which loses the hip flexor entirely.',
+    ],
+    substitute: 'Lie on your side if standing balance is the problem.',
+    recommendedReps: '45 seconds, about 20 each side.',
+  },
+  {
+    slug: 'cool-hamstring-stretch',
+    name: 'Hamstring stretch',
+    kind: 'stretch',
+    equipment: 'none',
+    summary: 'One heel forward, toes up, hinge at the hips with a flat back.',
+    cues: [
+      'Hinge from the hips, not by rounding the spine.',
+      'Front leg straight but not locked, toes pulled up.',
+      'Chest towards the toes rather than nose towards the knee.',
+      'Roughly 20 seconds each side.',
+    ],
+    faults: [
+      'Rounding the back, which moves the stretch into the spine.',
+      'Locking the knee out hard.',
+    ],
+    substitute: 'Sit and reach towards one foot at a time if standing is awkward.',
+    recommendedReps: '45 seconds, about 20 each side.',
+  },
+  {
+    slug: 'cool-hip-flexor-stretch',
+    name: 'Hip flexor stretch',
+    kind: 'stretch',
+    equipment: 'none',
+    summary: 'Half-kneeling lunge, hips pushed gently forward, tall through the chest.',
+    cues: [
+      'Tuck the pelvis under before you push forward — otherwise you just arch.',
+      'Squeeze the glute on the kneeling side.',
+      'Every lunge you did today shortened these. This is the one to keep.',
+      'Roughly 20 seconds each side.',
+    ],
+    faults: [
+      'Arching the lower back instead of tucking the pelvis.',
+      'Pushing so far forward that the front knee collapses inward.',
+    ],
+    substitute: 'Kneel on something soft, or do it standing in a split stance.',
+    recommendedReps: '45 seconds, about 20 each side.',
+  },
+  {
+    slug: 'cool-shoulder-stretch',
+    name: 'Shoulder and chest stretch',
+    kind: 'stretch',
+    equipment: 'none',
+    summary: 'Arm across the body, then a doorway or clasped-hands chest opener.',
+    cues: [
+      'Arm across the chest, pull gently above the elbow, not on the joint.',
+      'Then open the chest — hands clasped behind you, or a doorway.',
+      'Breathe out as you settle into each one.',
+      'Roughly 20 seconds each.',
+    ],
+    faults: [
+      'Pulling on the elbow joint itself.',
+      'Skipping the racket shoulder because it feels fine right now.',
+    ],
+    substitute: null,
+    recommendedReps: '45 seconds across both stretches.',
   },
 ]
 

@@ -17,7 +17,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useSessionGuard } from '@/hooks/useSessionGuard'
 import { useRepositories } from '@/lib/data/context'
 import { findExercise } from '@/lib/data/seed/exercises'
-import { isConditioning } from '@/lib/data/seed/drills'
+import { isConditioning, isPrepOrRecovery } from '@/lib/data/seed/drills'
 import { METRIC_CALLS, METRIC_COMPLETED, METRIC_DECEPTION } from '@/lib/data/stats'
 import type { Drill } from '@/lib/data/types'
 import { cornerIdsForLayout } from '@/lib/timer/corners'
@@ -27,6 +27,7 @@ import { randomSeed } from '@/lib/timer/rng'
 import type { BlockPhase } from '@/lib/timer/types'
 import { formatCompactDuration, formatDuration, pluralize } from '@/lib/utils'
 import { useCueStore } from '@/store/cueStore'
+import { useUiStore } from '@/store/uiStore'
 import { useDrillConfig } from '@/store/drillConfigStore'
 
 import { CourtBoard } from './components/CourtBoard'
@@ -86,6 +87,7 @@ function Runner({ drill }: { drill: Drill }) {
 
   const cues = useCueStore()
   const setAnnounceNumbers = useCueStore((state) => state.set)
+  const markWarmedUp = useUiStore((state) => state.markWarmedUp)
 
   // Number mode is a property of the drill, not a saved cue preference.
   useEffect(() => {
@@ -128,6 +130,17 @@ function Runner({ drill }: { drill: Drill }) {
   const handleComplete = useCallback(
     async (summary: RunnerSummary) => {
       setSaving(true)
+
+      // A warm-up is preparation, not training. Logging it as a session would
+      // let someone hold a streak by stretching, and would drag the training
+      // load and pace charts towards work that was deliberately easy. It is
+      // remembered only so the app can stop nagging you to do one.
+      if (isPrepOrRecovery(drill)) {
+        if (drill.category === 'warmup') markWarmedUp()
+        navigate('/', { replace: true })
+        return
+      }
+
       try {
         const session = await repositories.sessions.create(
           {
@@ -154,7 +167,7 @@ function Runner({ drill }: { drill: Drill }) {
         navigate('/', { replace: true })
       }
     },
-    [drillMode, drill, navigate, repositories],
+    [drillMode, drill, markWarmedUp, navigate, repositories],
   )
 
   const runner = useDrillRunner({

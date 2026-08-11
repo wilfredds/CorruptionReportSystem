@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Segmented } from '@/components/ui/segmented'
 import { useRepositories } from '@/lib/data/context'
 import { resolveRecommendation } from '@/lib/data/recommend'
-import { isConditioning } from '@/lib/data/seed/drills'
+import { isConditioning, isPrepOrRecovery } from '@/lib/data/seed/drills'
 import type { Drill } from '@/lib/data/types'
 import { configFromDrill, estimateDurationSec } from '@/lib/timer/plan'
 import { formatCompactDuration, pluralize } from '@/lib/utils'
@@ -20,6 +20,7 @@ import { useUiStore } from '@/store/uiStore'
 import { TodayCard } from '../programs/components/TodayCard'
 import { CueSettingsDialog } from './components/CueSettingsDialog'
 import { DrillCard } from './components/DrillCard'
+import { WarmUpBar } from './components/WarmUpBar'
 import { CATEGORY_LABEL, LEVEL_LABEL } from './drillLabels'
 
 type Tab = 'drills' | 'conditioning'
@@ -52,7 +53,10 @@ export function TrainPage() {
   const recommendation = profile ? resolveRecommendation(profile, drills) : null
   const featured = recommendation?.drill ?? drills[0]
 
-  const inTab = drills.filter((drill) =>
+  // Warm-ups and cool-downs are reached from the bar below the hero, not from
+  // the catalogue — they are not something you pick instead of training.
+  const trainable = drills.filter((drill) => !isPrepOrRecovery(drill))
+  const inTab = trainable.filter((drill) =>
     tab === 'conditioning' ? isConditioning(drill) : !isConditioning(drill),
   )
   const visible = inTab
@@ -131,6 +135,10 @@ export function TrainPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Directly under the drill you are about to do, because that is the
+          moment the advice is relevant. */}
+      <WarmUpBar />
 
       {/* Below the drill it is offering to improve, and dismissible. Above it,
           an unclosable prompt outranked the content it was advertising. */}
