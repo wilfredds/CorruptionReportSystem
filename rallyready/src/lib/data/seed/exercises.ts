@@ -66,6 +66,8 @@ export interface Exercise {
   faults: string[]
   /** What to do without the kit or the court. */
   substitute: string | null
+  /** How much of it to do when practising the exercise on its own. */
+  recommendedReps: string
   /** Ladder work only. */
   pattern?: FootFrame[]
   /** Everything else. */
@@ -141,6 +143,8 @@ export const EXERCISES: Exercise[] = [
       'Widening the "out" step so far that the next "in" step is a lunge.',
     ],
     substitute: 'No ladder? Chalk or tape eight 40cm squares, or just imagine the rungs.',
+    recommendedReps:
+      '4 lengths of the ladder, walking back between each. Stop when the feet get heavy.',
     pattern: IN_AND_OUT,
   },
   {
@@ -161,6 +165,7 @@ export const EXERCISES: Exercise[] = [
       'Only ever leading with the same foot.',
     ],
     substitute: 'Tape a line of squares, or shuffle between two markers about 4m apart.',
+    recommendedReps: '3 lengths leading with each foot, walking back between each.',
     pattern: LATERAL_SHUFFLE,
   },
   {
@@ -179,6 +184,7 @@ export const EXERCISES: Exercise[] = [
       'Rushing before the pattern is automatic, and tangling the feet.',
     ],
     substitute: 'Tape or chalk works fine. This pattern is about coordination, not the kit.',
+    recommendedReps: '3 lengths in each direction. Slow it down until the pattern is right.',
     pattern: CROSSOVER,
   },
   {
@@ -197,6 +203,7 @@ export const EXERCISES: Exercise[] = [
       'Slowing the cadence to get the knees higher. Cadence wins.',
     ],
     substitute: 'Run them on the spot with a marker line, or over eight taped squares.',
+    recommendedReps: '4 lengths, flat out, with a full walk back. This one is a sprint.',
     pattern: HIGH_KNEES,
   },
 
@@ -218,6 +225,7 @@ export const EXERCISES: Exercise[] = [
       'Letting the knees collapse inwards on landing.',
     ],
     substitute: null,
+    recommendedReps: '3 rounds of 8–10, fully recovered between rounds.',
     poses: [
       pose('Load', 0.85, 0, 0, -0.8, 0.35),
       pose('Drive', 0.1, 0.75, 0, 1, 0.25),
@@ -240,6 +248,7 @@ export const EXERCISES: Exercise[] = [
       'Drifting forwards rep by rep until you are travelling across the room.',
     ],
     substitute: 'Swap for jump squats if the ceiling is low or the knees are complaining.',
+    recommendedReps: '3 rounds of 6–8. Quality drops fast; stop the round when it does.',
     poses: [
       pose('Dip', 0.55, 0, 0, -0.7, 0.2),
       pose('Tuck', 0.15, 1, 1, 0.5, 0.1),
@@ -263,6 +272,7 @@ export const EXERCISES: Exercise[] = [
       'Crashing the back knee into the floor.',
     ],
     substitute: 'Step back into the lunge instead of jumping if the knees need a break.',
+    recommendedReps: '3 rounds of 10 (5 each leg), landing softly every time.',
     poses: [
       pose('Lunge', 0.8, 0, 0, -0.5, 1, 1),
       pose('Swap', 0.15, 0.8, 0.2, 0.8, 0.3),
@@ -285,6 +295,7 @@ export const EXERCISES: Exercise[] = [
       'Jumping upwards instead of across.',
     ],
     substitute: 'Shorten the bound in a tight space. Distance is adjustable, quality is not.',
+    recommendedReps: '3 rounds of 10 (5 each side), holding the landing for a beat.',
     poses: [
       pose('Load', 0.75, 0, 0, -0.6, 0.6),
       pose('Bound', 0.25, 0.5, 0, 0.7, 1),
@@ -307,6 +318,7 @@ export const EXERCISES: Exercise[] = [
       'Jumping back down to save time.',
     ],
     substitute: 'No box? Jump squats train the same drive without the trip hazard.',
+    recommendedReps: '3 rounds of 8–10, stepping down rather than jumping down.',
     poses: [
       pose('Load', 0.8, 0, 0, -0.8, 0.3),
       pose('Up', 0.2, 0.65, 0.35, 0.9, 0.2),
@@ -330,6 +342,7 @@ export const EXERCISES: Exercise[] = [
       'Standing up out of the lunge before pushing back.',
     ],
     substitute: null,
+    recommendedReps: '3 rounds of 30 seconds, alternating corners.',
     poses: [
       pose('Ready', 0.3, 0, 0, 0.2, 0.2),
       pose('Lunge', 0.85, 0, 0, 1, 1, 1),
@@ -352,6 +365,7 @@ export const EXERCISES: Exercise[] = [
       'Racing through the taps.',
     ],
     substitute: 'Drop to your knees and keep the hips level rather than sagging.',
+    recommendedReps: '3 rounds of 30–40 seconds, hips level throughout.',
     poses: [
       pose('Plank', 0.95, 0, 0.15, -0.35, 0.7),
       pose('Tap', 0.95, 0, 0.15, 0.85, 0.7),
