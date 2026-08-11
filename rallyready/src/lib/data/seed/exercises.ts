@@ -61,6 +61,36 @@ export interface FigurePose {
   label: string
 }
 
+/**
+ * A jointed pose, in degrees off straight-down, positive swinging forward.
+ *
+ * The older `FigurePose` is parametric — squat depth, air, tuck — which suits a
+ * jump squat and cannot describe an arm circle or a leg swing at all. Warm-up
+ * movements are about limbs travelling through a range, so they are described
+ * as angles and drawn as a real skeleton.
+ */
+export interface MobilityPose {
+  label: string
+  /** Arm rotation at the shoulder. 0 hangs down, 180 is straight overhead. */
+  armL: number
+  armR: number
+  /** Extra bend at the elbow, degrees. */
+  elbowL?: number
+  elbowR?: number
+  /** Leg rotation at the hip. 0 stands, positive lifts the knee forward. */
+  legL: number
+  legR: number
+  /** Extra bend at the knee, degrees. */
+  kneeL?: number
+  kneeR?: number
+  /** Shoulder rotation for twists, degrees — narrows the shoulders as it turns. */
+  twist?: number
+  /** Whole-body rise, for heel raises and hops. */
+  lift?: number
+  /** Forward lean at the hip, degrees. */
+  lean?: number
+}
+
 export interface Exercise {
   slug: string
   name: string
@@ -76,8 +106,10 @@ export interface Exercise {
   recommendedReps: string
   /** Ladder work only. */
   pattern?: FootFrame[]
-  /** Everything else. */
+  /** Jumps and bodyweight work. */
   poses?: FigurePose[]
+  /** Warm-up and stretching, drawn as a jointed skeleton. */
+  mobility?: MobilityPose[]
 }
 
 /* --------------------------------------------------------------- patterns */
@@ -127,6 +159,19 @@ const pose = (
   split = 0,
   lead = 0,
 ): FigurePose => ({ label, squat, air, tuck, arms, split, lead })
+
+/**
+ * Jointed poses. Only the joints that move need naming, so a movement reads as
+ * a short list of what actually changes.
+ */
+const mob = (label: string, p: Partial<MobilityPose> = {}): MobilityPose => ({
+  label,
+  armL: 8,
+  armR: 8,
+  legL: 4,
+  legR: 4,
+  ...p,
+})
 
 /* -------------------------------------------------------------- catalogue */
 
@@ -399,11 +444,11 @@ export const EXERCISES: Exercise[] = [
     ],
     substitute: 'Walk briskly on the spot if the knees are cold or complaining.',
     recommendedReps: '45–60 seconds, building from easy to brisk.',
-    poses: [
-      pose('Left up', 0.12, 0.02, 0.35, 0.55, 0.25, 1),
-      pose('Down', 0.15, 0, 0, 0, 0.2),
-      pose('Right up', 0.12, 0.02, 0.35, -0.55, 0.25, -1),
-      pose('Down', 0.15, 0, 0, 0, 0.2),
+    mobility: [
+      mob('Left knee up', { legL: 78, kneeL: 85, armR: 42, elbowR: 60, armL: -28 }),
+      mob('Down', { legL: 4, legR: 4, armL: 8, armR: 8 }),
+      mob('Right knee up', { legR: 78, kneeR: 85, armL: 42, elbowL: 60, armR: -28 }),
+      mob('Down', { legL: 4, legR: 4, armL: 8, armR: 8 }),
     ],
   },
   {
@@ -424,11 +469,51 @@ export const EXERCISES: Exercise[] = [
     ],
     substitute: 'Shuffle on the spot, one step each way, if the room is tight.',
     recommendedReps: '45 seconds, changing direction every two or three steps.',
-    poses: [
-      pose('Load left', 0.45, 0, 0, 0.25, 0.85, 0.35),
-      pose('Centre', 0.4, 0, 0, 0.3, 0.5),
-      pose('Load right', 0.45, 0, 0, 0.25, 0.85, -0.35),
-      pose('Centre', 0.4, 0, 0, 0.3, 0.5),
+    mobility: [
+      mob('Load left', {
+        legL: -34,
+        legR: 26,
+        kneeL: 26,
+        kneeR: 34,
+        lift: -6,
+        armL: 34,
+        armR: 34,
+        elbowL: 55,
+        elbowR: 55,
+      }),
+      mob('Push across', {
+        legL: -14,
+        legR: 14,
+        kneeL: 30,
+        kneeR: 30,
+        lift: -8,
+        armL: 34,
+        armR: 34,
+        elbowL: 55,
+        elbowR: 55,
+      }),
+      mob('Load right', {
+        legL: -26,
+        legR: 34,
+        kneeL: 34,
+        kneeR: 26,
+        lift: -6,
+        armL: 34,
+        armR: 34,
+        elbowL: 55,
+        elbowR: 55,
+      }),
+      mob('Push back', {
+        legL: -14,
+        legR: 14,
+        kneeL: 30,
+        kneeR: 30,
+        lift: -8,
+        armL: 34,
+        armR: 34,
+        elbowL: 55,
+        elbowR: 55,
+      }),
     ],
   },
 
@@ -452,6 +537,12 @@ export const EXERCISES: Exercise[] = [
     ],
     substitute: null,
     recommendedReps: '30 seconds: ten circles each ankle, then ten calf raises.',
+    mobility: [
+      mob('Heels down', { legL: -6, legR: 6, lift: 0 }),
+      mob('Rise onto toes', { legL: -6, legR: 6, lift: 9, armL: 16, armR: 16 }),
+      mob('Hold', { legL: -6, legR: 6, lift: 10, armL: 18, armR: 18 }),
+      mob('Lower slowly', { legL: -6, legR: 6, lift: 2 }),
+    ],
   },
   {
     slug: 'mob-leg-swings-front',
@@ -471,6 +562,12 @@ export const EXERCISES: Exercise[] = [
     ],
     substitute: 'Hold a wall or a chair back if balance is awkward.',
     recommendedReps: '30 seconds, ten swings each leg.',
+    mobility: [
+      mob('Swing forward', { legR: 62, legL: -6, armL: 46, elbowL: 20 }),
+      mob('Through the middle', { legR: 4, legL: -4, armL: 46, elbowL: 20 }),
+      mob('Swing back', { legR: -46, legL: -2, armL: 46, elbowL: 20, lean: 6 }),
+      mob('Through the middle', { legR: 4, legL: -4, armL: 46, elbowL: 20 }),
+    ],
   },
   {
     slug: 'mob-leg-swings-side',
@@ -490,6 +587,12 @@ export const EXERCISES: Exercise[] = [
     ],
     substitute: 'Hold a wall for balance and reduce the range.',
     recommendedReps: '30 seconds, ten swings each leg.',
+    mobility: [
+      mob('Across the body', { legR: -38, legL: 2, armL: 62, armR: 62 }),
+      mob('Through the middle', { legR: 2, legL: 2, armL: 62, armR: 62 }),
+      mob('Out to the side', { legR: 54, legL: 2, armL: 62, armR: 62 }),
+      mob('Through the middle', { legR: 2, legL: 2, armL: 62, armR: 62 }),
+    ],
   },
   {
     slug: 'mob-hip-openers',
@@ -509,10 +612,11 @@ export const EXERCISES: Exercise[] = [
     ],
     substitute: null,
     recommendedReps: '30 seconds, five each side.',
-    poses: [
-      pose('Knee up', 0.15, 0, 0.55, 0.3, 0.2, 1),
-      pose('Open out', 0.2, 0, 0.4, 0.15, 0.75, 0.8),
-      pose('Step down', 0.25, 0, 0, 0.1, 0.35),
+    mobility: [
+      mob('Knee up', { legR: 74, kneeR: 90, armR: 40, elbowR: 70 }),
+      mob('Open the gate', { legR: 58, kneeR: 88, twist: 16, armR: 52, elbowR: 60 }),
+      mob('Step down', { legR: 10, kneeR: 12, armR: 12 }),
+      mob('Tall', { legL: 4, legR: 4 }),
     ],
   },
   {
@@ -533,6 +637,12 @@ export const EXERCISES: Exercise[] = [
     ],
     substitute: null,
     recommendedReps: '30 seconds: ten circles each way, then shoulder rolls.',
+    mobility: [
+      mob('Arms down', { armR: 0, armL: 0 }),
+      mob('Forward and up', { armR: 92, armL: 92 }),
+      mob('Overhead', { armR: 176, armL: 176 }),
+      mob('Behind and round', { armR: 268, armL: 268 }),
+    ],
   },
   {
     slug: 'mob-torso-twists',
@@ -552,6 +662,12 @@ export const EXERCISES: Exercise[] = [
     ],
     substitute: null,
     recommendedReps: '30 seconds of slow, controlled rotations.',
+    mobility: [
+      mob('Turn left', { twist: -42, armL: 58, armR: 30, elbowL: 40, elbowR: 55 }),
+      mob('Centre', { twist: 0, armL: 40, armR: 40, elbowL: 45, elbowR: 45 }),
+      mob('Turn right', { twist: 42, armL: 30, armR: 58, elbowL: 55, elbowR: 40 }),
+      mob('Centre', { twist: 0, armL: 40, armR: 40, elbowL: 45, elbowR: 45 }),
+    ],
   },
 
   /* ------------------------------------ warm-up: potentiate, badminton-specific */
@@ -574,10 +690,50 @@ export const EXERCISES: Exercise[] = [
     ],
     substitute: null,
     recommendedReps: '30 seconds of continuous split-steps and pushes.',
-    poses: [
-      pose('Ready', 0.25, 0, 0, 0.2, 0.3),
-      pose('Hop', 0.1, 0.35, 0.1, 0.5, 0.3),
-      pose('Land loaded', 0.55, 0, 0, 0.15, 0.9),
+    mobility: [
+      mob('Ready', {
+        legL: -16,
+        legR: 16,
+        kneeL: 10,
+        kneeR: 10,
+        armL: 40,
+        armR: 40,
+        elbowL: 60,
+        elbowR: 60,
+      }),
+      mob('Hop', {
+        legL: -10,
+        legR: 10,
+        kneeL: 16,
+        kneeR: 16,
+        lift: 11,
+        armL: 28,
+        armR: 28,
+        elbowL: 50,
+        elbowR: 50,
+      }),
+      mob('Land wide and low', {
+        legL: -42,
+        legR: 42,
+        kneeL: 22,
+        kneeR: 22,
+        armL: 48,
+        armR: 48,
+        elbowL: 50,
+        elbowR: 50,
+        lean: 10,
+      }),
+      mob('Push off', {
+        legL: -38,
+        legR: 24,
+        kneeL: 16,
+        kneeR: 20,
+        armL: 46,
+        armR: 28,
+        elbowL: 40,
+        elbowR: 55,
+        lean: 6,
+      }),
     ],
   },
   {
@@ -598,6 +754,51 @@ export const EXERCISES: Exercise[] = [
     ],
     substitute: 'No court? Move to four imagined corners in whatever space you have.',
     recommendedReps: '45 seconds, covering every corner at least twice.',
+    mobility: [
+      mob('Ready at base', {
+        legL: -12,
+        legR: 12,
+        kneeL: 18,
+        kneeR: 18,
+        armL: 40,
+        armR: 40,
+        elbowL: 60,
+        elbowR: 60,
+      }),
+      mob('Chassé across', {
+        legL: -30,
+        legR: 22,
+        kneeL: 26,
+        kneeR: 30,
+        lift: -6,
+        armL: 44,
+        armR: 34,
+        elbowL: 45,
+        elbowR: 55,
+      }),
+      mob('Lunge to the net', {
+        legL: -34,
+        legR: 58,
+        kneeL: 12,
+        kneeR: 62,
+        lift: -12,
+        lean: 16,
+        armR: 74,
+        elbowR: 25,
+        armL: -34,
+      }),
+      mob('Push back to base', {
+        legL: -18,
+        legR: 20,
+        kneeL: 22,
+        kneeR: 26,
+        lift: -4,
+        armL: 40,
+        armR: 40,
+        elbowL: 60,
+        elbowR: 60,
+      }),
+    ],
   },
   {
     slug: 'mob-shadow-swings',
@@ -617,6 +818,12 @@ export const EXERCISES: Exercise[] = [
     ],
     substitute: 'No racket to hand? The pattern still works empty-handed.',
     recommendedReps: '30 seconds, building from easy to sharp.',
+    mobility: [
+      mob('Racket up', { armR: 128, elbowR: 62, armL: 96, twist: 22, legR: -8 }),
+      mob('Reach back', { armR: 168, elbowR: 88, armL: 118, twist: 34, lean: -8, legR: -12 }),
+      mob('Contact overhead', { armR: 186, elbowR: 6, armL: 60, twist: -6, lift: 5 }),
+      mob('Follow through', { armR: 78, elbowR: 34, armL: 12, twist: -28, lean: 10 }),
+    ],
   },
 
   /* ------------------------------------------------------------ cool-down */
@@ -640,6 +847,12 @@ export const EXERCISES: Exercise[] = [
     substitute: null,
     recommendedReps: '60 seconds, until your breathing has settled.',
     poses: [pose('Step', 0.1, 0, 0.15, 0.3, 0.3, 0.6), pose('Step', 0.1, 0, 0.15, -0.3, 0.3, -0.6)],
+    mobility: [
+      mob('Step', { legL: 34, kneeL: 26, legR: -22, armR: 26, armL: -18 }),
+      mob('Through', { legL: 4, legR: 4, armL: 6, armR: 6 }),
+      mob('Step', { legR: 34, kneeR: 26, legL: -22, armL: 26, armR: -18 }),
+      mob('Breathe out', { legL: 4, legR: 4, armL: 10, armR: 10 }),
+    ],
   },
   {
     slug: 'cool-calf-stretch',
@@ -656,6 +869,49 @@ export const EXERCISES: Exercise[] = [
     faults: ['Letting the back heel lift, which stretches nothing.', 'Bouncing to push deeper.'],
     substitute: 'Use a step edge, or press against any wall.',
     recommendedReps: '45 seconds, about 20 each side.',
+    mobility: [
+      mob('Split the stance', {
+        legL: -34,
+        legR: 22,
+        kneeR: 30,
+        lean: 14,
+        armL: 78,
+        armR: 78,
+        elbowL: 20,
+        elbowR: 20,
+      }),
+      mob('Press the heel down', {
+        legL: -38,
+        legR: 26,
+        kneeR: 36,
+        lean: 20,
+        armL: 82,
+        armR: 82,
+        elbowL: 14,
+        elbowR: 14,
+      }),
+      mob('Hold', {
+        legL: -38,
+        legR: 26,
+        kneeR: 36,
+        lean: 20,
+        armL: 82,
+        armR: 82,
+        elbowL: 14,
+        elbowR: 14,
+      }),
+      mob('Bend the back knee', {
+        legL: -32,
+        legR: 24,
+        kneeL: 22,
+        kneeR: 32,
+        lean: 18,
+        armL: 80,
+        armR: 80,
+        elbowL: 16,
+        elbowR: 16,
+      }),
+    ],
   },
   {
     slug: 'cool-quad-stretch',
@@ -675,6 +931,33 @@ export const EXERCISES: Exercise[] = [
     ],
     substitute: 'Lie on your side if standing balance is the problem.',
     recommendedReps: '45 seconds, about 20 each side.',
+    mobility: [
+      mob('Stand tall', { legL: 2, legR: 2, armL: 62, elbowL: 30 }),
+      mob('Heel to backside', {
+        legR: -18,
+        kneeR: 132,
+        armR: -42,
+        elbowR: 74,
+        armL: 62,
+        elbowL: 30,
+      }),
+      mob('Knees together, hold', {
+        legR: -8,
+        kneeR: 140,
+        armR: -34,
+        elbowR: 78,
+        armL: 62,
+        elbowL: 30,
+      }),
+      mob('Squeeze the glute', {
+        legR: -14,
+        kneeR: 138,
+        armR: -38,
+        elbowR: 76,
+        armL: 62,
+        elbowL: 30,
+      }),
+    ],
   },
   {
     slug: 'cool-hamstring-stretch',
@@ -694,6 +977,19 @@ export const EXERCISES: Exercise[] = [
     ],
     substitute: 'Sit and reach towards one foot at a time if standing is awkward.',
     recommendedReps: '45 seconds, about 20 each side.',
+    mobility: [
+      mob('Heel forward', { legR: 26, legL: -10, kneeL: 16, lean: 6 }),
+      mob('Hinge at the hips', { legR: 30, legL: -12, kneeL: 22, lean: 34, armR: 54, armL: 54 }),
+      mob('Chest towards the toes', {
+        legR: 32,
+        legL: -12,
+        kneeL: 24,
+        lean: 46,
+        armR: 62,
+        armL: 62,
+      }),
+      mob('Hold, flat back', { legR: 32, legL: -12, kneeL: 24, lean: 44, armR: 60, armL: 60 }),
+    ],
   },
   {
     slug: 'cool-hip-flexor-stretch',
@@ -713,6 +1009,36 @@ export const EXERCISES: Exercise[] = [
     ],
     substitute: 'Kneel on something soft, or do it standing in a split stance.',
     recommendedReps: '45 seconds, about 20 each side.',
+    mobility: [
+      mob('Half kneel', { legR: 62, kneeR: 96, legL: -30, kneeL: 128, armL: 16, armR: 16 }),
+      mob('Tuck the pelvis', {
+        legR: 64,
+        kneeR: 98,
+        legL: -34,
+        kneeL: 130,
+        lean: -7,
+        armL: 20,
+        armR: 20,
+      }),
+      mob('Ease forward', {
+        legR: 72,
+        kneeR: 104,
+        legL: -40,
+        kneeL: 134,
+        lean: -9,
+        armL: 24,
+        armR: 24,
+      }),
+      mob('Hold, chest tall', {
+        legR: 70,
+        kneeR: 102,
+        legL: -38,
+        kneeL: 132,
+        lean: -8,
+        armL: 22,
+        armR: 22,
+      }),
+    ],
   },
   {
     slug: 'cool-shoulder-stretch',
@@ -732,6 +1058,12 @@ export const EXERCISES: Exercise[] = [
     ],
     substitute: null,
     recommendedReps: '45 seconds across both stretches.',
+    mobility: [
+      mob('Arm across', { armR: 74, elbowR: -58, armL: 54, elbowL: 34 }),
+      mob('Pull above the elbow', { armR: 82, elbowR: -70, armL: 60, elbowL: 40 }),
+      mob('Hold', { armR: 82, elbowR: -70, armL: 60, elbowL: 40 }),
+      mob('Open the chest', { armR: -48, armL: -48, elbowR: 18, elbowL: 18, lean: -6 }),
+    ],
   },
 ]
 

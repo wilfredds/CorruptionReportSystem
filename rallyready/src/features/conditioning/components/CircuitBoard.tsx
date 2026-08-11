@@ -28,7 +28,7 @@ export function CircuitBoard({ exerciseSlug, resting, className }: CircuitBoardP
     )
   }
 
-  const hasDemo = Boolean(exercise.pattern ?? exercise.poses)
+  const hasDemo = Boolean(exercise.pattern ?? exercise.mobility ?? exercise.poses)
 
   return (
     <div className={cn('flex h-full w-full flex-col items-center gap-2', className)}>
