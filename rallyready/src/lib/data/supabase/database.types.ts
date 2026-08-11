@@ -2,6 +2,8 @@ import type { CornerId } from '@/lib/timer/corners'
 import type { DrillMode } from '@/lib/timer/types'
 import type {
   CircuitStep,
+  EnrollmentStatus,
+  ProgramFocus,
   DrillCategory,
   DrillLocation,
   DrillStyle,
@@ -26,6 +28,7 @@ export interface ProfileRow {
   skill_level: SkillLevel
   primary_discipline: Discipline
   goal: TrainingGoal
+  court_access: DrillLocation
   created_at: string
 }
 
@@ -77,6 +80,42 @@ export interface SessionMetricRow {
   session_id: string
   metric_key: string
   metric_value: number
+}
+
+export interface ProgramRow {
+  id: string
+  slug: string
+  name: string
+  description: string
+  total_weeks: number
+  level: SkillLevel
+  location: DrillLocation
+  sessions_per_week: number
+  is_public: boolean
+  created_by: string | null
+  created_at: string
+}
+
+export interface ProgramDayRow {
+  id: string
+  program_id: string
+  week_no: number
+  day_no: number
+  title: string
+  focus: ProgramFocus
+  drill_slugs: string[]
+  notes: string | null
+}
+
+export interface ProgramEnrollmentRow {
+  id: string
+  user_id: string
+  program_id: string
+  started_on: string
+  current_week: number
+  current_day: number
+  status: EnrollmentStatus
+  created_at: string
 }
 
 export interface BenchmarkRow {
@@ -141,6 +180,15 @@ export interface Database {
         Omit<SessionRow, 'id' | 'created_at'> & { id?: string; created_at?: string }
       >
       session_metrics: Table<SessionMetricRow, Omit<SessionMetricRow, 'id'> & { id?: string }>
+      programs: Table<
+        ProgramRow,
+        Omit<ProgramRow, 'id' | 'created_at'> & { id?: string; created_at?: string }
+      >
+      program_days: Table<ProgramDayRow, Omit<ProgramDayRow, 'id'> & { id?: string }>
+      program_enrollments: Table<
+        ProgramEnrollmentRow,
+        Omit<ProgramEnrollmentRow, 'id' | 'created_at'> & { id?: string; created_at?: string }
+      >
       benchmarks: Table<BenchmarkRow, Omit<BenchmarkRow, 'id'> & { id?: string }>
       badges: Table<BadgeRow>
       user_badges: Table<

@@ -1,10 +1,15 @@
 import type {
   Benchmark,
   Drill,
+  EnrollmentStatus,
   NewBenchmark,
+  NewProgram,
   NewSession,
   NewSessionMetric,
   Profile,
+  Program,
+  ProgramDay,
+  ProgramEnrollment,
   Session,
   SessionMetric,
   Streak,
@@ -45,6 +50,26 @@ export interface BenchmarkRepository {
   getById(id: string): Promise<Benchmark | null>
 }
 
+export interface ProgramRepository {
+  list(): Promise<Program[]>
+  getBySlug(slug: string): Promise<Program | null>
+  /** The whole plan, ordered by week then day. */
+  listDays(programId: string): Promise<ProgramDay[]>
+  /** Creates a program owned by the current user, with a generated plan. */
+  create(input: NewProgram): Promise<Program>
+  update(programId: string, patch: Partial<NewProgram>): Promise<Program>
+  saveDay(day: ProgramDay): Promise<void>
+  remove(programId: string): Promise<void>
+
+  /** At most one enrolment is active at a time. */
+  activeEnrollment(): Promise<ProgramEnrollment | null>
+  listEnrollments(): Promise<ProgramEnrollment[]>
+  enroll(programId: string): Promise<ProgramEnrollment>
+  /** Moves to a specific position, or marks the program finished. */
+  setPosition(enrollmentId: string, weekNo: number, dayNo: number): Promise<ProgramEnrollment>
+  setStatus(enrollmentId: string, status: EnrollmentStatus): Promise<ProgramEnrollment>
+}
+
 export interface BadgeRepository {
   /** Slugs the user has already been awarded. */
   listEarned(): Promise<string[]>
@@ -68,6 +93,7 @@ export interface Repositories {
   profiles: ProfileRepository
   benchmarks: BenchmarkRepository
   badges: BadgeRepository
+  programs: ProgramRepository
   /** Which backend is actually serving this bundle. */
   readonly backend: 'local' | 'supabase'
 }

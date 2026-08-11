@@ -76,10 +76,7 @@ describe('computeStreak', () => {
   })
 
   it('is unfazed by duplicates and unsorted input', () => {
-    const streak = computeStreak(
-      ['2026-08-04', '2026-07-28', '2026-08-04', '2026-07-21'],
-      SUNDAY,
-    )
+    const streak = computeStreak(['2026-08-04', '2026-07-28', '2026-08-04', '2026-07-21'], SUNDAY)
     expect(streak.currentStreak).toBe(3)
     expect(streak.lastActiveDate).toBe('2026-08-04')
   })

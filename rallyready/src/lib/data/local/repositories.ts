@@ -19,6 +19,7 @@ import type {
   SessionMetric,
   Streak,
 } from '../types'
+import { localPrograms } from './programs'
 import { newId, readJson, STORAGE_KEYS, writeJson } from './storage'
 
 /**
@@ -163,6 +164,7 @@ const profiles: ProfileRepository = {
       skillLevel: patch.skillLevel ?? existing?.skillLevel ?? 'intermediate',
       primaryDiscipline: patch.primaryDiscipline ?? existing?.primaryDiscipline ?? 'both',
       goal: patch.goal ?? existing?.goal ?? 'footwork',
+      courtAccess: patch.courtAccess ?? existing?.courtAccess ?? 'court',
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     }
     writeJson(STORAGE_KEYS.profile, profile)
@@ -171,5 +173,14 @@ const profiles: ProfileRepository = {
 }
 
 export function createLocalRepositories(): Repositories {
-  return { drills, sessions, streaks, profiles, benchmarks, badges, backend: 'local' }
+  return {
+    drills,
+    sessions,
+    streaks,
+    profiles,
+    benchmarks,
+    badges,
+    programs: localPrograms,
+    backend: 'local',
+  }
 }

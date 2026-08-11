@@ -112,9 +112,7 @@ describe('badgeStates', () => {
 
   it('shows training time in hours rather than raw seconds', () => {
     const states = badgeStates(withStats({ totalTrainingSec: 9000 }))
-    expect(states.find((state) => state.slug === 'ten-hours')?.progressLabel).toBe(
-      '2.5 / 10 hours',
-    )
+    expect(states.find((state) => state.slug === 'ten-hours')?.progressLabel).toBe('2.5 / 10 hours')
   })
 
   it('never reports progress above 1', () => {

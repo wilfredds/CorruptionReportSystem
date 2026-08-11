@@ -11,6 +11,7 @@ import type {
   StreakRepository,
 } from '../ports'
 import { computeStreak, localDateKey } from '../streaks'
+import { createSupabasePrograms } from './programs'
 import type {
   Benchmark,
   Drill,
@@ -88,6 +89,7 @@ function toProfile(row: ProfileRow): Profile {
     skillLevel: row.skill_level,
     primaryDiscipline: row.primary_discipline,
     goal: row.goal,
+    courtAccess: row.court_access,
     createdAt: row.created_at,
   }
 }
@@ -117,10 +119,7 @@ function fail(context: string, error: { message: string } | null): void {
   if (error) throw new Error(`${context}: ${error.message}`)
 }
 
-export function createSupabaseRepositories(
-  client: RallyReadyClient,
-  userId: string,
-): Repositories {
+export function createSupabaseRepositories(client: RallyReadyClient, userId: string): Repositories {
   const drills: DrillRepository = {
     async list() {
       // RLS already limits this to public drills plus the user's own.
@@ -129,11 +128,7 @@ export function createSupabaseRepositories(
       return (data ?? []).map(toDrill)
     },
     async getBySlug(slug) {
-      const { data, error } = await client
-        .from('drills')
-        .select('*')
-        .eq('slug', slug)
-        .maybeSingle()
+      const { data, error } = await client.from('drills').select('*').eq('slug', slug).maybeSingle()
       fail('Could not load drill', error)
       return data ? toDrill(data) : null
     },
@@ -179,11 +174,7 @@ export function createSupabaseRepositories(
     },
 
     async getById(id) {
-      const { data, error } = await client
-        .from('sessions')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle()
+      const { data, error } = await client.from('sessions').select('*').eq('id', id).maybeSingle()
       fail('Could not load session', error)
       return data ? toSession(data) : null
     },
@@ -259,11 +250,7 @@ export function createSupabaseRepositories(
     },
 
     async getById(id) {
-      const { data, error } = await client
-        .from('benchmarks')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle()
+      const { data, error } = await client.from('benchmarks').select('*').eq('id', id).maybeSingle()
       fail('Could not load benchmark', error)
       return data ? toBenchmark(data) : null
     },
@@ -342,6 +329,7 @@ export function createSupabaseRepositories(
           skill_level: patch.skillLevel ?? existing?.skillLevel ?? 'intermediate',
           primary_discipline: patch.primaryDiscipline ?? existing?.primaryDiscipline ?? 'both',
           goal: patch.goal ?? existing?.goal ?? 'footwork',
+          court_access: patch.courtAccess ?? existing?.courtAccess ?? 'court',
         })
         .select('*')
         .single()
@@ -351,5 +339,14 @@ export function createSupabaseRepositories(
     },
   }
 
-  return { drills, sessions, streaks, profiles, benchmarks, badges, backend: 'supabase' }
+  return {
+    drills,
+    sessions,
+    streaks,
+    profiles,
+    benchmarks,
+    badges,
+    programs: createSupabasePrograms(client, userId),
+    backend: 'supabase',
+  }
 }

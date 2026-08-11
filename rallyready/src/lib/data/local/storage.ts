@@ -48,6 +48,9 @@ export const STORAGE_KEYS = {
   profile: 'profile',
   benchmarks: 'benchmarks',
   badges: 'badges',
+  programs: 'programs',
+  programDays: 'program-days',
+  enrollments: 'program-enrollments',
   /** Set once a local history has been uploaded, so it uploads only once. */
   migratedAt: 'migrated-at',
   drillSettings: 'drill-settings',

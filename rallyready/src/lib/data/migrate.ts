@@ -44,11 +44,7 @@ export async function migrateLocalHistory(
   const localBenchmarks = readJson<Benchmark[]>(STORAGE_KEYS.benchmarks, [])
   const localBadges = readJson<string[]>(STORAGE_KEYS.badges, [])
 
-  if (
-    localSessions.length === 0 &&
-    localBenchmarks.length === 0 &&
-    localBadges.length === 0
-  ) {
+  if (localSessions.length === 0 && localBenchmarks.length === 0 && localBadges.length === 0) {
     markMigrated(userId)
     return { ...NOTHING, skipped: true }
   }

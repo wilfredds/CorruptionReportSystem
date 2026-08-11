@@ -70,13 +70,15 @@ create table if not exists public.profiles (
   avatar_url         text,
   skill_level        skill_level   not null default 'intermediate',
   primary_discipline discipline    not null default 'both',
-  goal               training_goal not null default 'footwork',
-  created_at         timestamptz   not null default now()
+  goal               training_goal  not null default 'footwork',
+  court_access       drill_location not null default 'court',
+  created_at         timestamptz    not null default now()
 );
 
--- Added in Phase 2; keeps an existing database in step with a fresh one.
+-- Added in Phases 2 and 4; keeps an existing database in step with a fresh one.
 alter table public.profiles
-  add column if not exists goal training_goal not null default 'footwork';
+  add column if not exists goal         training_goal  not null default 'footwork',
+  add column if not exists court_access drill_location not null default 'court';
 
 alter table public.profiles enable row level security;
 
@@ -276,12 +278,22 @@ create table if not exists public.programs (
   slug        text        not null unique,
   name        text        not null,
   description text        not null default '',
-  total_weeks integer     not null default 8 check (total_weeks between 1 and 52),
+  total_weeks integer     not null default 8 check (total_weeks between 4 and 16),
   level       skill_level not null default 'intermediate',
   is_public   boolean     not null default false,
   created_by  uuid references auth.users (id) on delete set null,
+  -- Phase 4. A plan is periodised from these two, so they belong with it:
+  -- `location` is what makes a no-court program possible at all.
+  location          drill_location not null default 'court',
+  sessions_per_week integer        not null default 3
+                      check (sessions_per_week between 2 and 6),
   created_at  timestamptz not null default now()
 );
+
+-- Added in Phase 4; keeps an existing database in step with a fresh one.
+alter table public.programs
+  add column if not exists location          drill_location not null default 'court',
+  add column if not exists sessions_per_week integer not null default 3;
 
 alter table public.programs enable row level security;
 
@@ -309,10 +321,17 @@ create table if not exists public.program_days (
   day_no     integer       not null check (day_no between 1 and 7),
   title      text          not null,
   focus      program_focus not null,
-  drill_ids  uuid[]        not null default '{}',
+  -- Drills referenced by slug rather than uuid. Slugs are stable across
+  -- re-seeding and identical on both backends, where a uuid would have to be
+  -- resolved twice and would break the moment a drill row was recreated.
+  drill_slugs text[]       not null default '{}',
   notes      text,
   unique (program_id, week_no, day_no)
 );
+
+alter table public.program_days
+  add column if not exists drill_slugs text[] not null default '{}';
+alter table public.program_days drop column if exists drill_ids;
 
 create index if not exists program_days_program_idx on public.program_days (program_id, week_no, day_no);
 
@@ -757,6 +776,1613 @@ on conflict (slug) do update set
   location             = excluded.location,
   equipment            = excluded.equipment;
 -- <<< end generated drill seed
+
+-- >>> generated program seed from src/lib/data/seed/programs.ts — do not edit
+insert into public.programs (
+  slug, name, description, total_weeks, level, location, sessions_per_week, is_public
+) values
+(
+  'return-to-court', 'Return to Court',
+  'Eight weeks for a player coming back after a long break. Three sessions a week, heavy on movement quality, with a deload built in before you feel like you need one. Assumes court access.',
+  8, 'beginner', 'court',
+  3, true
+),
+(
+  'rebuild-the-engine', 'Rebuild the Engine',
+  'Twelve weeks from base fitness to match fitness. Four sessions a week through Base, Build and Sharpen, ending with a taper. The full arc for a club player who wants their legs back by the new season.',
+  12, 'intermediate', 'court',
+  4, true
+),
+(
+  'no-court-comeback', 'No-Court Comeback',
+  'Ten weeks that need nothing but floor space. Shadow intervals, ladder work and bodyweight circuits, for anyone whose hall is shut or whose club night is once a fortnight.',
+  10, 'intermediate', 'anywhere',
+  4, true
+),
+(
+  'sharpen-for-season', 'Sharpen for the Season',
+  'Eight hard weeks for a player who already has a base. Five sessions a week, weighted towards speed, reaction and match play. Do not start this one out of shape.',
+  8, 'advanced', 'court',
+  5, true
+)
+on conflict (slug) do update set
+  name              = excluded.name,
+  description       = excluded.description,
+  total_weeks       = excluded.total_weeks,
+  level             = excluded.level,
+  location          = excluded.location,
+  sessions_per_week = excluded.sessions_per_week,
+  is_public         = excluded.is_public;
+
+insert into public.program_days (
+  program_id, week_no, day_no, title, focus, drill_slugs, notes
+) values
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  1, 1, 'Footwork — technique', 'footwork',
+  array[
+      'net-footwork'
+    ], 'Quality over pace. Stop the block if the movement gets scrappy.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  1, 2, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  1, 3, 'Easy conditioning', 'conditioning',
+  array[
+      'agility-ladder-circuit'
+    ], 'Comfortably hard. You should be able to speak in the rest.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  1, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  1, 5, 'Footwork — volume', 'footwork',
+  array[
+      'net-footwork'
+    ], 'Add a round rather than adding speed.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  1, 6, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  1, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  2, 1, 'Circuit', 'conditioning',
+  array[
+      'agility-ladder-circuit'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  2, 2, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  2, 3, 'Play', 'matchplay',
+  '{}', 'Social games. Play, do not train — this is the fun one.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  2, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  2, 5, 'Footwork — technique', 'footwork',
+  array[
+      'four-corner-footwork'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  2, 6, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  2, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  3, 1, 'Footwork under load', 'footwork',
+  array[
+      'rear-court-scissor'
+    ], 'Hold your form into the last round. That is the whole session.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  3, 2, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  3, 3, 'Intervals', 'conditioning',
+  array[
+      'match-rhythm-intervals'
+    ], 'Take the full rest. Cutting it short trains the wrong thing.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  3, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  3, 5, 'Reaction work', 'footwork',
+  array[
+      'net-footwork'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  3, 6, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  3, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  4, 1, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  4, 2, 'Play for fun', 'matchplay',
+  '{}', 'No score, no pressure.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  4, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  4, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  4, 5, 'Light circuit', 'conditioning',
+  array[
+      'match-rhythm-intervals'
+    ], 'One round fewer than you think you need.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  4, 6, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  4, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  5, 1, 'Footwork — volume', 'footwork',
+  array[
+      'net-footwork'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  5, 2, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  5, 3, 'Footwork under load', 'footwork',
+  array[
+      'six-corner-shadow'
+    ], 'Hold your form into the last round. That is the whole session.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  5, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  5, 5, 'Intervals', 'conditioning',
+  array[
+      'match-rhythm-intervals'
+    ], 'Take the full rest. Cutting it short trains the wrong thing.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  5, 6, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  5, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  6, 1, 'Match play', 'matchplay',
+  '{}', 'Play as if it counts. This is what the last weeks were for.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  6, 2, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  6, 3, 'Footwork — crisp', 'footwork',
+  array[
+      'rear-court-scissor'
+    ], 'Cut the volume, keep the pace.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  6, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  6, 5, 'Power circuit', 'conditioning',
+  array[
+      'match-rhythm-intervals'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  6, 6, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  6, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  7, 1, 'Reaction work', 'footwork',
+  array[
+      'rear-court-scissor'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  7, 2, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  7, 3, 'Speed and reaction', 'footwork',
+  array[
+      'six-corner-shadow'
+    ], 'Short and fast. Fully recovered before every block.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  7, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  7, 5, 'Sharp intervals', 'conditioning',
+  array[
+      'rear-court-scissor'
+    ], 'Ten-second efforts. Empty the tank, then take the whole rest.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  7, 6, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  7, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  8, 1, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  8, 2, 'Easy footwork', 'footwork',
+  array[
+      'four-corner-footwork'
+    ], 'Half the usual rounds. Move well, do not chase the clock.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  8, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  8, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  8, 5, 'Play for fun', 'matchplay',
+  '{}', 'No score, no pressure.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  8, 6, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'return-to-court'),
+  8, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  1, 1, 'Footwork — technique', 'footwork',
+  array[
+      'net-footwork'
+    ], 'Quality over pace. Stop the block if the movement gets scrappy.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  1, 2, 'Easy conditioning', 'conditioning',
+  array[
+      'agility-ladder-circuit'
+    ], 'Comfortably hard. You should be able to speak in the rest.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  1, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  1, 4, 'Footwork — volume', 'footwork',
+  array[
+      'net-footwork'
+    ], 'Add a round rather than adding speed.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  1, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  1, 6, 'Circuit', 'conditioning',
+  array[
+      'agility-ladder-circuit'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  1, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  2, 1, 'Play', 'matchplay',
+  '{}', 'Social games. Play, do not train — this is the fun one.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  2, 2, 'Footwork — technique', 'footwork',
+  array[
+      'net-footwork'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  2, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  2, 4, 'Footwork — technique', 'footwork',
+  array[
+      'four-corner-footwork'
+    ], 'Quality over pace. Stop the block if the movement gets scrappy.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  2, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  2, 6, 'Easy conditioning', 'conditioning',
+  array[
+      'match-rhythm-intervals'
+    ], 'Comfortably hard. You should be able to speak in the rest.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  2, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  3, 1, 'Footwork — volume', 'footwork',
+  array[
+      'net-footwork'
+    ], 'Add a round rather than adding speed.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  3, 2, 'Circuit', 'conditioning',
+  array[
+      'agility-ladder-circuit'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  3, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  3, 4, 'Play', 'matchplay',
+  '{}', 'Social games. Play, do not train — this is the fun one.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  3, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  3, 6, 'Footwork — technique', 'footwork',
+  array[
+      'four-corner-footwork'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  3, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  4, 1, 'Easy footwork', 'footwork',
+  array[
+      'four-corner-footwork'
+    ], 'Half the usual rounds. Move well, do not chase the clock.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  4, 2, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  4, 3, 'Play for fun', 'matchplay',
+  '{}', 'No score, no pressure.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  4, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  4, 5, 'Light circuit', 'conditioning',
+  array[
+      'agility-ladder-circuit'
+    ], 'One round fewer than you think you need.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  4, 6, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  4, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  5, 1, 'Hard conditioning', 'conditioning',
+  array[
+      'rally-hiit'
+    ], 'The one you will want to skip. Do it anyway.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  5, 2, 'Match play', 'matchplay',
+  '{}', 'Competitive games. Notice where your movement breaks down first.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  5, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  5, 4, 'Footwork — volume', 'footwork',
+  array[
+      'rear-court-scissor'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  5, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  5, 6, 'Footwork under load', 'footwork',
+  array[
+      'four-corner-footwork'
+    ], 'Hold your form into the last round. That is the whole session.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  5, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  6, 1, 'Intervals', 'conditioning',
+  array[
+      'agility-ladder-circuit'
+    ], 'Take the full rest. Cutting it short trains the wrong thing.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  6, 2, 'Reaction work', 'footwork',
+  array[
+      'deception-reaction'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  6, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  6, 4, 'Hard conditioning', 'conditioning',
+  array[
+      'rally-hiit'
+    ], 'The one you will want to skip. Do it anyway.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  6, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  6, 6, 'Match play', 'matchplay',
+  '{}', 'Competitive games. Notice where your movement breaks down first.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  6, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  7, 1, 'Footwork — volume', 'footwork',
+  array[
+      'rear-court-scissor'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  7, 2, 'Footwork under load', 'footwork',
+  array[
+      'four-corner-footwork'
+    ], 'Hold your form into the last round. That is the whole session.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  7, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  7, 4, 'Intervals', 'conditioning',
+  array[
+      'agility-ladder-circuit'
+    ], 'Take the full rest. Cutting it short trains the wrong thing.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  7, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  7, 6, 'Reaction work', 'footwork',
+  array[
+      'deception-reaction'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  7, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  8, 1, 'Easy footwork', 'footwork',
+  array[
+      'four-corner-footwork'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  8, 2, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  8, 3, 'Easy footwork', 'footwork',
+  array[
+      'net-footwork'
+    ], 'Half the usual rounds. Move well, do not chase the clock.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  8, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  8, 5, 'Play for fun', 'matchplay',
+  '{}', 'No score, no pressure.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  8, 6, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  8, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  9, 1, 'Speed and reaction', 'footwork',
+  array[
+      'tabata-shadow'
+    ], 'Short and fast. Fully recovered before every block.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  9, 2, 'Sharp intervals', 'conditioning',
+  array[
+      'deception-reaction'
+    ], 'Ten-second efforts. Empty the tank, then take the whole rest.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  9, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  9, 4, 'Match play', 'matchplay',
+  '{}', 'Play as if it counts. This is what the last weeks were for.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  9, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  9, 6, 'Footwork — crisp', 'footwork',
+  array[
+      'six-corner-shadow'
+    ], 'Cut the volume, keep the pace.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  9, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  10, 1, 'Power circuit', 'conditioning',
+  array[
+      'match-rhythm-intervals'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  10, 2, 'Reaction work', 'footwork',
+  array[
+      'tabata-shadow'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  10, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  10, 4, 'Speed and reaction', 'footwork',
+  array[
+      'deception-reaction'
+    ], 'Short and fast. Fully recovered before every block.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  10, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  10, 6, 'Sharp intervals', 'conditioning',
+  array[
+      'tabata-shadow'
+    ], 'Ten-second efforts. Empty the tank, then take the whole rest.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  10, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  11, 1, 'Match play', 'matchplay',
+  '{}', 'Play as if it counts. This is what the last weeks were for.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  11, 2, 'Footwork — crisp', 'footwork',
+  array[
+      'six-corner-shadow'
+    ], 'Cut the volume, keep the pace.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  11, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  11, 4, 'Power circuit', 'conditioning',
+  array[
+      'rally-hiit'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  11, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  11, 6, 'Reaction work', 'footwork',
+  array[
+      'deception-reaction'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  11, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  12, 1, 'Light circuit', 'conditioning',
+  array[
+      'agility-ladder-circuit'
+    ], 'One round fewer than you think you need.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  12, 2, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  12, 3, 'Easy footwork', 'footwork',
+  array[
+      'net-footwork'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  12, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  12, 5, 'Easy footwork', 'footwork',
+  array[
+      'four-corner-footwork'
+    ], 'Half the usual rounds. Move well, do not chase the clock.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  12, 6, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'rebuild-the-engine'),
+  12, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  1, 1, 'Footwork — technique', 'footwork',
+  array[
+      'match-rhythm-intervals'
+    ], 'Quality over pace. Stop the block if the movement gets scrappy.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  1, 2, 'Easy conditioning', 'conditioning',
+  array[
+      'home-court-circuit'
+    ], 'Comfortably hard. You should be able to speak in the rest.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  1, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  1, 4, 'Footwork — volume', 'footwork',
+  array[
+      'match-rhythm-intervals'
+    ], 'Add a round rather than adding speed.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  1, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  1, 6, 'Circuit', 'conditioning',
+  array[
+      'home-court-circuit'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  1, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  2, 1, 'Play', 'matchplay',
+  '{}', 'Social games. Play, do not train — this is the fun one.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  2, 2, 'Footwork — technique', 'footwork',
+  array[
+      'match-rhythm-intervals'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  2, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  2, 4, 'Footwork — technique', 'footwork',
+  array[
+      'match-rhythm-intervals'
+    ], 'Quality over pace. Stop the block if the movement gets scrappy.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  2, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  2, 6, 'Easy conditioning', 'conditioning',
+  array[
+      'agility-ladder-circuit'
+    ], 'Comfortably hard. You should be able to speak in the rest.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  2, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  3, 1, 'Footwork — volume', 'footwork',
+  array[
+      'match-rhythm-intervals'
+    ], 'Add a round rather than adding speed.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  3, 2, 'Circuit', 'conditioning',
+  array[
+      'home-court-circuit'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  3, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  3, 4, 'Play', 'matchplay',
+  '{}', 'Social games. Play, do not train — this is the fun one.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  3, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  3, 6, 'Footwork — technique', 'footwork',
+  array[
+      'match-rhythm-intervals'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  3, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  4, 1, 'Easy footwork', 'footwork',
+  array[
+      'match-rhythm-intervals'
+    ], 'Half the usual rounds. Move well, do not chase the clock.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  4, 2, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  4, 3, 'Play for fun', 'matchplay',
+  '{}', 'No score, no pressure.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  4, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  4, 5, 'Light circuit', 'conditioning',
+  array[
+      'home-court-circuit'
+    ], 'One round fewer than you think you need.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  4, 6, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  4, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  5, 1, 'Hard conditioning', 'conditioning',
+  array[
+      'plyometric-power-circuit'
+    ], 'The one you will want to skip. Do it anyway.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  5, 2, 'Match play', 'matchplay',
+  '{}', 'Competitive games. Notice where your movement breaks down first.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  5, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  5, 4, 'Footwork — volume', 'footwork',
+  array[
+      'rally-hiit'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  5, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  5, 6, 'Footwork under load', 'footwork',
+  array[
+      'match-rhythm-intervals'
+    ], 'Hold your form into the last round. That is the whole session.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  5, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  6, 1, 'Intervals', 'conditioning',
+  array[
+      'home-court-circuit'
+    ], 'Take the full rest. Cutting it short trains the wrong thing.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  6, 2, 'Reaction work', 'footwork',
+  array[
+      'tabata-shadow'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  6, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  6, 4, 'Hard conditioning', 'conditioning',
+  array[
+      'plyometric-power-circuit'
+    ], 'The one you will want to skip. Do it anyway.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  6, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  6, 6, 'Match play', 'matchplay',
+  '{}', 'Competitive games. Notice where your movement breaks down first.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  6, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  7, 1, 'Reaction work', 'footwork',
+  array[
+      'tabata-shadow'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  7, 2, 'Speed and reaction', 'footwork',
+  array[
+      'tabata-shadow'
+    ], 'Short and fast. Fully recovered before every block.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  7, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  7, 4, 'Sharp intervals', 'conditioning',
+  array[
+      'tabata-shadow'
+    ], 'Ten-second efforts. Empty the tank, then take the whole rest.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  7, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  7, 6, 'Match play', 'matchplay',
+  '{}', 'Play as if it counts. This is what the last weeks were for.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  7, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  8, 1, 'Easy footwork', 'footwork',
+  array[
+      'match-rhythm-intervals'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  8, 2, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  8, 3, 'Easy footwork', 'footwork',
+  array[
+      'match-rhythm-intervals'
+    ], 'Half the usual rounds. Move well, do not chase the clock.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  8, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  8, 5, 'Play for fun', 'matchplay',
+  '{}', 'No score, no pressure.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  8, 6, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  8, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  9, 1, 'Speed and reaction', 'footwork',
+  array[
+      'tabata-shadow'
+    ], 'Short and fast. Fully recovered before every block.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  9, 2, 'Sharp intervals', 'conditioning',
+  array[
+      'tabata-shadow'
+    ], 'Ten-second efforts. Empty the tank, then take the whole rest.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  9, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  9, 4, 'Match play', 'matchplay',
+  '{}', 'Play as if it counts. This is what the last weeks were for.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  9, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  9, 6, 'Footwork — crisp', 'footwork',
+  array[
+      'rally-hiit'
+    ], 'Cut the volume, keep the pace.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  9, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  10, 1, 'Light circuit', 'conditioning',
+  array[
+      'home-court-circuit'
+    ], 'One round fewer than you think you need.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  10, 2, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  10, 3, 'Easy footwork', 'footwork',
+  array[
+      'match-rhythm-intervals'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  10, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  10, 5, 'Easy footwork', 'footwork',
+  array[
+      'match-rhythm-intervals'
+    ], 'Half the usual rounds. Move well, do not chase the clock.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  10, 6, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'no-court-comeback'),
+  10, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  1, 1, 'Footwork — technique', 'footwork',
+  array[
+      'net-footwork'
+    ], 'Quality over pace. Stop the block if the movement gets scrappy.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  1, 2, 'Easy conditioning', 'conditioning',
+  array[
+      'agility-ladder-circuit'
+    ], 'Comfortably hard. You should be able to speak in the rest.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  1, 3, 'Footwork — volume', 'footwork',
+  array[
+      'net-footwork'
+    ], 'Add a round rather than adding speed.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  1, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  1, 5, 'Circuit', 'conditioning',
+  array[
+      'agility-ladder-circuit'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  1, 6, 'Play', 'matchplay',
+  '{}', 'Social games. Play, do not train — this is the fun one.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  1, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  2, 1, 'Footwork — technique', 'footwork',
+  array[
+      'four-corner-footwork'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  2, 2, 'Footwork — technique', 'footwork',
+  array[
+      'net-footwork'
+    ], 'Quality over pace. Stop the block if the movement gets scrappy.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  2, 3, 'Easy conditioning', 'conditioning',
+  array[
+      'agility-ladder-circuit'
+    ], 'Comfortably hard. You should be able to speak in the rest.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  2, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  2, 5, 'Footwork — volume', 'footwork',
+  array[
+      'net-footwork'
+    ], 'Add a round rather than adding speed.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  2, 6, 'Circuit', 'conditioning',
+  array[
+      'agility-ladder-circuit'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  2, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  3, 1, 'Match play', 'matchplay',
+  '{}', 'Competitive games. Notice where your movement breaks down first.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  3, 2, 'Footwork — volume', 'footwork',
+  array[
+      'four-corner-footwork'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  3, 3, 'Footwork under load', 'footwork',
+  array[
+      'net-footwork'
+    ], 'Hold your form into the last round. That is the whole session.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  3, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  3, 5, 'Intervals', 'conditioning',
+  array[
+      'agility-ladder-circuit'
+    ], 'Take the full rest. Cutting it short trains the wrong thing.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  3, 6, 'Reaction work', 'footwork',
+  array[
+      'deception-reaction'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  3, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  4, 1, 'Easy footwork', 'footwork',
+  array[
+      'four-corner-footwork'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  4, 2, 'Easy footwork', 'footwork',
+  array[
+      'net-footwork'
+    ], 'Half the usual rounds. Move well, do not chase the clock.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  4, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  4, 4, 'Play for fun', 'matchplay',
+  '{}', 'No score, no pressure.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  4, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  4, 6, 'Light circuit', 'conditioning',
+  array[
+      'match-rhythm-intervals'
+    ], 'One round fewer than you think you need.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  4, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  5, 1, 'Intervals', 'conditioning',
+  array[
+      'rally-hiit'
+    ], 'Take the full rest. Cutting it short trains the wrong thing.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  5, 2, 'Reaction work', 'footwork',
+  array[
+      'multifeed-shadow'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  5, 3, 'Hard conditioning', 'conditioning',
+  array[
+      'match-rhythm-intervals'
+    ], 'The one you will want to skip. Do it anyway.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  5, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  5, 5, 'Match play', 'matchplay',
+  '{}', 'Competitive games. Notice where your movement breaks down first.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  5, 6, 'Footwork — volume', 'footwork',
+  array[
+      'net-footwork'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  5, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  6, 1, 'Speed and reaction', 'footwork',
+  array[
+      'deception-reaction'
+    ], 'Short and fast. Fully recovered before every block.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  6, 2, 'Sharp intervals', 'conditioning',
+  array[
+      'tabata-shadow'
+    ], 'Ten-second efforts. Empty the tank, then take the whole rest.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  6, 3, 'Match play', 'matchplay',
+  '{}', 'Play as if it counts. This is what the last weeks were for.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  6, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  6, 5, 'Footwork — crisp', 'footwork',
+  array[
+      'rear-court-scissor'
+    ], 'Cut the volume, keep the pace.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  6, 6, 'Power circuit', 'conditioning',
+  array[
+      'match-rhythm-intervals'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  6, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  7, 1, 'Reaction work', 'footwork',
+  array[
+      'tabata-shadow'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  7, 2, 'Speed and reaction', 'footwork',
+  array[
+      'deception-reaction'
+    ], 'Short and fast. Fully recovered before every block.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  7, 3, 'Sharp intervals', 'conditioning',
+  array[
+      'tabata-shadow'
+    ], 'Ten-second efforts. Empty the tank, then take the whole rest.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  7, 4, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  7, 5, 'Match play', 'matchplay',
+  '{}', 'Play as if it counts. This is what the last weeks were for.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  7, 6, 'Footwork — crisp', 'footwork',
+  array[
+      'rear-court-scissor'
+    ], 'Cut the volume, keep the pace.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  7, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  8, 1, 'Light circuit', 'conditioning',
+  array[
+      'agility-ladder-circuit'
+    ], 'One round fewer than you think you need.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  8, 2, 'Easy footwork', 'footwork',
+  array[
+      'net-footwork'
+    ], null
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  8, 3, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  8, 4, 'Easy footwork', 'footwork',
+  array[
+      'four-corner-footwork'
+    ], 'Half the usual rounds. Move well, do not chase the clock.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  8, 5, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  8, 6, 'Play for fun', 'matchplay',
+  '{}', 'No score, no pressure.'
+),
+(
+  (select id from public.programs where slug = 'sharpen-for-season'),
+  8, 7, 'Rest', 'rest',
+  '{}', 'Walk, stretch, sleep. Rest days are part of the plan, not a gap in it.'
+)
+on conflict (program_id, week_no, day_no) do update set
+  title       = excluded.title,
+  focus       = excluded.focus,
+  drill_slugs = excluded.drill_slugs,
+  notes       = excluded.notes;
+-- <<< end generated program seed
 
 --  Mirrors src/lib/data/badges.ts. Tiers are segmented on purpose: a beginner
 --  always has a bronze within reach and a returning competitor still has a
