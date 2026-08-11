@@ -7,149 +7,146 @@ the way.
 
 ## Status
 
-| Phase                                    | State                         |
-| ---------------------------------------- | ----------------------------- |
-| 0 — Scaffold, design system, data layer  | ✅ Done                        |
-| 1 — Guided drill trainer                 | ✅ Done                        |
-| 2 — Accounts, progress, benchmark        | ✅ Done                        |
-| **3 — Stamina & conditioning**           | ✅ **Done — ready for review** |
-| 4 — Multi-week programs                  | ⬜ Not started                 |
-| 5 — Curated library                      | ⬜ Not started                 |
+| Phase                                   | State                          |
+| --------------------------------------- | ------------------------------ |
+| 0 — Scaffold, design system, data layer | ✅ Done                        |
+| 1 — Guided drill trainer                | ✅ Done                        |
+| 2 — Accounts, progress, benchmark       | ✅ Done                        |
+| 3 — Stamina & conditioning              | ✅ Done                        |
+| **4 — Multi-week programs**             | ✅ **Done — ready for review** |
+| 5 — Curated library                     | ⬜ Not started                 |
 
-`npm run verify` is green: 0 type errors, 0 lint errors/warnings, 184 unit
+`npm run verify` is green: 0 type errors, 0 lint errors/warnings, 205 unit
 tests passing, production build clean.
 
 ---
 
-## Phase 3 — what the brief asked for
+## Phase 4 — what the brief asked for
 
-> *Badminton-specific HIIT built on real rally:rest ratios; Tabata; multifeed-style
-> shadow intervals. Agility-ladder and plyometric circuits with short demo clips
-> and coaching cues. On-court and at-home variants. Reuse the Phase-1 timer
-> engine; conditioning logs to `sessions` too.*
+> _8–12 week returning-player programs: Base → Build → Sharpen → Deload. 3–5
+> sessions a week mixing footwork, conditioning and rest. Enrolment tracking the
+> current week and day, with "today's session" surfaced on the home screen.
+> Volume adapted to level and court access. Users can publish their own._
 
-| Item                             | Status | How                                                                                     |
-| -------------------------------- | :----: | ----------------------------------------------------------------------------------------- |
-| HIIT on real rally:rest ratios   |   ✅   | Match Rhythm (6/12 × 12, a true 1:2) and Rally HIIT (15/15 × 10, deliberately harder).      |
-| Tabata                           |   ✅   | Shipped in Phase 1 as a drill *and* a structure preset on any drill.                        |
-| Multifeed shadow intervals       |   ✅   | 10s flat out / 30s recovery × 10 — short efforts so movement quality never degrades.        |
-| Agility-ladder circuits          |   ✅   | Four patterns: in-and-out, lateral shuffle, crossover, high knees.                          |
-| Plyometric circuits              |   ✅   | Jump squats, split jumps, lateral bounds, tuck jumps, step jumps.                           |
-| Demo clips + coaching cues       |   ◑   | Cues and faults in full; demos are drawn schematics rather than video — see below.          |
-| On-court and at-home variants    |   ✅   | Every workout is tagged, every exercise lists a no-kit substitute, and Train has a filter.  |
-| Reuse the timer engine           |   ✅   | One engine; circuits are ladder steps that name an exercise instead of calling a corner.    |
-| Conditioning logs to `sessions`  |   ✅   | Same session row, `source: 'conditioning'`, feeding the same streak and dashboard.          |
+| Item                              | Status | How                                                                                     |
+| --------------------------------- | :----: | --------------------------------------------------------------------------------------- |
+| Periodised 8–12 week programs     |   ✅   | 4–16 weeks supported; deload every fourth week plus a taper, then base/build/sharpen.   |
+| 3–5 sessions a week               |   ✅   | 2–6, spread across fixed weekdays; deload weeks train one session fewer.                |
+| Footwork, conditioning, rest      |   ✅   | Each phase has its own week pattern, including genuine rest days and match play.        |
+| Enrolment tracks week and day     |   ✅   | One active enrolment; advance, jump to any day, leave, and a completion state.          |
+| Today's session on the home screen |   ✅   | First card on Train: the day, its drill, one tap to run it, and progress through plan.  |
+| Adapted to level and court access |   ✅   | Beginners skip reaction work; an anywhere program never names a court drill.            |
+| Publish your own                  |   ✅   | Builder with a live phase preview; publish/unpublish; built-ins are read-only.          |
 
 ### Built
 
-**Circuits in the engine.** A ladder step can now carry an `exerciseSlug`. A
-step that does issues no corner calls, and the block records which exercise to
-perform. That one addition is the whole of the engine work — the clock, cursor,
-countdowns, pause/resume, wake lock and session logging are all untouched and
-shared.
+**A periodiser, not a calendar editor.** `src/lib/programs/periodise.ts` turns
+four numbers — weeks, sessions a week, level, location — into a full plan. Every
+fourth week is a deload and so is the last; the loading weeks left over split
+base → build → sharpen, remainder to base. Deterministic, so a published program
+looks identical to everyone who follows it, and testable without a UI (19 tests).
 
-**The exercise catalogue.** Eleven exercises with real coaching cues, common
-faults, and an explicit substitute for anyone without the kit. Bundled with the
-app, so a circuit runs in a garage with no signal.
+Hand-placing 84 days is not a task anyone finishes, and a plan assembled by hand
+tends not to periodise at all. So the builder asks for the shape and generates
+the rest.
 
-**Drawn demos.** Ladder work gets an animated footfall diagram; everything else
-gets a side-view figure computed from pose parameters — squat depth, height off
-the floor, tuck, arm swing, foot split, and lead-leg asymmetry. One renderer
-covers every non-ladder exercise, which is what makes a demo affordable for all
-of them.
+**Intensity is gated by phase.** Each drill pool is ordered easiest first, and a
+phase only draws from the part it has earned: base and deload weeks stay in the
+gentler half, sharpen weeks in the harder half, build weeks use everything.
+Without this, week one of a base block handed a returning player a plyometric
+circuit under the heading "Easy conditioning".
 
-**The circuit board.** In place of the court board: the exercise named large
-enough to read from the floor, the looping schematic, and the single cue that
-matters most. During a rest it switches to what is coming next, because that is
-the only thing worth knowing while you catch your breath. And the voice
-announces the exercise by name, so a circuit is as eyes-free as a drill —
-"tuck jumps" tells you everything, "go" tells you nothing.
+**Today, on Train.** The active enrolment's current day is the first card on the
+home screen: what today is, which drill it wants, and a single button that
+starts it. Rest days get "Rested — next day" instead.
 
-**Train, split.** Drills and Conditioning as tabs, plus a "No court" filter.
-Seven of the twelve workouts now need nothing but floor space.
+**Ticking a day off from the session summary.** Advancing is deliberate rather
+than automatic — a session can be logged from anywhere, and the same summary can
+be reopened days later. When the drill you just ran is the one the plan asked
+for, the prompt says so; otherwise it offers the day as a choice.
 
-**Generated SQL seed.** The catalogue and the Postgres seed had already drifted
-once, so `npm run seed:sql` now derives the SQL from the TypeScript. One source
-of truth.
+**Four built-in programs.** Return to Court (8wk, beginner, court), Rebuild the
+Engine (12wk, club, court), No-Court Comeback (10wk, club, anywhere) and Sharpen
+for the Season (8wk, competitive, court) — 266 generated days, all derived from
+the same periodiser and written into `schema.sql` by `npm run seed:sql`.
+
+**Court access on the profile.** A fourth onboarding question, and the Programs
+list puts plans you can actually train first.
 
 ---
 
 ## Decisions and their reasons
 
-**Circuits are drills, not a separate entity.** They share the table, the
-runner, the session log, the streak and the dashboard. A conditioning workout
-differs from a footwork drill in what it asks you to do, not in what it *is* —
-modelling it separately would have duplicated all of that for nothing.
+**Programs are generated, not stored day by day — locally.** The local backend
+keeps only the program's shape and any day the user has actually edited, as a
+sparse override; the days themselves are generated on read. The Supabase adapter
+does the opposite and writes every day out as a row, because a published program
+must look the same to every reader, including readers on a future version of the
+periodiser.
 
-**Demos are drawn rather than embedded.** Vetted clips are Phase 5, and made-up
-links rot. Rendering the demo means it works offline, matches the theme, and
-costs nothing to keep. For ladder patterns — where the pattern, not the effort,
-is the hard part — a diagram is arguably clearer than a video you would have to
-scrub back and forth.
+**Editing the shape rebuilds the plan.** Changing the length or the sessions per
+week regenerates the days and discards day-level edits. The alternative —
+reconciling hand-edits against a new periodisation — produces a plan that is
+neither what the user wrote nor what the periodiser would produce. The builder
+says so on the create screen.
 
-**The figure holds each keyframe.** Blending continuously between poses looked
-like a person swaying: the figure spent all its time between positions and never
-actually showed the one being taught. It now sits in each keyframe for 45% of
-the slot, then moves.
+**One active enrolment at a time.** Enrolling in a second program pauses the
+first rather than running both. Two periodised plans at once is not a training
+programme, it is twice the volume with none of the structure.
 
-**A lunge needed asymmetric legs.** Mirroring the two legs rendered every lunge
-as a wide stance. Poses now carry a `lead` parameter: front knee stacked over
-the ankle, trailing knee dropped towards the floor, torso upright rather than
-pitched forward.
+**Progress is measured in days, not sessions.** A 56-day plan advances ~1.8% per
+day, including rest days. Rest days are part of the plan, so skipping them in the
+denominator would make the bar lie about how far through you are.
 
-**Circuits drop the warm-up, the split-step tick and the sprint set.** All three
-are corner-call concepts. A metronome tick before a jump squat is meaningless,
-and a "warm-up" of corner calls makes no sense in a room with no court.
-
-**Countdowns are keyed on the phase, not on whether calls are issued.** A
-circuit block calls no corners but still needs "3, 2, 1" — otherwise the first
-few seconds of every exercise are guesswork.
+**Drills are referenced by slug, not id.** Slugs are stable across re-seeding and
+identical on both backends; a uuid would have to be resolved twice and would
+break the generated SQL seed.
 
 ### Deviations from the brief's data model
 
-`drills` gains four Phase-3 columns: `circuit` (jsonb), `circuit_rounds`,
-`location` and `equipment`. The circuit is jsonb rather than a child table
-because it is an ordered value object that is always read and written whole and
-never queried into — a `circuit_steps` table would buy joins nobody needs.
+`programs` gains `location` and `sessions_per_week`; `profiles` gains
+`court_access`; `program_days.drill_ids uuid[]` became `drill_slugs text[]` for
+the reason above. `programs.total_weeks` is constrained to 4–16.
 
 ### Fixed while verifying in a browser
 
-- `sanitizePlan` rebuilt ladder steps and dropped `exerciseSlug`, silently
-  turning every circuit back into a corner-calling drill. Caught by a test
-  written before the UI existed.
-- The runner's status line read "Then · Rest" during a circuit — technically
-  true, useless in practice. It now names the next exercise.
-- The session summary showed "Calls: 0" and a blank average interval for
-  circuits. Those tiles are now dropped and "Rounds" reads "Exercises".
-- The figure's head clipped the top of its viewBox at full standing height.
-- The pose caption named the keyframe being left rather than the one on screen,
-  so "TUCK" was shown over a figure standing on the ground.
+- The Today card's primary button read "Start Four-Corner Footwork" and pushed
+  the second action off a 414px screen. The drill is named in the card body now
+  and the button just says "Start".
+- A day row at 360px truncated its title to "Fo…" — two actions were eating the
+  width. The actions are icon-only with labels, and the title wraps.
+- Ticking a day off showed no confirmation whenever the next day was a rest day,
+  because the confirmation was rendered below the guard that hides the prompt on
+  rest days.
+- Finishing a program was completely silent: the enrolment completed and the
+  button quietly reverted to "Start this program". There is a completion banner
+  now, and the CTA reads "Start it again".
+- Base weeks off court opened with Rally HIIT and a plyometric circuit. See
+  intensity gating above.
 
 ### Known limitations
 
-- **Demos are schematic, not filmed.** They convey pattern and shape well and
-  tempo poorly. Phase 5 adds vetted clips alongside them, not instead of them.
-- **Circuits are not editable per step.** You can change the number of rounds
-  and the cool-down, but not swap an exercise or retime an individual block.
-  Custom circuits belong with the user-authored content in Phase 4.
-- **The Supabase path is still unexercised against a live project** — no
-  instance to point at here. Fully typed against the schema; the local backend
-  is exercised end to end.
-- **`equipment` is free text.** Fine for the seeded catalogue, too loose for
-  filtering once users author their own workouts.
+- **Days can be retitled but not re-planned.** You can jump to any day and skip
+  it, but not swap the drill a specific day asks for. The shape controls are the
+  intended lever; per-day authoring is a bigger surface than it is worth here.
+- **No calendar dates.** Day 1 is whenever you start, and the plan tracks
+  position rather than dates, so a missed week does not leave a hole. The cost is
+  that "week 3, day 2" never means a particular Tuesday.
+- **Demos are schematic, not filmed.** Phase 5 adds vetted clips alongside them.
+- **The Supabase path is still unexercised against a live project** — no instance
+  to point at here. Fully typed against the schema; the local backend is
+  exercised end to end.
 
 ---
 
-## Next: Phase 4 — structured multi-week programs
+## Next: Phase 5 — curated drill and video library
 
-1. Periodised 8–12 week returning-player programs: Base → Build → Sharpen →
-   Deload, 3–5 sessions a week mixing footwork, conditioning and rest days.
-2. Enrolment tracking current week and day; "Today's session" on the home
-   screen.
-3. Volume adapted to level and court access — the `location` tag added in this
-   phase is what makes an anywhere-only program possible.
-4. Users authoring and publishing their own programs (`is_public`), which is
-   also where per-step circuit editing belongs.
+1. Filter by category, level, solo or partner, court or home, and duration.
+2. Short reference clips from reputable coaches and federations, vetted rather
+   than scraped, with attribution.
+3. Coaching cues, common faults and recommended reps on every entry — most of
+   this already exists on the drill and exercise records.
+4. One tap to start any entry as a timed drill, pre-configured.
 
-The `programs`, `program_days` and `program_enrollments` tables and their RLS
-policies have been in the schema since Phase 0, so this is app work only.
+The `drills` table already carries `video_url`, cues and faults, so the work is
+curation plus a browsing surface rather than new plumbing.

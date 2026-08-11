@@ -5,10 +5,10 @@ partner. Guided footwork drills, conditioning, progression tracking, structured
 programs and a vetted library — in one place, instead of scattered across
 YouTube tabs.
 
-**Phases 1–3 are complete and usable** — the guided drill trainer, accounts,
-progress tracking, the fitness benchmark, and stamina/conditioning workouts.
-Phases 4 and 5 (multi-week programs and the vetted video library) are
-scaffolded and stated in the app, not yet built. See `PROGRESS.md`.
+**Phases 1–4 are complete and usable** — the guided drill trainer, accounts,
+progress tracking, the fitness benchmark, stamina/conditioning workouts, and
+periodised multi-week programs. Phase 5 (the vetted video library) is scaffolded
+and stated in the app, not yet built. See `PROGRESS.md`.
 
 ---
 
@@ -18,13 +18,13 @@ scaffolded and stated in the app, not yet built. See `PROGRESS.md`.
   buzzes the phone. You can complete a whole session without once looking at
   the screen — which is the point, because you cannot watch a screen and move
   to a corner at the same time.
-- **Solo-native.** The app *is* the random caller. No partner, no feeder, no
+- **Solo-native.** The app _is_ the random caller. No partner, no feeder, no
   court required.
 - **Split-step training.** An optional metronome tick fires a configurable
   0.2–0.7s before each call, so you learn to land the split-step as the call
   arrives. This is the single most common club-player fault.
 - **Real deception.** A fake call, then the real one, forcing a second
-  split-step. The fake sounds *identical* to a real call — a fake you can hear
+  split-step. The fake sounds _identical_ to a real call — a fake you can hear
   coming would train nothing.
 - **Offline.** Installable as a PWA. The timer, the drills and the coaching
   notes all work with no connection at all, and sessions still log.
@@ -40,6 +40,10 @@ scaffolded and stated in the app, not yet built. See `PROGRESS.md`.
   ratios, multifeed-style speed intervals, and agility-ladder and plyometric
   circuits — each exercise with coaching cues, common faults, a no-kit
   substitute, and an animated schematic the app draws itself.
+- **Programs that decide for you.** Periodised 4–16 week plans — Base → Build →
+  Sharpen, a deload every fourth week and a taper at the end — generated from
+  four choices rather than hand-assembled. Today's session is the first card on
+  the home screen. Write your own and publish it for other players to follow.
 
 ---
 
@@ -107,16 +111,16 @@ signed-out is uploaded to the account the first time you sign in.
 
 ## Scripts
 
-| Command             | What it does                                          |
-| ------------------- | ----------------------------------------------------- |
-| `npm run dev`       | Dev server with HMR                                    |
-| `npm run build`     | Typecheck, then production build (incl. service worker)|
-| `npm run preview`   | Serve the production build — needed to test the PWA    |
-| `npm test`          | Unit tests (Vitest)                                    |
-| `npm run lint`      | ESLint                                                 |
-| `npm run typecheck` | `tsc --noEmit`                                         |
-| `npm run format`    | Prettier                                               |
-| `npm run verify`    | typecheck + lint + test + build, in that order         |
+| Command             | What it does                                            |
+| ------------------- | ------------------------------------------------------- |
+| `npm run dev`       | Dev server with HMR                                     |
+| `npm run build`     | Typecheck, then production build (incl. service worker) |
+| `npm run preview`   | Serve the production build — needed to test the PWA     |
+| `npm test`          | Unit tests (Vitest)                                     |
+| `npm run lint`      | ESLint                                                  |
+| `npm run typecheck` | `tsc --noEmit`                                          |
+| `npm run format`    | Prettier                                                |
+| `npm run verify`    | typecheck + lint + test + build, in that order          |
 
 Two things are generated rather than hand-maintained:
 
@@ -141,11 +145,12 @@ Edit the TypeScript, then re-run the script — never the SQL block directly.
 src/
   lib/
     timer/        the drill engine — pure, deterministic, unit-tested
+    programs/     the periodiser — plans generated from four numbers
     audio/        speech, tones, haptics, wake lock (all feature-detected)
     data/         the repository layer: ports, local adapter, Supabase adapter
     auth/         Supabase auth, wrapped so nothing else touches the client
     supabase/     the one place a Supabase client is constructed
-  features/       one folder per domain (train, progress, benchmark, …)
+  features/       one folder per domain (train, progress, programs, …)
   components/     ui/ holds the shadcn primitives; the rest is app chrome
   store/          Zustand — cue preferences and per-drill setup
 ```
@@ -155,8 +160,8 @@ src/
 The part that has to be correct is the part that is easy to test, so it is
 four small pure modules with no React in sight:
 
-| Module         | Responsibility                                                         |
-| -------------- | ---------------------------------------------------------------------- |
+| Module         | Responsibility                                                          |
+| -------------- | ----------------------------------------------------------------------- |
 | `corners.ts`   | The court model for 4/6/8 zones, plus the audio and haptic mapping      |
 | `sequencer.ts` | Picks the next zone: sequential, random, weighted, and deception feints |
 | `timeline.ts`  | Expands a plan into absolute-timestamped events                         |
@@ -166,7 +171,7 @@ four small pure modules with no React in sight:
 A plan's main set is either uniform (`rounds` × work/rest) or an explicit
 `ladder` of steps. The ladder is what lets one engine drive three different
 things: a footwork drill, the stepped benchmark, and a conditioning circuit
-where each step names an *exercise* instead of calling a corner.
+where each step names an _exercise_ instead of calling a corner.
 
 A session's whole event timeline is **precomputed against absolute timestamps**
 from a seed, rather than accumulated tick by tick. Three things fall out of
@@ -194,6 +199,20 @@ never be missed because the app was closed at the wrong moment.
 Streaks are counted in **weeks, not days** — missing a Tuesday should not wipe
 out two months of consistent training.
 
+### The periodiser
+
+`src/lib/programs/periodise.ts` turns a program's shape — weeks, sessions a
+week, level, court access — into its full week-by-week plan. Every fourth week
+is a deload and so is the last; the loading weeks that remain split into base,
+build and sharpen blocks, with any remainder going to base, because more base is
+the safer error for a returning player. Each phase has its own weekly pattern of
+session types, and drill pools are ordered easiest first so a base week cannot
+serve up the hardest thing in the catalogue.
+
+It is pure and deterministic, which is what lets a published program look
+identical to everyone following it, and lets the whole thing be tested without a
+database or a browser.
+
 ### Design system
 
 Live documentation at [`/design-system`](http://localhost:5173/design-system):
@@ -218,7 +237,7 @@ an installed PWA makes no network requests at all.
   outlast its slot, and `speechSynthesis` queues rather than interrupts; left
   alone the voice ends up calling corners from ten seconds ago.
 - **Skipping a round does not count as completing it,** and the average shot
-  interval only measures gaps between calls *within the same block* — spanning
+  interval only measures gaps between calls _within the same block_ — spanning
   a rest would report the length of the break instead of the pace of the drill.
 - **Three columns were added to `drills`** beyond the original data model
   (`default_interval_ms`, `default_call_mode`, `enabled_corners`, and the
@@ -229,8 +248,17 @@ an installed PWA makes no network requests at all.
   sign-in screen says so, and with no Supabase project attached the app states
   that plainly rather than offering a button that cannot work.
 - **The benchmark runner has no Skip button.** Skipping a level would
-  invalidate the score, so the only way out is to stop — and stopping *is* the
+  invalidate the score, so the only way out is to stop — and stopping _is_ the
   measurement.
+- **Programs are generated from a shape, not authored day by day.** Hand-placing
+  84 days is not a task anyone finishes, and a plan assembled by hand tends not
+  to periodise at all. The builder asks four questions and generates the rest;
+  changing the shape later rebuilds the plan, which it says on the screen.
+- **Locally, only edited program days are stored.** The days are generated on
+  read from the program's shape, and an edited day is kept as a sparse override.
+  The Supabase adapter writes every day out as a row instead — a published
+  program has to look the same to every reader, including one on a later version
+  of the periodiser.
 - **Exercise demos are drawn, not filmed.** The brief asks for short demo
   clips; curating vetted video is Phase 5, and inventing links now would plant
   dead ones. Instead each exercise carries a schematic the app renders itself:
