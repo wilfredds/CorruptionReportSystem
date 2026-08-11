@@ -12,6 +12,7 @@ import { useRepositories } from '@/lib/data/context'
 import { formatDuration, pluralize } from '@/lib/utils'
 
 import { ProgramDayPrompt } from '../programs/components/ProgramDayPrompt'
+import { ShareSessionButton } from './components/ShareSessionButton'
 
 export function SessionSummaryPage() {
   const { id = '' } = useParams()
@@ -156,6 +157,23 @@ export function SessionSummaryPage() {
             <Link to={`/run/${drill.slug}`}>Go again</Link>
           </Button>
         )}
+        <ShareSessionButton
+          data={{
+            drillName: session.drillName ?? 'Solo session',
+            durationLabel: formatDuration(session.durationSec),
+            rounds: session.roundsCompleted,
+            calls,
+            paceLabel: session.avgShotIntervalMs
+              ? `${(session.avgShotIntervalMs / 1000).toFixed(2)}s`
+              : null,
+            streakWeeks: streak?.currentStreak ?? 0,
+            dateLabel: new Date(session.startedAt).toLocaleDateString(undefined, {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            }),
+          }}
+        />
         <Button asChild variant="outline" size="lg" className="flex-1">
           <Link to="/">Back to Train</Link>
         </Button>

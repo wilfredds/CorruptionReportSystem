@@ -24,6 +24,8 @@ import type { ThemePreference } from '@/lib/theme'
 import { formatDuration, pluralize } from '@/lib/utils'
 import { useDrillConfigStore } from '@/store/drillConfigStore'
 
+import { BackupCard } from './components/BackupCard'
+
 const LEVEL_LABEL = {
   beginner: 'Getting back into it',
   intermediate: 'Club player',
@@ -215,6 +217,10 @@ export function ProfilePage() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Directly after "Your data", because that card is where someone
+            realises their training only exists in this one browser. */}
+        <BackupCard />
 
         <Card>
           <CardHeader>

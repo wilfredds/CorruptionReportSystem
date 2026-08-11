@@ -45,6 +45,15 @@ deliberately absent: curated third-party video. See
   Sharpen, a deload every fourth week and a taper at the end — generated from
   four choices rather than hand-assembled. Today's session is the first card on
   the home screen. Write your own and publish it for other players to follow.
+- **A warm-up you can actually do.** Guided, audio-first, RAMP-structured — six
+  minutes of raise, mobilise and sharpen, or three when that is all you have,
+  plus a cool-down. Offered under the drill you are about to run, and it gets
+  out of the way once you have done it.
+- **Your data is yours.** Export every session and benchmark to one file and
+  import it on another device. Merges rather than overwrites, so importing the
+  same backup twice changes nothing.
+- **Share a session.** Drawn as an image and handed to the OS share sheet, which
+  is what reaches Messenger, Facebook and Instagram.
 - **A reference that is actually written.** Every drill, exercise and technique
   in one filterable list, each with coaching cues, the faults that spoil it, how
   much of it to do, and one tap to start it pre-configured. Search reads the

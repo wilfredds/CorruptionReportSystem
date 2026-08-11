@@ -17,7 +17,7 @@ the way.
 | **5 — Curated library**                 | ✅ **Done — ready for review** |
 
 All five phases are built. `npm run verify` is green: 0 type errors, 0 lint
-errors/warnings, 226 unit tests passing, production build clean.
+errors/warnings, 249 unit tests passing, production build clean.
 
 Earlier phases, one line each — the detail is in the git history:
 
@@ -27,6 +27,51 @@ Earlier phases, one line each — the detail is in the git history:
 - **3** — conditioning circuits on the same engine, an eleven-exercise
   catalogue, and drawn demos.
 - **4** — the periodiser, four built-in programs, and today's session on Train.
+
+---
+
+## After the brief — from testing on a real phone
+
+The first person to actually train with this asked for a warm-up, and was
+right: the app explained warming up in the Library and gave you no way to do
+one, which is the wrong way round for the only advice in here that prevents an
+injury rather than improving a shot.
+
+**A guided warm-up and cool-down.** Three routines — Full (6:25), Quick (3 min)
+and a five-minute cool-down — built as circuits on the existing engine, so no
+timer work at all. RAMP structure: raise the heart rate, mobilise the joints
+badminton punishes in the order it loads them, then two minutes of sharp
+court-specific movement. Seventeen new movements across two new exercise kinds.
+
+Every step rests for zero seconds, because the timeline already drops
+zero-length rests — a warm-up flows from one movement to the next instead of
+stopping to cool you down between them.
+
+**Warm-ups do not log a session.** Logging them would let someone hold a streak
+by stretching, and drag the training load and pace charts towards work that was
+deliberately easy. The app remembers only _that_ you warmed up, so the prompt
+can get out of the way for 45 minutes and then come back.
+
+**Export and import.** Local storage is scoped to one origin in one browser —
+we watched a domain change make a whole history unreachable during this build.
+One JSON file holds every session, its metrics and every benchmark. Importing
+merges rather than replaces, de-duplicating on when a session started rather
+than on its id, because ids are assigned by whichever device stored the row and
+never match across a backup. Importing the same file twice is a no-op.
+
+**A share card.** The session drawn onto a 1080×1350 canvas in the app's own
+palette, handed to `navigator.share` so it reaches Messenger, Facebook and
+Instagram through the OS share sheet — no per-platform SDKs, no API keys, and it
+works from an installed PWA. Where no share sheet exists it downloads the image
+instead, so the button is never a dead end.
+
+### Deliberately not built
+
+- **Push reminders.** iOS only delivers them to an installed PWA, they are
+  unreliable across platforms, and a daily nag is very easy to get wrong. A
+  training app that annoys you is one you delete.
+- **User-authored custom drills.** A large surface for something with little
+  daily value next to the twelve that ship.
 
 ---
 
