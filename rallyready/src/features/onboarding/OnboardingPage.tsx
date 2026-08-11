@@ -11,14 +11,15 @@ import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useAuth } from '@/lib/auth/context'
 import { useRepositories } from '@/lib/data/context'
 import { resolveRecommendation } from '@/lib/data/recommend'
-import type { Discipline, SkillLevel, TrainingGoal } from '@/lib/data/types'
+import type { Discipline, DrillLocation, SkillLevel, TrainingGoal } from '@/lib/data/types'
 import { estimateDurationSec, configFromDrill } from '@/lib/timer/plan'
 import { cn, formatCompactDuration } from '@/lib/utils'
 
 /**
- * Two minutes, three questions, then straight into a drill chosen for the
+ * Two minutes, four questions, then straight into a drill chosen for the
  * answers — plus a badge for finishing. Early wins are what turn a first visit
- * into a second one (§4 Phase 2).
+ * into a second one (§4 Phase 2). The last question, court access, is what
+ * lets Phase 4 hand out a program that fits where you actually train.
  */
 
 interface Choice<T extends string> {
@@ -53,12 +54,37 @@ const DISCIPLINES: Choice<Discipline>[] = [
 
 const GOALS: Choice<TrainingGoal>[] = [
   { value: 'stamina', label: 'Rebuild my stamina', detail: 'Last a full match without fading.' },
-  { value: 'footwork', label: 'Sharpen my footwork', detail: 'Get to the shuttle earlier, in balance.' },
-  { value: 'match-ready', label: 'Get match-ready', detail: 'Train the rhythm a real game demands.' },
-  { value: 'consistency', label: 'Train consistently', detail: 'Build the habit before the intensity.' },
+  {
+    value: 'footwork',
+    label: 'Sharpen my footwork',
+    detail: 'Get to the shuttle earlier, in balance.',
+  },
+  {
+    value: 'match-ready',
+    label: 'Get match-ready',
+    detail: 'Train the rhythm a real game demands.',
+  },
+  {
+    value: 'consistency',
+    label: 'Train consistently',
+    detail: 'Build the habit before the intensity.',
+  },
 ]
 
-type Step = 0 | 1 | 2 | 3
+const COURT_ACCESS: Choice<DrillLocation>[] = [
+  {
+    value: 'court',
+    label: 'I can get on a court',
+    detail: 'Regular hall or club access. Programs will use the full court.',
+  },
+  {
+    value: 'anywhere',
+    label: 'Mostly at home',
+    detail: 'A garage, a hallway, a patch of grass. Programs will need no court.',
+  },
+]
+
+type Step = 0 | 1 | 2 | 3 | 4
 
 export function OnboardingPage() {
   const navigate = useNavigate()
@@ -71,6 +97,7 @@ export function OnboardingPage() {
   const [skillLevel, setSkillLevel] = useState<SkillLevel | null>(null)
   const [primaryDiscipline, setPrimaryDiscipline] = useState<Discipline | null>(null)
   const [goal, setGoal] = useState<TrainingGoal | null>(null)
+  const [courtAccess, setCourtAccess] = useState<DrillLocation | null>(null)
   const [saving, setSaving] = useState(false)
 
   const { data: drills = [] } = useQuery({
@@ -78,8 +105,8 @@ export function OnboardingPage() {
     queryFn: () => repositories.drills.list(),
   })
 
-  const finish = async (chosenGoal: TrainingGoal) => {
-    setGoal(chosenGoal)
+  const finish = async (chosenAccess: DrillLocation) => {
+    setCourtAccess(chosenAccess)
     setSaving(true)
     try {
       await repositories.profiles.save({
@@ -87,7 +114,8 @@ export function OnboardingPage() {
         avatarUrl: auth.user?.avatarUrl ?? null,
         skillLevel: skillLevel ?? 'intermediate',
         primaryDiscipline: primaryDiscipline ?? 'both',
-        goal: chosenGoal,
+        goal: goal ?? 'footwork',
+        courtAccess: chosenAccess,
       })
       await repositories.badges.award(['getting-started'])
       await queryClient.invalidateQueries()
@@ -96,11 +124,11 @@ export function OnboardingPage() {
       // recommendation below is unaffected — only persistence is lost.
     }
     setSaving(false)
-    setStep(3)
+    setStep(4)
   }
 
   const recommendation =
-    step === 3 && drills.length > 0
+    step === 4 && drills.length > 0
       ? resolveRecommendation(
           {
             skillLevel: skillLevel ?? 'intermediate',
@@ -130,7 +158,7 @@ export function OnboardingPage() {
               Skip for now
             </Link>
           </Button>
-        ) : step < 3 ? (
+        ) : step < 4 ? (
           <Button
             variant="ghost"
             size="sm"
@@ -143,18 +171,18 @@ export function OnboardingPage() {
         ) : (
           <span />
         )}
-        {step < 3 && (
+        {step < 4 && (
           <span className="text-muted-foreground tnum text-xs font-medium">
-            Step {step + 1} of 3
+            Step {step + 1} of 4
           </span>
         )}
       </div>
 
-      {step < 3 && (
+      {step < 4 && (
         <div className="bg-secondary mb-7 h-1 w-full overflow-hidden rounded-full">
           <div
             className="bg-primary h-full rounded-full transition-[width] duration-300"
-            style={{ width: `${((step + 1) / 3) * 100}%` }}
+            style={{ width: `${((step + 1) / 4) * 100}%` }}
           />
         </div>
       )}
@@ -197,13 +225,28 @@ export function OnboardingPage() {
               subtitle="Pick the one that matters most this month."
               choices={GOALS}
               selected={goal}
+              onSelect={(value) => {
+                setGoal(value)
+                setStep(3)
+              }}
+            />
+          </motion.div>
+        )}
+
+        {step === 3 && (
+          <motion.div key="court" {...transition}>
+            <Question
+              title="Where will you train?"
+              subtitle="Programs adapt to this — a no-court plan uses nothing but floor space."
+              choices={COURT_ACCESS}
+              selected={courtAccess}
               onSelect={(value) => void finish(value)}
               busy={saving}
             />
           </motion.div>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <motion.div
             key="done"
             initial={reducedMotion ? false : { opacity: 0, y: 12 }}

@@ -84,9 +84,7 @@ export function ProfilePage() {
             {auth.status === 'signed-in' && auth.user && (
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="truncate font-medium">
-                    {auth.user.displayName ?? auth.user.email}
-                  </p>
+                  <p className="truncate font-medium">{auth.user.displayName ?? auth.user.email}</p>
                   <p className="text-muted-foreground truncate text-sm">{auth.user.email}</p>
                 </div>
                 <Button variant="outline" onClick={() => void auth.signOut()}>
