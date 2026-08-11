@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Flame, Home, Play, SlidersHorizontal, Sparkles, Zap } from 'lucide-react'
+import { Flame, Home, Play, SlidersHorizontal, Sparkles, X, Zap } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -15,6 +15,7 @@ import type { Drill } from '@/lib/data/types'
 import { configFromDrill, estimateDurationSec } from '@/lib/timer/plan'
 import { formatCompactDuration, pluralize } from '@/lib/utils'
 import { useDrillConfigStore } from '@/store/drillConfigStore'
+import { useUiStore } from '@/store/uiStore'
 
 import { TodayCard } from '../programs/components/TodayCard'
 import { CueSettingsDialog } from './components/CueSettingsDialog'
@@ -26,6 +27,8 @@ type Tab = 'drills' | 'conditioning'
 export function TrainPage() {
   const repositories = useRepositories()
   const overrides = useDrillConfigStore((state) => state.overrides)
+  const setupDismissed = useUiStore((state) => state.setupPromptDismissed)
+  const dismissSetup = useUiStore((state) => state.dismissSetupPrompt)
   const [tab, setTab] = useState<Tab>('drills')
   const [homeOnly, setHomeOnly] = useState(false)
 
@@ -85,36 +88,17 @@ export function TrainPage() {
 
       <TodayCard />
 
-      {!profileLoading && !profile && (
-        <Card className="mb-6">
-          <CardContent className="flex items-center gap-4 p-4">
-            <div className="bg-accent text-accent-foreground grid size-11 shrink-0 place-items-center rounded-xl">
-              <Sparkles className="size-5" aria-hidden />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">Get drills picked for you</p>
-              <p className="text-muted-foreground text-xs leading-relaxed">
-                Four questions, under two minutes.
-              </p>
-            </div>
-            <Button asChild size="sm" className="shrink-0">
-              <Link to="/onboarding">Set up</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
       {isLoading && <p className="text-muted-foreground text-sm">Loading drills…</p>}
 
       {featured && (
-        <Card className="border-primary/40 from-accent/60 mb-8 overflow-hidden bg-gradient-to-br to-transparent">
+        <Card className="border-primary/40 from-accent/60 mb-6 overflow-hidden bg-gradient-to-br to-transparent">
           <CardContent className="flex flex-col gap-4 p-5">
             <div>
               <Badge variant="accent" className="mb-2">
                 <Zap className="size-3" aria-hidden />
                 {recommendation ? 'Picked for you' : 'Start here'}
               </Badge>
-              <h2 className="text-2xl font-bold tracking-tight">{featured.name}</h2>
+              <h2 className="text-3xl font-bold tracking-tight text-balance">{featured.name}</h2>
               <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
                 {recommendation?.reason ?? featured.description}
               </p>
@@ -146,6 +130,31 @@ export function TrainPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Below the drill it is offering to improve, and dismissible. Above it,
+          an unclosable prompt outranked the content it was advertising. */}
+      {!profileLoading && !profile && !setupDismissed && (
+        <div className="border-border mb-8 flex items-center gap-3 rounded-xl border border-dashed p-3">
+          <Sparkles className="text-primary size-4 shrink-0" aria-hidden />
+          <p className="text-muted-foreground min-w-0 flex-1 text-xs leading-relaxed">
+            <span className="text-foreground font-medium">Get drills picked for you.</span> Four
+            questions, under two minutes.
+          </p>
+          <Button asChild size="sm" variant="outline" className="shrink-0">
+            <Link to="/onboarding">Set up</Link>
+          </Button>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            className="shrink-0"
+            onClick={dismissSetup}
+            title="Dismiss"
+          >
+            <X />
+            <span className="sr-only">Dismiss this prompt</span>
+          </Button>
+        </div>
       )}
 
       <section aria-labelledby="catalogue">

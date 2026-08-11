@@ -1,16 +1,17 @@
 import type { ReactNode } from 'react'
 
-import { ThemeToggle } from '@/components/ThemeToggle'
-
 interface PageHeaderProps {
   title: string
   description?: string
   action?: ReactNode
-  /** Hide the theme control on screens that supply their own actions. */
-  hideThemeToggle?: boolean
 }
 
-export function PageHeader({ title, description, action, hideThemeToggle }: PageHeaderProps) {
+/**
+ * The theme control used to live here, on every screen, as an unlabelled
+ * monitor glyph — a second way to set something Profile already owns properly.
+ * One home for one setting.
+ */
+export function PageHeader({ title, description, action }: PageHeaderProps) {
   return (
     <header className="mb-7 flex items-start justify-between gap-4">
       <div className="min-w-0">
@@ -21,10 +22,7 @@ export function PageHeader({ title, description, action, hideThemeToggle }: Page
           </p>
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-1">
-        {action}
-        {!hideThemeToggle && <ThemeToggle />}
-      </div>
+      {action && <div className="flex shrink-0 items-center gap-1">{action}</div>}
     </header>
   )
 }

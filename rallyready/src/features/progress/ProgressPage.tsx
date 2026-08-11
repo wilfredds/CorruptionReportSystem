@@ -1,4 +1,12 @@
-import { Award, Flame, Gauge, LineChart as LineChartIcon, Timer, Trophy } from 'lucide-react'
+import {
+  Award,
+  Flame,
+  Gauge,
+  LineChart as LineChartIcon,
+  Timer,
+  TrendingUp,
+  Trophy,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import {
   Bar,
@@ -45,24 +53,92 @@ export function ProgressPage() {
 
       {loading && <p className="text-muted-foreground text-sm">Loading your history…</p>}
 
+      {/* An empty dashboard should still show what it is going to measure —
+            otherwise the screen is one card floating above nothing, and the
+            player has no idea what logging a session actually buys them. */}
       {!loading && !hasHistory && (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-            <div className="bg-accent text-accent-foreground grid size-14 place-items-center rounded-2xl">
-              <LineChartIcon className="size-7" aria-hidden />
-            </div>
-            <div>
-              <p className="font-semibold">No sessions yet</p>
-              <p className="text-muted-foreground mt-1 max-w-sm text-sm leading-relaxed">
-                Complete a drill and this fills in: a weekly streak, your training load, your pace
-                over time, and the badges you have earned along the way.
-              </p>
-            </div>
-            <Button asChild size="lg">
-              <Link to="/">Start a drill</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="space-y-5">
+          <Card>
+            <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
+              <div className="bg-accent text-accent-foreground grid size-14 place-items-center rounded-2xl">
+                <LineChartIcon className="size-7" aria-hidden />
+              </div>
+              <div>
+                <p className="font-semibold">Nothing logged yet</p>
+                <p className="text-muted-foreground mt-1 max-w-sm text-sm leading-relaxed">
+                  Finish one drill and this page starts working. Nothing here is entered by hand —
+                  it is all derived from sessions you actually did.
+                </p>
+              </div>
+              <Button asChild size="lg">
+                <Link to="/">Start your first drill</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <div>
+            <h2 className="text-muted-foreground mb-3 text-sm font-semibold tracking-wide uppercase">
+              What you will see here
+            </h2>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {[
+                {
+                  icon: <Flame className="size-4" aria-hidden />,
+                  title: 'A weekly streak',
+                  body: 'Counted in weeks, not days — missing a Tuesday should not wipe out two months.',
+                },
+                {
+                  icon: <Timer className="size-4" aria-hidden />,
+                  title: 'Training load',
+                  body: 'How much you actually did each week, so a heavy block is visible before your legs tell you.',
+                },
+                {
+                  icon: <TrendingUp className="size-4" aria-hidden />,
+                  title: 'Whether you are getting faster',
+                  body: 'Average seconds between calls, per session, charted so improvement reads as up.',
+                },
+                {
+                  icon: <Trophy className="size-4" aria-hidden />,
+                  title: 'Personal bests and badges',
+                  body: 'Per drill, and a trophy case that fills in as you go.',
+                },
+              ].map((item) => (
+                <li key={item.title}>
+                  <Card className="h-full">
+                    <CardContent className="flex h-full gap-3 p-4">
+                      <span className="bg-secondary text-muted-foreground grid size-9 shrink-0 place-items-center rounded-lg">
+                        {item.icon}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold">{item.title}</p>
+                        <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
+                          {item.body}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <Card>
+            <CardContent className="flex items-center gap-4 p-4">
+              <div className="bg-accent text-accent-foreground grid size-11 shrink-0 place-items-center rounded-xl">
+                <Gauge className="size-5" aria-hidden />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">Or start with a number</p>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  The fitness benchmark gives you a score to improve on from day one.
+                </p>
+              </div>
+              <Button asChild size="sm" variant="outline" className="shrink-0">
+                <Link to="/benchmark">Take it</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {!loading && hasHistory && (

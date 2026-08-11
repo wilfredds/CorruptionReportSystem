@@ -12,7 +12,6 @@ import {
 import { Link } from 'react-router-dom'
 
 import { PageHeader } from '@/components/PageHeader'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Segmented } from '@/components/ui/segmented'
@@ -62,7 +61,6 @@ export function ProfilePage() {
       <PageHeader
         title="Profile"
         description="Your account, your settings, and where your data lives."
-        hideThemeToggle
       />
 
       <div className="space-y-5">
@@ -76,7 +74,7 @@ export function ProfilePage() {
               {auth.status === 'signed-in'
                 ? 'Your sessions sync to this account.'
                 : auth.status === 'unavailable'
-                  ? 'This build has no Supabase project attached, so everything stays on this device.'
+                  ? 'Accounts are switched off in this build, so your training stays on this device. Everything still works.'
                   : 'Signing in syncs your training across devices. It is entirely optional.'}
             </CardDescription>
           </CardHeader>
@@ -170,7 +168,7 @@ export function ProfilePage() {
             <CardDescription>
               {repositories.backend === 'supabase'
                 ? 'Synced to your account. A copy stays on this device so drills still run offline.'
-                : 'Stored on this device only.'}
+                : 'Everything you have logged, and what it would take to lose it.'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -185,12 +183,17 @@ export function ProfilePage() {
               </div>
             </dl>
 
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">Backend: {repositories.backend}</Badge>
-              <Badge variant="outline">
-                Supabase {isSupabaseConfigured() ? 'configured' : 'not configured'}
-              </Badge>
-            </div>
+            {/* Where the data lives, in words a player can act on. The old
+                version read "Backend: local · Supabase not configured", which
+                is a developer's status line, not an answer to "is my training
+                safe if I lose this phone?". */}
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              {repositories.backend === 'supabase'
+                ? 'Saved to your account, so it survives losing this phone.'
+                : isSupabaseConfigured()
+                  ? 'Saved in this browser. Sign in and it comes with you to your other devices.'
+                  : 'Saved in this browser. Clearing your browser data would erase it.'}
+            </p>
 
             <Button
               variant="outline"
