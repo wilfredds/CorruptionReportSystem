@@ -351,6 +351,44 @@ select test.record(
   exists (select 1 from public.reservation_events where action = 'deleted'));
 
 -- ===========================================================================
+--  RATE LIMITING
+-- ===========================================================================
+set role anon;
+set request.jwt.claims = '{"role":"anon"}';
+
+-- Three requests against a limit of 3 all pass; the fourth does not.
+select test.record(
+  'rate limit: allows requests up to the cap',
+  (select bool_and(public.check_rate_limit('test:burst', 3, 60))
+   from generate_series(1, 3)));
+
+select test.record(
+  'rate limit: refuses the request after the cap',
+  public.check_rate_limit('test:burst', 3, 60) = false);
+
+-- Buckets are independent, so one noisy visitor cannot lock everyone else out.
+select test.record(
+  'rate limit: a different caller has their own budget',
+  public.check_rate_limit('test:someone-else', 3, 60) = true);
+
+-- A zero-second window has always already expired, which is the cheapest way
+-- to test that an elapsed window resets the count instead of staying blocked.
+select test.record(
+  'rate limit: the window resets once it has elapsed',
+  public.check_rate_limit('test:burst', 3, 0) = true);
+
+-- The counter is not something a caller can read or reset.
+select test.record(
+  'rate limit: caller CANNOT read the counter table',
+  test.run($q$select * from public.rate_limits$q$) in ('rows=0', 'error:42501'));
+
+select test.record(
+  'rate limit: caller CANNOT delete their own counter',
+  test.run($q$delete from public.rate_limits$q$) like 'error:%');
+
+reset role;
+
+-- ===========================================================================
 --  RESULTS
 -- ===========================================================================
 \set QUIET off

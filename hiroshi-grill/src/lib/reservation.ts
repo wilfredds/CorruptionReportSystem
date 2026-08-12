@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { unliPackages } from "./menu";
+import { unliPackages } from "./menu.ts";
 
 /**
  * ONE schema, used in two places, for two different reasons.
@@ -93,11 +93,16 @@ export const reservationSchema = z.object({
 
   /**
    * Honeypot. A real guest never sees this field, so a real guest never fills
-   * it in. Bots fill every input they find. If it arrives with anything in it,
-   * the server will accept the request with a 200 (so the bot learns nothing)
-   * and quietly drop it.
+   * it in. Bots fill every input they find.
+   *
+   * `.trim()` before `.max(0)` so that whitespace counts as empty. The API
+   * route decides what to do about a filled honeypot — it accepts the request
+   * with a cheerful 201 and silently drops it, so the bot learns nothing — and
+   * it makes that call by trimming too. These two had to agree on what "empty"
+   * means, and they did not: the schema rejected "   " with a 400 while the
+   * route waved it through as a real guest. A test caught the disagreement.
    */
-  website: z.string().max(0).optional(),
+  website: z.string().trim().max(0).optional(),
 });
 
 /** What the schema hands back once it has parsed and coerced everything. */

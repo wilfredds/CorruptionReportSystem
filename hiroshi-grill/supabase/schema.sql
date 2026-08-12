@@ -428,3 +428,108 @@ grant select on public.staff_reservations to authenticated;
 
 grant execute on function public.staff_role() to anon, authenticated;
 grant execute on function public.mask_contact(text) to authenticated;
+
+-- ============================================================================
+--  6. RATE LIMITING  (§6 — "cap requests per IP")
+-- ============================================================================
+--  The spec suggests Upstash. This does it in the database we already have,
+--  which matters more than saving a round trip: the obvious alternative, a
+--  counter in a JavaScript variable, is worthless on Vercel. Every serverless
+--  instance gets its own memory, instances come and go per request, and a bot
+--  that trips the limit simply lands on a fresh one. An in-memory limiter on
+--  serverless is a limiter that does not limit.
+--
+--  Shared state is the whole requirement, and Postgres is shared state.
+--
+--  On identity: the key stored here is a SALTED HASH of the caller's IP, never
+--  the address itself (see src/lib/rate-limit.ts). The database therefore holds
+--  no record of who visited the site — the limiter can still recognise a
+--  repeat caller, but the table is useless to anyone who steals it. Under the
+--  Data Privacy Act an IP address is personal information; a salted hash is
+--  the cheapest way to not be holding any.
+-- ============================================================================
+
+create table if not exists public.rate_limits (
+  bucket text primary key,
+  count int not null default 0,
+  window_start timestamptz not null default now()
+);
+
+-- Returns TRUE if this request is allowed, FALSE if the caller is over budget.
+--
+-- The whole thing is one INSERT ... ON CONFLICT DO UPDATE, which Postgres
+-- executes atomically. That is the point. The naive version — SELECT the
+-- count, add one, UPDATE — has a race between the read and the write, and two
+-- requests arriving together both read the old value and both pass. Under a
+-- burst, which is exactly when a rate limiter is supposed to work, the naive
+-- version fails. This one cannot: the row is locked for the duration of the
+-- upsert, so concurrent callers queue and each sees the previous one's count.
+create or replace function public.check_rate_limit(
+  p_bucket text,
+  p_limit int,
+  p_window_seconds int
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_now timestamptz := clock_timestamp();
+  v_count int;
+begin
+  insert into public.rate_limits as rl (bucket, count, window_start)
+  values (p_bucket, 1, v_now)
+  on conflict (bucket) do update
+    set
+      -- Fixed window: once the old window has elapsed, this request starts a
+      -- new one at 1 rather than incrementing a stale count.
+      count = case
+        when rl.window_start < v_now - make_interval(secs => p_window_seconds) then 1
+        else rl.count + 1
+      end,
+      window_start = case
+        when rl.window_start < v_now - make_interval(secs => p_window_seconds) then v_now
+        else rl.window_start
+      end
+  returning rl.count into v_count;
+
+  return v_count <= p_limit;
+end;
+$$;
+
+-- Housekeeping. Buckets are worthless once their window has passed, and left
+-- alone this table would grow forever. Call it from pg_cron (Database →
+-- Extensions → pg_cron) or any scheduler:
+--   select cron.schedule('prune-rate-limits', '0 * * * *',
+--                        $$select public.prune_rate_limits()$$);
+create or replace function public.prune_rate_limits(p_older_than_seconds int default 86400)
+returns int
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_deleted int;
+begin
+  delete from public.rate_limits
+  where window_start < clock_timestamp() - make_interval(secs => p_older_than_seconds);
+  get diagnostics v_deleted = row_count;
+  return v_deleted;
+end;
+$$;
+
+alter table public.rate_limits enable row level security;
+alter table public.rate_limits force row level security;
+
+-- No policies at all, deliberately. Nothing may read this table, and nothing
+-- may write to it except the security-definer function above. A caller who
+-- could SELECT here would learn how close they are to the limit; a caller who
+-- could DELETE would simply reset their own counter.
+revoke all on public.rate_limits from anon, authenticated;
+
+-- The public form is used by logged-out visitors, so anon must be able to call
+-- the check. It can call it and nothing else — the function decides what
+-- happens to the table.
+grant execute on function public.check_rate_limit(text, int, int) to anon, authenticated;
+grant execute on function public.prune_rate_limits(int) to service_role;

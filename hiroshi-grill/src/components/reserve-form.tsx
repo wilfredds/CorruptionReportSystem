@@ -12,13 +12,6 @@ import {
   type ReservationFormValues,
 } from "@/lib/reservation";
 
-/**
- * Milestone 1 renders the form and validates it in the browser, but there is
- * nowhere to send it yet — `/api/reservations` arrives in milestone 3, once
- * Supabase is standing. Flip this to `true` then and delete the preview panel.
- */
-const BOOKING_ENDPOINT_LIVE = false;
-
 const emptyForm: ReservationFormValues = {
   name: "",
   contact: "",
@@ -33,7 +26,6 @@ const emptyForm: ReservationFormValues = {
 type Status =
   | { kind: "idle" }
   | { kind: "sending" }
-  | { kind: "preview"; summary: string }
   | { kind: "sent" }
   | { kind: "failed"; message: string };
 
@@ -93,31 +85,51 @@ export function ReserveForm() {
     }
 
     setErrors({});
-
-    if (!BOOKING_ENDPOINT_LIVE) {
-      setStatus({
-        kind: "preview",
-        summary: `${result.data.name} · party of ${result.data.partySize} · ${result.data.reserveDate} at ${result.data.reserveTime}`,
-      });
-      return;
-    }
-
     setStatus({ kind: "sending" });
+
     try {
       const response = await fetch("/api/reservations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (!response.ok) {
-        throw new Error(`Request failed with ${response.status}`);
+
+      if (response.ok) {
+        setForm(emptyForm);
+        setStatus({ kind: "sent" });
+        return;
       }
-      setForm(emptyForm);
-      setStatus({ kind: "sent" });
-    } catch {
+
+      /* The server re-ran the same schema and disagreed with us. That should be
+         impossible after the check above — but it is exactly what happens if
+         the guest leaves the tab open past midnight and their chosen date
+         quietly becomes yesterday. Show the server's verdict; it is the one
+         that decides. */
+      if (response.status === 400) {
+        const payload = (await response.json()) as { errors?: ReservationErrors };
+        setErrors(payload.errors ?? {});
+        setStatus({ kind: "idle" });
+        return;
+      }
+
+      if (response.status === 429) {
+        setStatus({
+          kind: "failed",
+          message:
+            "That is a lot of requests in a short time. Please wait a few minutes, or give us a call.",
+        });
+        return;
+      }
+
       setStatus({
         kind: "failed",
-        message: "We could not send that. Please try again, or give us a call.",
+        message: "We could not save that request. Please try again, or give us a call.",
+      });
+    } catch {
+      /* fetch itself failed — no network, or the request never landed. */
+      setStatus({
+        kind: "failed",
+        message: "We could not reach the restaurant. Please check your connection, or call us.",
       });
     }
   }
@@ -303,13 +315,6 @@ export function ReserveForm() {
           {/* Status is announced politely so a screen reader hears the outcome
               without the focus being yanked away from the button. */}
           <div aria-live="polite" className="mt-4 empty:mt-0">
-            {status.kind === "preview" ? (
-              <p className="rounded-lg border border-gold/50 bg-gold/10 px-4 py-3 text-sm text-sumi-soft">
-                <strong className="font-semibold">Preview only — nothing was sent.</strong> The
-                booking API lands in milestone 3. This request passed validation:{" "}
-                {status.summary}
-              </p>
-            ) : null}
             {status.kind === "sent" ? (
               <p className="rounded-lg border border-lacquer/30 bg-lacquer/5 px-4 py-3 text-sm text-sumi-soft">
                 Request received. Our host will text you to confirm — please wait for that reply

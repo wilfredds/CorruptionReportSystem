@@ -31,6 +31,7 @@ npm run dev                    # http://localhost:3000
 ```bash
 npm run build && npm run start # production build
 npm run lint
+npm test                       # endpoint tests — no server, no database needed
 npm run db:test                # apply the schema to a scratch DB, test the policies
 ```
 
@@ -43,10 +44,10 @@ the staff accounts — is in [`supabase/README.md`](supabase/README.md).
 | --- | --- | --- |
 | 1 | Scaffold, design tokens, public site | **Done** |
 | 2 | Supabase tables, RLS policies | **Done** — 37 policy tests pass |
-| 3 | `/api/reservations` — server validation + rate limit | Not started |
+| 3 | `/api/reservations` — server validation + rate limit | **Done** — 29 endpoint tests |
 | 4 | Supabase Auth login at `/portal` | Placeholder page only |
 | 5 | `/portal/dashboard` with role-aware controls | Not started |
-| 6 | Honeypot/Turnstile, per-role testing | Honeypot done |
+| 6 | Honeypot/Turnstile, per-role testing | Honeypot wired; Turnstile pending |
 | 7 | SEO + deploy | Metadata & JSON-LD done |
 
 ## ⚠️ Before this goes public
@@ -82,12 +83,42 @@ using one render per request instead of being served from a build-time cache.
 
 **One validation schema, run twice** (`src/lib/reservation.ts`) — the browser
 runs it for friendly errors as the guest types. That is UX and can be bypassed
-by anyone with dev tools. The API route (milestone 3) imports the *same schema*
-and re-runs it on the server, and that run is the one that protects the
-database. Sharing the definition is what stops the two drifting apart.
+by anyone with dev tools. `/api/reservations` imports the *same schema* and
+re-runs it on the request it actually received, and that run is the one that
+protects the database. The endpoint then stores the schema's **output**, not the
+body it was sent — trimmed, coerced, unknown keys dropped. Handing the raw body
+onward after validating it is a quietly common way to undo the validation you
+just did.
 
 **Honeypot field** — a hidden input a real guest never sees, that bots fill in.
-It is already in the form and already in the schema.
+A filled honeypot gets the same cheerful `201` a real booking gets, and is
+silently dropped without touching the database. Telling a bot it was caught
+teaches whoever wrote it to stop filling the field; success teaches them
+nothing.
+
+**Rate limiting in Postgres** (`check_rate_limit` in `schema.sql`) — not in a
+JavaScript variable, because on Vercel each serverless instance has its own
+memory and a bot that trips an in-memory limit just lands on a fresh instance.
+An in-memory limiter on serverless is a limiter that does not limit. The counter
+is one atomic `INSERT … ON CONFLICT DO UPDATE`; the naive read-then-write races
+under exactly the burst it exists to stop. Verified with 30 concurrent
+connections against a limit of 10 — exactly 10 got through.
+
+**IPs are salted and hashed, never stored** — the limiter only needs to know
+"same caller as before?", and a hash answers that while leaving the database
+holding no record of who visited. Unsalted would be pointless: there are only
+four billion IPv4 addresses, so a plain SHA-256 is reversible in seconds.
+
+**Trusting the right header** — `x-forwarded-for` is client-supplied and can say
+anything. Taking its leftmost value blindly lets an attacker use a fresh fake
+address per request and never hit the cap. On Vercel, `x-vercel-forwarded-for`
+is set by the platform, so that is what we prefer.
+
+**Errors that say nothing useful to an attacker** — a failed insert returns one
+sentence; the real error, full of table and constraint names, goes to the server
+log. The endpoint also refuses non-JSON content types, caps the body at 8 KB
+before parsing, and checks the real size rather than the `content-length` the
+caller claims.
 
 **Timezone-correct date handling** — "is this date in the past?" is answered in
 `Asia/Manila`, not in the server's UTC. Otherwise a 9pm booking made in Manila
@@ -108,10 +139,17 @@ no UPDATE policy at all and so could not do the one job crew exists for; and
 phone-number masking moved from React into a SQL view, because a UI mask lasts
 only until someone opens the network tab.
 
-**Tested, not asserted** — `npm run db:test` builds a scratch database, applies
-the real schema, and runs 37 assertions covering every line of the spec's §9
-checklist, impersonating each role the way a real request does. Loosen a policy
-and it goes red. It needs no Supabase project, so it runs offline in a second.
+**Tested, not asserted** — two suites, both offline and both fast.
+`npm run db:test` builds a scratch database, applies the real schema and runs 43
+assertions covering the spec's §9 checklist, impersonating each role the way a
+real request does. `npm test` drives the reservation endpoint through 29 cases,
+most of which check that something did *not* happen — the honeypot request never
+reached the database, the oversized body was never parsed, the pre-confirmed
+payload never got through. Those are the paths clicking around never exercises,
+which is why they are the ones that rot.
+
+Both suites have caught real bugs in this project, listed in the commit
+messages.
 
 **No self-service roles** — there is no insert policy on `profiles`, so no
 request from any browser with any key creates a host or an owner. Accounts are
@@ -120,7 +158,7 @@ the service key.
 
 ### Still to come
 
-Rate limiting on the reservation and login endpoints lands in milestone 3, and
+Sign-in and its own (stricter, fail-closed) rate limit land in milestone 4;
 Turnstile in milestone 6.
 
 ## Layout
@@ -130,6 +168,7 @@ src/
   app/
     layout.tsx        fonts, metadata, JSON-LD, reads the CSP nonce
     page.tsx          the public landing page
+    api/reservations/route.ts   POST — a thin adapter over handler.ts
     portal/page.tsx   placeholder — real sign-in in milestone 4
     globals.css       design tokens (Tailwind v4 @theme)
   components/         one file per section of the landing page
@@ -137,6 +176,10 @@ src/
     restaurant.ts     business details + Schema.org markup   ⚠️ placeholders
     menu.ts           packages, à la carte, house rules      ⚠️ placeholders
     reservation.ts    the shared Zod schema
+    rate-limit.ts     client IP, salted hashing, the limit check
+    reservations/
+      handler.ts      the endpoint's logic, with side effects injected
+      insert.ts       the write — anon key, so RLS still judges it
     format.ts         peso formatting
     supabase/
       env.ts          reads the keys; the dangerous one throws in the browser
@@ -148,6 +191,8 @@ supabase/
   schema.sql          tables, policies, triggers, the masked staff view
   verify-rls.sql      37 policy tests
   local/              Supabase shim so the tests run without a project
+tests/
+  reservation-handler.test.ts   npm test
 scripts/
   create-staff.mjs    the only way an account gets a role
   db-test.sh          npm run db:test
