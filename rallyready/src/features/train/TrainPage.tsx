@@ -20,6 +20,7 @@ import { useUiStore } from '@/store/uiStore'
 import { TodayCard } from '../programs/components/TodayCard'
 import { CueSettingsDialog } from './components/CueSettingsDialog'
 import { DrillCard } from './components/DrillCard'
+import { ReadinessCard } from './components/ReadinessCard'
 import { WarmUpBar } from './components/WarmUpBar'
 import { CATEGORY_LABEL, LEVEL_LABEL } from './drillLabels'
 
@@ -89,6 +90,10 @@ export function TrainPage() {
           </span>
         </div>
       )}
+
+      {/* First on the screen because it is the first decision of the session:
+          everything below reads differently once the app knows how you feel. */}
+      <ReadinessCard />
 
       <TodayCard />
 

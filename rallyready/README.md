@@ -33,6 +33,19 @@ deliberately absent: curated third-party video. See
   streak, training load, whether your pace is actually improving, personal
   bests per drill, and a trophy case — all derived from what you logged, none
   of it paywalled.
+- **Training load, not minutes.** One tap after a session rates the effort 1–10;
+  effort × minutes is the number that actually compares a brutal ten minutes
+  with an easy half hour. From that the app watches the ramp — a week far
+  heavier than the month behind it is where overuse injuries come from, and
+  training alone means nobody else is watching for it.
+- **It adjusts to you, not to the calendar.** Three taps — sleep, legs, energy —
+  and the session bends: lighter when you are beaten up or ramping too fast, a
+  round more when you are fresh and have room. A written plan cannot tell you
+  slept four hours. This is the part that makes it feel coached.
+- **It tells you why.** Today's card names the block you are in and when it lets
+  up: "Base week 3 of 12 — next week backs off". The weeks people quit on are
+  the ugly ones in the middle, and they quit because from the inside a
+  twelve-week plan looks like an infinite one.
 - **A number to chase.** A repeatable B-ENDURANCE-style benchmark: twelve
   levels of four-corner movement, work stepping 18s → 30s against a fixed 10s
   recovery. You go until you cannot hold the pace, and the score is charted
@@ -238,6 +251,34 @@ never be missed because the app was closed at the wrong moment.
 
 Streaks are counted in **weeks, not days** — missing a Tuesday should not wipe
 out two months of consistent training.
+
+### Training load and auto-regulation
+
+`src/lib/data/load.ts` turns sessions plus their effort ratings into one number
+per session — RPE × minutes — and from there into the figure that matters:
+this week's load against the average of the last four. Below 0.8 you are easing
+off, 0.8–1.3 is the maintenance band, and past 1.5 you are ramping faster than
+your body has been prepared for. The ratio is **withheld entirely until there
+is three weeks of history**, because before that it reads "spike" for everyone
+who has just started, and a warning that fires on day two is a warning people
+learn to ignore.
+
+An unrated session is counted as a moderate effort rather than skipped:
+excluding it would make a heavy week look light purely because it went unrated,
+which is backwards for something whose job is to catch a heavy week.
+
+`src/lib/data/readiness.ts` scores the daily check-in and combines it with that
+load status into a single instruction. Two rules do most of the work. Any single
+answer at the bottom of its scale forces "lighter" whatever the other two say —
+averaging hides the answer that matters, and "slept fine, energy fine, legs
+wrecked" is not a day for repeated lunging. And it will never suggest going
+harder on feel alone: backing off a fresh player wrongly costs one ordinary
+session, pushing a tired one wrongly costs six weeks.
+
+The adjustment is applied by `scaleConfig()` at the moment the drill starts and
+is never written into the saved configuration — it is a decision about today,
+and a tired Tuesday must not quietly become a drill's new normal. Rounds move
+before work time, because a round is the unit a player counts in.
 
 ### The periodiser
 

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Check, CalendarRange, Coffee, Play } from 'lucide-react'
+import { Check, CalendarRange, ChevronDown, Coffee, Info, Play } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useRepositories } from '@/lib/data/context'
+import { whyToday } from '@/lib/programs/why'
 
 import { useProgramState } from '../useProgramState'
 
@@ -28,6 +29,12 @@ export function TodayCard() {
   })
 
   if (loading || !enrollment || !program || !today) return null
+
+  const why = whyToday({
+    totalWeeks: program.totalWeeks,
+    currentWeek: enrollment.currentWeek,
+    focus: today.focus,
+  })
 
   const drill = today.drillSlugs
     .map((slug) => drills.find((candidate) => candidate.slug === slug))
@@ -65,6 +72,42 @@ export function TodayCard() {
             <p className="text-muted-foreground mt-1 text-xs leading-relaxed">{today.notes}</p>
           )}
         </div>
+
+        {/*
+         * Why this session, and when the block lets up.
+         *
+         * The plan already says what to do. The weeks people quit on are the
+         * ugly ones in the middle of a build block, and they quit because from
+         * the inside an eight-week program looks like an infinite one. Naming
+         * the block and pointing at the next deload turns "this is relentless"
+         * into "this is week two of three".
+         */}
+        {why && (
+          <details className="group border-border/70 border-t pt-3">
+            {/* The block name and the let-up are outside the fold, because they
+                are the half that keeps someone going and a paragraph nobody
+                opens coaches nobody. The longer "what this week is doing to
+                you" sits behind the tap. */}
+            <summary className="cursor-pointer list-none">
+              <span className="flex items-center justify-between gap-2 text-sm font-medium">
+                <span className="inline-flex min-w-0 items-center gap-1.5">
+                  <Info className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
+                  <span className="truncate">{why.label}</span>
+                </span>
+                <ChevronDown
+                  className="text-muted-foreground size-4 shrink-0 transition-transform group-open:rotate-180"
+                  aria-hidden
+                />
+              </span>
+              {why.ahead && (
+                <span className="text-muted-foreground mt-1 block text-xs leading-relaxed">
+                  {why.ahead}
+                </span>
+              )}
+            </summary>
+            <p className="text-muted-foreground mt-2 text-xs leading-relaxed">{why.purpose}</p>
+          </details>
+        )}
 
         <div className="bg-secondary h-1.5 w-full overflow-hidden rounded-full">
           <div

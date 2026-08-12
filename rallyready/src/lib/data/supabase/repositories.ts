@@ -6,6 +6,7 @@ import type {
   BenchmarkRepository,
   DrillRepository,
   ProfileRepository,
+  ReadinessRepository,
   Repositories,
   SessionRepository,
   StreakRepository,
@@ -19,6 +20,7 @@ import type {
   NewSession,
   NewSessionMetric,
   Profile,
+  ReadinessCheck,
   Session,
   SessionMetric,
 } from '../types'
@@ -26,6 +28,7 @@ import type {
   BenchmarkRow,
   DrillRow,
   ProfileRow,
+  ReadinessCheckRow,
   SessionMetricRow,
   SessionRow,
 } from './database.types'
@@ -103,6 +106,18 @@ function toMetric(row: SessionMetricRow): SessionMetric {
   }
 }
 
+function toReadiness(row: ReadinessCheckRow): ReadinessCheck {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    date: row.date,
+    createdAt: row.created_at,
+    sleep: row.sleep,
+    soreness: row.soreness,
+    energy: row.energy,
+  }
+}
+
 function toBenchmark(row: BenchmarkRow): Benchmark {
   return {
     id: row.id,
@@ -171,6 +186,18 @@ export function createSupabaseRepositories(client: RallyReadyClient, userId: str
       }
 
       return toSession(data)
+    },
+
+    async setMetric(sessionId, metricKey, metricValue) {
+      // Upsert on (session_id, metric_key) — see the unique index in
+      // schema.sql. Rating a session twice corrects it rather than duplicating.
+      const { error } = await client
+        .from('session_metrics')
+        .upsert(
+          { session_id: sessionId, metric_key: metricKey, metric_value: metricValue },
+          { onConflict: 'session_id,metric_key' },
+        )
+      fail('Could not save session metric', error)
     },
 
     async getById(id) {
@@ -306,6 +333,50 @@ export function createSupabaseRepositories(client: RallyReadyClient, userId: str
     },
   }
 
+  const readiness: ReadinessRepository = {
+    async today(date) {
+      const { data, error } = await client
+        .from('readiness_checks')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('date', date)
+        .maybeSingle()
+      fail('Could not load your check-in', error)
+      return data ? toReadiness(data) : null
+    },
+
+    async save(input) {
+      const { data, error } = await client
+        .from('readiness_checks')
+        .upsert(
+          {
+            user_id: userId,
+            date: input.date,
+            sleep: input.sleep,
+            soreness: input.soreness,
+            energy: input.energy,
+          },
+          { onConflict: 'user_id,date' },
+        )
+        .select('*')
+        .single()
+      fail('Could not save your check-in', error)
+      if (!data) throw new Error('Could not save your check-in: no row returned')
+      return toReadiness(data)
+    },
+
+    async listRecent(limit = 30) {
+      const { data, error } = await client
+        .from('readiness_checks')
+        .select('*')
+        .eq('user_id', userId)
+        .order('date', { ascending: false })
+        .limit(limit)
+      fail('Could not load your check-ins', error)
+      return (data ?? []).map(toReadiness)
+    },
+  }
+
   const profiles: ProfileRepository = {
     async get() {
       const { data, error } = await client
@@ -347,6 +418,7 @@ export function createSupabaseRepositories(client: RallyReadyClient, userId: str
     benchmarks,
     badges,
     programs: createSupabasePrograms(client, userId),
+    readiness,
     backend: 'supabase',
   }
 }

@@ -82,6 +82,17 @@ export interface SessionMetricRow {
   metric_value: number
 }
 
+export interface ReadinessCheckRow {
+  id: string
+  user_id: string
+  /** `YYYY-MM-DD`; unique per user, so a second answer upserts the first. */
+  date: string
+  created_at: string
+  sleep: number
+  soreness: number
+  energy: number
+}
+
 export interface ProgramRow {
   id: string
   slug: string
@@ -180,6 +191,10 @@ export interface Database {
         Omit<SessionRow, 'id' | 'created_at'> & { id?: string; created_at?: string }
       >
       session_metrics: Table<SessionMetricRow, Omit<SessionMetricRow, 'id'> & { id?: string }>
+      readiness_checks: Table<
+        ReadinessCheckRow,
+        Omit<ReadinessCheckRow, 'id' | 'created_at'> & { id?: string; created_at?: string }
+      >
       programs: Table<
         ProgramRow,
         Omit<ProgramRow, 'id' | 'created_at'> & { id?: string; created_at?: string }

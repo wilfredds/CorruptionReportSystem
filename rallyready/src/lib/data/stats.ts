@@ -1,3 +1,4 @@
+import { rpeBySession, sessionLoad } from './load'
 import { localDateKey, weekIndex, weekIndexFromKey, weekLabel, weekStartKey } from './streaks'
 import type { Session, SessionMetric } from './types'
 
@@ -23,6 +24,8 @@ export interface WeeklyBucket {
   sessions: number
   minutes: number
   calls: number
+  /** Effort × minutes, summed. See `load.ts` for why minutes are not enough. */
+  load: number
 }
 
 export interface DrillStats {
@@ -100,7 +103,11 @@ export function computeStats(
   const byId = metricsBySession(metrics)
   const currentWeek = weekIndex(today)
 
-  const weekCounts = new Map<number, { sessions: number; seconds: number; calls: number }>()
+  const rpes = rpeBySession(metrics)
+  const weekCounts = new Map<
+    number,
+    { sessions: number; seconds: number; calls: number; load: number }
+  >()
   const drills = new Map<string, DrillStats>()
   const intervalTrend: IntervalPoint[] = []
 
@@ -121,10 +128,11 @@ export function computeStats(
     totalRounds += session.roundsCompleted
     if (own?.get(METRIC_DECEPTION) === 1) deceptionSessions += 1
 
-    const bucket = weekCounts.get(week) ?? { sessions: 0, seconds: 0, calls: 0 }
+    const bucket = weekCounts.get(week) ?? { sessions: 0, seconds: 0, calls: 0, load: 0 }
     bucket.sessions += 1
     bucket.seconds += session.durationSec
     bucket.calls += calls
+    bucket.load += sessionLoad(session.durationSec, rpes.get(session.id) ?? null)
     weekCounts.set(week, bucket)
 
     if (session.avgShotIntervalMs && session.avgShotIntervalMs > 0) {
@@ -172,6 +180,7 @@ export function computeStats(
       sessions: bucket?.sessions ?? 0,
       minutes: Math.round((bucket?.seconds ?? 0) / 60),
       calls: bucket?.calls ?? 0,
+      load: bucket?.load ?? 0,
     })
   }
 
@@ -199,6 +208,7 @@ function emptyWeeks(today: Date, weeksBack: number): WeeklyBucket[] {
       sessions: 0,
       minutes: 0,
       calls: 0,
+      load: 0,
     }
   })
 }

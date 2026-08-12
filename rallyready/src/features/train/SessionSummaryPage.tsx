@@ -9,9 +9,11 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useRepositories } from '@/lib/data/context'
+import { METRIC_RPE } from '@/lib/data/load'
 import { formatDuration, pluralize } from '@/lib/utils'
 
 import { ProgramDayPrompt } from '../programs/components/ProgramDayPrompt'
+import { RpePrompt } from './components/RpePrompt'
 import { ShareSessionButton } from './components/ShareSessionButton'
 
 export function SessionSummaryPage() {
@@ -68,6 +70,7 @@ export function SessionSummaryPage() {
 
   const calls = metrics.find((metric) => metric.metricKey === 'calls_answered')?.metricValue ?? 0
   const finished = metrics.find((metric) => metric.metricKey === 'completed')?.metricValue === 1
+  const rpe = metrics.find((metric) => metric.metricKey === METRIC_RPE)?.metricValue ?? null
 
   return (
     <motion.div
@@ -126,6 +129,10 @@ export function SessionSummaryPage() {
           </>
         )}
       </div>
+
+      {/* Above everything else the screen offers: the rating is worth almost
+          nothing an hour later, and the streak card will still be there. */}
+      <RpePrompt sessionId={session.id} durationSec={session.durationSec} initial={rpe} />
 
       <ProgramDayPrompt drillSlug={drill?.slug} />
 

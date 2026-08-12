@@ -3,6 +3,7 @@ import type {
   BenchmarkRepository,
   DrillRepository,
   ProfileRepository,
+  ReadinessRepository,
   Repositories,
   SessionRepository,
   StreakRepository,
@@ -15,6 +16,7 @@ import type {
   NewSession,
   NewSessionMetric,
   Profile,
+  ReadinessCheck,
   Session,
   SessionMetric,
   Streak,
@@ -51,6 +53,10 @@ function loadMetrics(): Record<string, SessionMetric[]> {
   return readJson<Record<string, SessionMetric[]>>(STORAGE_KEYS.metrics, {})
 }
 
+function loadReadiness(): ReadinessCheck[] {
+  return readJson<ReadinessCheck[]>(STORAGE_KEYS.readiness, [])
+}
+
 const sessions: SessionRepository = {
   async create(input: NewSession, metrics: NewSessionMetric[] = []) {
     const session: Session = {
@@ -81,6 +87,25 @@ const sessions: SessionRepository = {
     }
 
     return session
+  },
+
+  async setMetric(sessionId, metricKey, metricValue) {
+    const store = loadMetrics()
+    const existing = store[sessionId] ?? []
+    const index = existing.findIndex((metric) => metric.metricKey === metricKey)
+    const row: SessionMetric = {
+      id: existing[index]?.id ?? newId(),
+      sessionId,
+      metricKey,
+      metricValue,
+    }
+    // Replace in place so re-rating a session corrects it rather than logging
+    // a second opinion that the reader would have to pick between.
+    store[sessionId] =
+      index === -1
+        ? [...existing, row]
+        : existing.map((metric, at) => (at === index ? row : metric))
+    writeJson(STORAGE_KEYS.metrics, store)
   },
 
   async getById(id) {
@@ -151,6 +176,35 @@ const streaks: StreakRepository = {
   },
 }
 
+const readiness: ReadinessRepository = {
+  async today(date) {
+    return loadReadiness().find((check) => check.date === date) ?? null
+  },
+
+  async save(input) {
+    const check: ReadinessCheck = {
+      id: newId(),
+      userId: null,
+      date: input.date,
+      createdAt: new Date().toISOString(),
+      sleep: input.sleep,
+      soreness: input.soreness,
+      energy: input.energy,
+    }
+    // One check per day: answering again is changing your mind, not adding a
+    // second data point, and two rows for one morning would skew the trend.
+    const rest = loadReadiness().filter((existing) => existing.date !== input.date)
+    writeJson(STORAGE_KEYS.readiness, [check, ...rest])
+    return check
+  },
+
+  async listRecent(limit = 30) {
+    return loadReadiness()
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, limit)
+  },
+}
+
 const profiles: ProfileRepository = {
   async get() {
     return readJson<Profile | null>(STORAGE_KEYS.profile, null)
@@ -181,6 +235,7 @@ export function createLocalRepositories(): Repositories {
     benchmarks,
     badges,
     programs: localPrograms,
+    readiness,
     backend: 'local',
   }
 }

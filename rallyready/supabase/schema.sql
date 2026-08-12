@@ -256,6 +256,19 @@ create table if not exists public.session_metrics (
 
 create index if not exists session_metrics_session_idx on public.session_metrics (session_id);
 
+-- One row per metric per session, so that rating a session's effort a second
+-- time corrects the first answer instead of recording two contradictory ones.
+-- Existing duplicates are collapsed first, keeping the most recent row, or the
+-- unique index below would refuse to build on a database that already has them.
+delete from public.session_metrics a
+  using public.session_metrics b
+ where a.session_id = b.session_id
+   and a.metric_key = b.metric_key
+   and a.id < b.id;
+
+create unique index if not exists session_metrics_key_idx
+  on public.session_metrics (session_id, metric_key);
+
 alter table public.session_metrics enable row level security;
 
 -- Ownership is inherited from the parent session.
@@ -275,6 +288,20 @@ create policy "metrics are written with their session"
     where s.id = session_id and s.user_id = auth.uid()
   ));
 
+-- An upsert that lands on the unique index above becomes an UPDATE, so the
+-- owner needs update rights as well as insert ones.
+drop policy if exists "metrics are updatable by their owner" on public.session_metrics;
+create policy "metrics are updatable by their owner"
+  on public.session_metrics for update
+  using (exists (
+    select 1 from public.sessions s
+    where s.id = session_id and s.user_id = auth.uid()
+  ))
+  with check (exists (
+    select 1 from public.sessions s
+    where s.id = session_id and s.user_id = auth.uid()
+  ));
+
 drop policy if exists "metrics are deletable by their owner" on public.session_metrics;
 create policy "metrics are deletable by their owner"
   on public.session_metrics for delete
@@ -282,6 +309,45 @@ create policy "metrics are deletable by their owner"
     select 1 from public.sessions s
     where s.id = session_id and s.user_id = auth.uid()
   ));
+
+-- ========================================================= readiness_checks
+-- The daily check-in behind auto-regulation. One row per user per day: a second
+-- answer is a change of mind, not a second morning.
+create table if not exists public.readiness_checks (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  -- Stored as the player's own local date, not a timestamp: "today" is a
+  -- calendar question, and a UTC instant puts an evening check-in in Manila on
+  -- the wrong day.
+  date       date not null,
+  created_at timestamptz not null default now(),
+  sleep      smallint not null check (sleep between 1 and 5),
+  soreness   smallint not null check (soreness between 1 and 5),
+  energy     smallint not null check (energy between 1 and 5),
+  unique (user_id, date)
+);
+
+create index if not exists readiness_user_date_idx
+  on public.readiness_checks (user_id, date desc);
+
+alter table public.readiness_checks enable row level security;
+
+drop policy if exists "users read their own check-ins" on public.readiness_checks;
+create policy "users read their own check-ins"
+  on public.readiness_checks for select using (auth.uid() = user_id);
+
+drop policy if exists "users write their own check-ins" on public.readiness_checks;
+create policy "users write their own check-ins"
+  on public.readiness_checks for insert with check (auth.uid() = user_id);
+
+drop policy if exists "users update their own check-ins" on public.readiness_checks;
+create policy "users update their own check-ins"
+  on public.readiness_checks for update
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "users delete their own check-ins" on public.readiness_checks;
+create policy "users delete their own check-ins"
+  on public.readiness_checks for delete using (auth.uid() = user_id);
 
 -- ================================================================== programs
 create table if not exists public.programs (

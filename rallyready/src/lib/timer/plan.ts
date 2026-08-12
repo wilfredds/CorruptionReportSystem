@@ -89,6 +89,45 @@ export function configFromDrill(drill: Drill): DrillConfig {
   }
 }
 
+/** Never trim a work block below something worth starting the timer for. */
+const MIN_SCALED_WORK_SEC = 10
+const MAX_SCALED_WORK_SEC = 600
+
+/**
+ * The same drill, dialled up or down — how auto-regulation actually changes a
+ * session rather than merely commenting on it.
+ *
+ * Rounds move first, because a round is the unit a player thinks in: "four
+ * instead of six" is a decision you can hold in your head mid-drill, where
+ * "42 seconds instead of 60" is just an odd number on a clock. Only when the
+ * round count cannot express the change — a single-round drill, or a scale too
+ * small to move it — does the work time take the difference instead, so that
+ * asking for a lighter session always produces one.
+ *
+ * The shot interval is deliberately left alone. Interval is a technique
+ * setting: slowing it down changes what the drill teaches, not how much of it
+ * you do.
+ */
+export function scaleConfig(config: DrillConfig, scale: number): DrillConfig {
+  if (!Number.isFinite(scale) || scale === 1 || scale <= 0) return config
+
+  const scaleWork = (seconds: number) =>
+    Math.min(MAX_SCALED_WORK_SEC, Math.max(MIN_SCALED_WORK_SEC, Math.round(seconds * scale)))
+
+  if (isCircuit(config) && config.circuit) {
+    const circuitRounds = Math.max(1, Math.round(config.circuitRounds * scale))
+    if (circuitRounds !== config.circuitRounds) return { ...config, circuitRounds }
+    return {
+      ...config,
+      circuit: config.circuit.map((step) => ({ ...step, workSec: scaleWork(step.workSec) })),
+    }
+  }
+
+  const rounds = Math.max(1, Math.round(config.rounds * scale))
+  if (rounds !== config.rounds) return { ...config, rounds }
+  return { ...config, workSec: scaleWork(config.workSec) }
+}
+
 export function planFromConfig(
   config: DrillConfig,
   options: { splitStepLeadMs: number; seed: number },

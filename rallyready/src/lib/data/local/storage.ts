@@ -48,6 +48,7 @@ export const STORAGE_KEYS = {
   profile: 'profile',
   benchmarks: 'benchmarks',
   badges: 'badges',
+  readiness: 'readiness',
   programs: 'programs',
   programDays: 'program-days',
   enrollments: 'program-enrollments',

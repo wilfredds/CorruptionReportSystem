@@ -8,7 +8,7 @@ import {
   planRestore,
   type BackupFile,
 } from './backup'
-import type { Benchmark, Session, SessionMetric } from './types'
+import type { Benchmark, ReadinessCheck, Session, SessionMetric } from './types'
 
 const session = (overrides: Partial<Session> = {}): Session => ({
   id: 's1',
@@ -189,6 +189,67 @@ describe('planRestore', () => {
     const plan = planRestore(file, { sessions: [], benchmarks: [] })
     expect(plan.sessions[0]?.input.startedAt).toBeInstanceOf(Date)
     expect(plan.benchmarks[0]?.takenAt).toBeInstanceOf(Date)
+  })
+})
+
+describe('readiness in a backup', () => {
+  const check = (date: string): ReadinessCheck => ({
+    id: `r-${date}`,
+    userId: null,
+    date,
+    createdAt: `${date}T07:00:00.000Z`,
+    sleep: 4,
+    soreness: 3,
+    energy: 4,
+  })
+
+  it('carries check-ins out and back', () => {
+    const built = buildBackup({
+      profile: null,
+      sessions: [],
+      metrics: [],
+      benchmarks: [],
+      readiness: [check('2026-08-01')],
+    })
+    const parsed = parseBackup(JSON.stringify(built))
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) return
+    expect(parsed.file.readiness).toHaveLength(1)
+    expect(planRestore(parsed.file, { sessions: [], benchmarks: [] }).readiness).toEqual([
+      { date: '2026-08-01', sleep: 4, soreness: 3, energy: 4 },
+    ])
+  })
+
+  it('keeps the check-in already recorded for a day rather than overwriting it', () => {
+    const built = buildBackup({
+      profile: null,
+      sessions: [],
+      metrics: [],
+      benchmarks: [],
+      readiness: [check('2026-08-01'), check('2026-08-02')],
+    })
+    const plan = planRestore(built, {
+      sessions: [],
+      benchmarks: [],
+      readiness: [check('2026-08-01')],
+    })
+    expect(plan.readiness).toHaveLength(1)
+    expect(plan.readiness[0]?.date).toBe('2026-08-02')
+    expect(plan.skippedReadiness).toBe(1)
+  })
+
+  it('reads a version-1 file that predates check-ins', () => {
+    const old = JSON.stringify({
+      app: 'rallyready',
+      version: 1,
+      exportedAt: '2026-08-01T00:00:00.000Z',
+      profile: null,
+      sessions: [],
+      benchmarks: [],
+    })
+    const parsed = parseBackup(old)
+    expect(parsed.ok).toBe(true)
+    if (parsed.ok) expect(parsed.file.readiness).toEqual([])
   })
 })
 

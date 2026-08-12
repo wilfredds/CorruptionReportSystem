@@ -28,12 +28,15 @@ import { gradeBenchmark } from '@/lib/timer/benchmark'
 import { formatDuration, pluralize } from '@/lib/utils'
 
 import { AXIS_TICK, CHART, TOOLTIP_STYLE } from './chartTheme'
+import { LoadStatusStrip } from './components/LoadStatusStrip'
+import { ReadinessTrend } from './components/ReadinessTrend'
 import { StreakCalendar } from './components/StreakCalendar'
 import { TrophyCase } from './components/TrophyCase'
 import { useTrainingData } from './useTrainingData'
 
 export function ProgressPage() {
-  const { loading, stats, streak, benchmarks, badges, earnedCount } = useTrainingData()
+  const { loading, stats, load, readiness, streak, benchmarks, badges, earnedCount } =
+    useTrainingData()
 
   const hasHistory = stats.sessionCount > 0
   const latestBenchmark = benchmarks[0]
@@ -90,7 +93,7 @@ export function ProgressPage() {
                 {
                   icon: <Timer className="size-4" aria-hidden />,
                   title: 'Training load',
-                  body: 'How much you actually did each week, so a heavy block is visible before your legs tell you.',
+                  body: 'Effort × minutes, week by week, with a warning when you ramp faster than your body has been prepared for.',
                 },
                 {
                   icon: <TrendingUp className="size-4" aria-hidden />,
@@ -185,12 +188,17 @@ export function ProgressPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Training load</CardTitle>
-              <CardDescription>Minutes trained per week.</CardDescription>
+              <CardDescription>
+                Effort × minutes, per week. Twelve brutal minutes and twelve easy ones are the same
+                number of minutes and nothing like the same session.
+              </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <LoadStatusStrip load={load} />
+
               <div className="h-48 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.weekly} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
+                  <BarChart data={stats.weekly} margin={{ top: 4, right: 8, bottom: 0, left: -8 }}>
                     <CartesianGrid stroke={CHART.grid} strokeDasharray="3 3" vertical={false} />
                     <XAxis
                       dataKey="label"
@@ -199,11 +207,13 @@ export function ProgressPage() {
                       axisLine={false}
                       interval={2}
                     />
-                    <YAxis tick={AXIS_TICK} tickLine={false} axisLine={false} width={40} />
+                    {/* Wide enough for a four-figure load. Sized for two-digit
+                        minutes, the axis silently ate the leading digits. */}
+                    <YAxis tick={AXIS_TICK} tickLine={false} axisLine={false} width={48} />
                     <Tooltip {...TOOLTIP_STYLE} />
                     <Bar
-                      dataKey="minutes"
-                      name="Minutes"
+                      dataKey="load"
+                      name="Load"
                       fill={CHART.primary}
                       radius={[4, 4, 0, 0]}
                       maxBarSize={28}
@@ -211,8 +221,19 @@ export function ProgressPage() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+
+              {load.unrated > 0 && (
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  {load.unrated === load.sessions
+                    ? 'None of your recent sessions have been rated, so these bars assume a moderate effort throughout.'
+                    : `${pluralize(load.unrated, 'recent session')} went unrated and ${load.unrated === 1 ? 'was' : 'were'} counted as moderate.`}{' '}
+                  Rating one takes a single tap on the summary screen right after you finish.
+                </p>
+              )}
             </CardContent>
           </Card>
+
+          {readiness.length >= 3 && <ReadinessTrend checks={readiness} />}
 
           {paceSeries.length > 1 && (
             <Card>

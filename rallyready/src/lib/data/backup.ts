@@ -1,9 +1,11 @@
 import type {
   Benchmark,
   NewBenchmark,
+  NewReadinessCheck,
   NewSession,
   NewSessionMetric,
   Profile,
+  ReadinessCheck,
   Session,
   SessionMetric,
 } from './types'
@@ -20,7 +22,11 @@ import type {
  * merge rules are unit-tested rather than trusted.
  */
 
-export const BACKUP_VERSION = 1
+/**
+ * 2 added the daily readiness check-ins. Older files still import — the parser
+ * only refuses a file from a *newer* build than the one reading it.
+ */
+export const BACKUP_VERSION = 2
 
 export interface BackupSession {
   session: Session
@@ -35,6 +41,7 @@ export interface BackupFile {
   profile: Profile | null
   sessions: BackupSession[]
   benchmarks: Benchmark[]
+  readiness: ReadinessCheck[]
 }
 
 export function buildBackup(input: {
@@ -42,6 +49,7 @@ export function buildBackup(input: {
   sessions: Session[]
   metrics: SessionMetric[]
   benchmarks: Benchmark[]
+  readiness?: ReadinessCheck[]
   now?: Date
 }): BackupFile {
   const bySession = new Map<string, SessionMetric[]>()
@@ -61,6 +69,7 @@ export function buildBackup(input: {
       metrics: bySession.get(session.id) ?? [],
     })),
     benchmarks: input.benchmarks,
+    readiness: input.readiness ?? [],
   }
 }
 
@@ -119,6 +128,11 @@ export function parseBackup(text: string): ParseResult {
       profile: isRecord(raw.profile) ? (raw.profile as unknown as Profile) : null,
       sessions,
       benchmarks: Array.isArray(raw.benchmarks) ? (raw.benchmarks as Benchmark[]) : [],
+      readiness: Array.isArray(raw.readiness)
+        ? raw.readiness.filter(
+            (entry): entry is ReadinessCheck => isRecord(entry) && typeof entry.date === 'string',
+          )
+        : [],
     },
   }
 }
@@ -135,9 +149,11 @@ function sessionKey(session: Pick<Session, 'startedAt' | 'drillId'>): string {
 export interface RestorePlan {
   sessions: { input: NewSession; metrics: NewSessionMetric[] }[]
   benchmarks: NewBenchmark[]
+  readiness: NewReadinessCheck[]
   profile: Profile | null
   skippedSessions: number
   skippedBenchmarks: number
+  skippedReadiness: number
 }
 
 /**
@@ -147,7 +163,7 @@ export interface RestorePlan {
  */
 export function planRestore(
   file: BackupFile,
-  existing: { sessions: Session[]; benchmarks: Benchmark[] },
+  existing: { sessions: Session[]; benchmarks: Benchmark[]; readiness?: ReadinessCheck[] },
 ): RestorePlan {
   const haveSessions = new Set(existing.sessions.map(sessionKey))
   const haveBenchmarks = new Set(
@@ -198,13 +214,34 @@ export function planRestore(
     })
   }
 
+  // A check-in already recorded for a day is the one that was actually given
+  // that morning; a backup restored over it would be a stale second opinion.
+  const haveDates = new Set((existing.readiness ?? []).map((check) => check.date))
+  const readiness: NewReadinessCheck[] = []
+  let skippedReadiness = 0
+  for (const check of file.readiness) {
+    if (haveDates.has(check.date)) {
+      skippedReadiness += 1
+      continue
+    }
+    haveDates.add(check.date)
+    readiness.push({
+      date: check.date,
+      sleep: check.sleep,
+      soreness: check.soreness,
+      energy: check.energy,
+    })
+  }
+
   return {
     sessions,
     benchmarks,
+    readiness,
     // Only offered when there is nothing to overwrite.
     profile: file.profile,
     skippedSessions,
     skippedBenchmarks,
+    skippedReadiness,
   }
 }
 

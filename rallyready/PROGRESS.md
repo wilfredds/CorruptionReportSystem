@@ -14,10 +14,11 @@ the way.
 | 2 — Accounts, progress, benchmark       | ✅ Done                        |
 | 3 — Stamina & conditioning              | ✅ Done                        |
 | 4 — Multi-week programs                 | ✅ Done                        |
-| **5 — Curated library**                 | ✅ **Done — ready for review** |
+| 5 — Curated library                     | ✅ Done                        |
+| **6 — Load, readiness, why**            | ✅ **Done — ready for review** |
 
-All five phases are built. `npm run verify` is green: 0 type errors, 0 lint
-errors/warnings, 249 unit tests passing, production build clean.
+All six phases are built. `npm run verify` is green: 0 type errors, 0 lint
+errors/warnings, 310 unit tests passing, production build clean.
 
 Earlier phases, one line each — the detail is in the git history:
 
@@ -27,6 +28,73 @@ Earlier phases, one line each — the detail is in the git history:
 - **3** — conditioning circuits on the same engine, an eleven-exercise
   catalogue, and drawn demos.
 - **4** — the periodiser, four built-in programs, and today's session on Train.
+- **5** — the technique reference and one filterable library over everything.
+
+---
+
+## Phase 6 — the app starts listening
+
+Everything up to here was a very good timer with a very good plan attached. It
+still could not tell the difference between a session that wrecked you and one
+that did not, and it did not care how you felt when you opened it. Three
+changes, in the order they matter.
+
+**Session RPE and training load.** One tap on the summary screen, 1–10, rated
+while you can still feel it. Effort × minutes is the standard measure in every
+sport for a reason: twelve minutes of Tabata and twelve of technique footwork
+are the same number of minutes and nothing like the same session. From that the
+app derives the acute:chronic ratio — this week against the last four — which
+is the closest thing amateur sport has to an early warning for overuse injury,
+and exactly what a solo player has nobody to spot for them.
+
+Two judgement calls in there. The ratio is withheld until three weeks of
+history exist, because before that it screams "spike" at everyone who has just
+started, and a warning that cries wolf on day two is one people learn to
+ignore. And an unrated session counts as a moderate effort rather than being
+skipped — dropping it would make a heavy week look light purely because it went
+unrated, which is backwards for a safety net.
+
+**The readiness check and auto-regulation.** Sleep, legs, energy; three taps,
+no submit button, saved on the third answer. The result plus the load status
+produce one instruction, and the player accepts it or ignores it — the app is
+allowed an opinion about today, but it does not overrule anyone.
+
+The rule that earns its keep: any single answer at the bottom of its scale
+forces "lighter" regardless of the other two. "Slept fine, energy fine, legs
+wrecked" averages to a perfectly respectable 50, and is not a day to go and do
+repeated lunging. Averaging hides the answer that matters. The reverse
+asymmetry is deliberate too — it will back you off on feel alone, but never
+push you harder unless the workload figures agree, because a wrong "take it
+easy" costs one ordinary session and a wrong "push" costs six weeks.
+
+Accepting an adjustment does not touch the saved drill configuration. It is
+applied at the moment the drill starts and expires overnight, so a tired
+Tuesday never quietly becomes a drill's new normal. Rounds are trimmed before
+work time, because "four instead of six" is a decision you can hold in your
+head mid-drill and "42 seconds instead of 60" is just an odd number on a clock.
+
+**Why today.** The Today card now names the block and the let-up — "Base week 3
+of 12", "Next week backs off — hold on until then" — derived from the same
+periodiser that generated the plan, so it cannot drift out of step with it. The
+weeks people quit on are the ugly ones in the middle of a build block, and they
+quit because from the inside a twelve-week plan is indistinguishable from an
+infinite one.
+
+### Found by looking rather than by testing
+
+- A session you had already rated came back showing no rating. The metrics
+  query only starts once the session has loaded, so the rating arrived a render
+  after the prompt mounted and `useState(initial)` had already missed it.
+  Derived during render instead.
+- The load strip said "this week" over a rolling seven-day window while the
+  bars directly beneath it were calendar weeks — two different weeks, two
+  different numbers, in one card. Relabelled; the rolling window is the correct
+  one for a ramp and the field names now say so.
+- The load chart's Y axis was sized for two-digit minutes and silently ate the
+  leading digit of every three-digit load.
+- The check-in asked "How did you sleep? 1 2 3 4 5" with no indication of which
+  end was good. Anchor labels now sit under each row, before the first tap
+  rather than after it.
 
 ---
 
@@ -182,7 +250,12 @@ where a vetted clip would go.
   33 entries; it would want stemming and ranking at ten times the size.
 - **The Supabase path is still unexercised against a live project** — no
   instance to point at here. Fully typed against the schema; the local backend
-  is exercised end to end.
+  is exercised end to end. Phase 6 adds a `readiness_checks` table and a unique
+  index on `session_metrics (session_id, metric_key)`; re-running `schema.sql`
+  applies both, and it de-duplicates any existing metric rows first so the index
+  can build.
+- **The load ratio needs three weeks before it says anything.** By design, but
+  it does mean a new player sees "Settling in" for most of their first month.
 
 ---
 
@@ -190,12 +263,20 @@ where a vetted clip would go.
 
 Nothing in the brief remains. If it were carried on:
 
-1. **Vet and add the clips** from an environment with network access — the seam
+1. **Record and review your own swing.** The biggest hole left in solo
+   training: nobody ever tells you your overhead is wrong, so a flaw gets
+   grooved for six months. Camera, an eight-second clip, quarter-speed playback
+   beside the technique checklist, and last month's clip next to this one.
+   Needs IndexedDB rather than local storage, a camera permission flow and a
+   storage-budget story — its own release, not a bullet point.
+2. **Vet and add the clips** from an environment with network access — the seam
    is built and tested.
-2. **Session-linked notes**, so a player can record what actually went wrong in
+3. **Session-linked notes**, so a player can record what actually went wrong in
    a session against the fault it matches.
-3. **Exercise-level circuit authoring**, the one thing Phase 3 deferred and
+4. **Exercise-level circuit authoring**, the one thing Phase 3 deferred and
    Phase 4 did not pick up: swapping a single exercise inside a circuit.
-4. **Real device testing.** Everything has been verified in Chromium at phone
+5. **A wider desktop layout.** The content column caps at `max-w-3xl`, which
+   uses under half of a 1440px screen. Real, but nobody trains from a desk.
+6. **Real device testing.** Everything has been verified in Chromium at phone
    and desktop widths, but wake lock, vibration and speech behave differently on
    actual iOS and Android hardware.

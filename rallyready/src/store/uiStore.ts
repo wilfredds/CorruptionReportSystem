@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+import type { Adjustment } from '@/lib/data/readiness'
+
 /**
  * A warm-up is good for about this long. Past it you have cooled down and the
  * prompt comes back; inside it, the app stops asking. Roughly the window the
@@ -16,6 +18,14 @@ interface UiStore {
   /** When the last warm-up finished, so the app can stop nagging. */
   lastWarmupAt: number | null
   markWarmedUp(): void
+  /**
+   * The auto-regulation the player accepted, and the day they accepted it for.
+   * Dated rather than timed: an adjustment is a decision about today, and it
+   * has to expire on its own overnight instead of quietly lightening tomorrow.
+   */
+  adjustment: Adjustment | null
+  adjustmentDate: string | null
+  setAdjustment(adjustment: Adjustment | null, date: string): void
 }
 
 /**
@@ -31,10 +41,23 @@ export const useUiStore = create<UiStore>()(
       dismissSetupPrompt: () => set({ setupPromptDismissed: true }),
       lastWarmupAt: null,
       markWarmedUp: () => set({ lastWarmupAt: Date.now() }),
+      adjustment: null,
+      adjustmentDate: null,
+      setAdjustment: (adjustment, date) =>
+        set({ adjustment, adjustmentDate: adjustment === null ? null : date }),
     }),
-    { name: 'rallyready.ui', version: 2 },
+    { name: 'rallyready.ui', version: 3 },
   ),
 )
+
+/** The accepted adjustment, but only while it is still today's. */
+export function adjustmentFor(
+  state: Pick<UiStore, 'adjustment' | 'adjustmentDate'>,
+  today: string,
+): Adjustment | null {
+  if (state.adjustmentDate !== today) return null
+  return state.adjustment
+}
 
 /** True if a warm-up finished recently enough to still count. */
 export function isStillWarm(lastWarmupAt: number | null, now = Date.now()): boolean {

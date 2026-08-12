@@ -26,13 +26,14 @@ export function BackupCard() {
     setBusy('export')
     setMessage(null)
     try {
-      const [profile, sessions, metrics, benchmarks] = await Promise.all([
+      const [profile, sessions, metrics, benchmarks, readiness] = await Promise.all([
         repositories.profiles.get(),
         repositories.sessions.listRecent(100_000),
         repositories.sessions.listAllMetrics(),
         repositories.benchmarks.list(),
+        repositories.readiness.listRecent(100_000),
       ])
-      const file = buildBackup({ profile, sessions, metrics, benchmarks })
+      const file = buildBackup({ profile, sessions, metrics, benchmarks, readiness })
       const blob = new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
@@ -61,13 +62,18 @@ export function BackupCard() {
         return
       }
 
-      const [sessions, benchmarks] = await Promise.all([
+      const [sessions, benchmarks, readiness] = await Promise.all([
         repositories.sessions.listRecent(100_000),
         repositories.benchmarks.list(),
+        repositories.readiness.listRecent(100_000),
       ])
-      const plan = planRestore(parsed.file, { sessions, benchmarks })
+      const plan = planRestore(parsed.file, { sessions, benchmarks, readiness })
 
-      if (plan.sessions.length === 0 && plan.benchmarks.length === 0) {
+      if (
+        plan.sessions.length === 0 &&
+        plan.benchmarks.length === 0 &&
+        plan.readiness.length === 0
+      ) {
         setMessage({
           tone: 'ok',
           text: 'Nothing new in that file — everything in it is already here.',
@@ -88,6 +94,9 @@ export function BackupCard() {
       }
       for (const entry of plan.benchmarks) {
         await repositories.benchmarks.create(entry)
+      }
+      for (const entry of plan.readiness) {
+        await repositories.readiness.save(entry)
       }
 
       await queryClient.invalidateQueries()
@@ -113,8 +122,8 @@ export function BackupCard() {
           Back up your training
         </CardTitle>
         <CardDescription>
-          A single file with every session and benchmark. Keep it somewhere safe and you can move to
-          a new phone, or recover from clearing your browser.
+          A single file with every session, effort rating, check-in and benchmark. Keep it somewhere
+          safe and you can move to a new phone, or recover from clearing your browser.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">

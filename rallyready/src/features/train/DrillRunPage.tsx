@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronsRight, Loader2, Pause, Play, Power, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronsRight, Loader2, Pause, Play, Power, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
@@ -18,10 +18,12 @@ import { useSessionGuard } from '@/hooks/useSessionGuard'
 import { useRepositories } from '@/lib/data/context'
 import { findExercise } from '@/lib/data/seed/exercises'
 import { isConditioning, isPrepOrRecovery } from '@/lib/data/seed/drills'
+import { ADJUSTMENT_SCALE } from '@/lib/data/readiness'
 import { METRIC_CALLS, METRIC_COMPLETED, METRIC_DECEPTION } from '@/lib/data/stats'
+import { localDateKey } from '@/lib/data/streaks'
 import type { Drill } from '@/lib/data/types'
 import { cornerIdsForLayout } from '@/lib/timer/corners'
-import { estimateDurationSec, isCircuit, planFromConfig } from '@/lib/timer/plan'
+import { estimateDurationSec, isCircuit, planFromConfig, scaleConfig } from '@/lib/timer/plan'
 import { CircuitBoard } from '@/features/conditioning/components/CircuitBoard'
 import { randomSeed } from '@/lib/timer/rng'
 import type { BlockPhase } from '@/lib/timer/types'
@@ -80,7 +82,29 @@ function Runner({ drill }: { drill: Drill }) {
   const navigate = useNavigate()
   const repositories = useRepositories()
   const reducedMotion = useReducedMotion()
-  const config = useDrillConfig(drill)
+  const savedConfig = useDrillConfig(drill)
+
+  /*
+   * Auto-regulation, applied at the last possible moment.
+   *
+   * The adjustment is deliberately not written into the saved config: it is a
+   * decision about today, and a tired Tuesday must not quietly become the new
+   * normal for this drill. Warm-ups and cool-downs are exempt — a lighter
+   * warm-up is not a lighter session, it is a worse one.
+   */
+  const storedAdjustment = useUiStore((state) => state.adjustment)
+  const adjustmentDate = useUiStore((state) => state.adjustmentDate)
+  const adjustment =
+    isPrepOrRecovery(drill) || adjustmentDate !== localDateKey(new Date()) ? null : storedAdjustment
+
+  const config = useMemo(
+    () =>
+      savedConfig && adjustment
+        ? scaleConfig(savedConfig, ADJUSTMENT_SCALE[adjustment])
+        : savedConfig,
+    [savedConfig, adjustment],
+  )
+
   // Pulled out of the optional chain so hook dependency arrays stay plain
   // identifiers — the React Compiler cannot track `config?.mode` as a dep.
   const drillMode = config?.mode ?? null
@@ -319,6 +343,19 @@ function Runner({ drill }: { drill: Drill }) {
               transition={{ duration: 0.18 }}
               className="mx-auto flex w-full max-w-md flex-col items-center gap-3"
             >
+              {/* Never change someone's session without telling them it
+                  changed, or the drill they know becomes untrustworthy. */}
+              {adjustment && (
+                <Badge variant={adjustment === 'lighter' ? 'outline' : 'accent'}>
+                  {adjustment === 'lighter' ? (
+                    <ArrowDown className="size-3" aria-hidden />
+                  ) : (
+                    <ArrowUp className="size-3" aria-hidden />
+                  )}
+                  {adjustment === 'lighter' ? 'Lightened for today' : 'Pushed up for today'}
+                </Badge>
+              )}
+
               <div className="flex flex-wrap justify-center gap-2">
                 {circuit ? (
                   <>

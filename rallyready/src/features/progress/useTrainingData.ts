@@ -3,9 +3,10 @@ import { useEffect, useMemo, useRef } from 'react'
 
 import { badgeStates, evaluateBadges, type BadgeInput, type BadgeState } from '@/lib/data/badges'
 import { useRepositories } from '@/lib/data/context'
+import { computeLoad, type LoadSummary } from '@/lib/data/load'
 import { computeStats, type TrainingStats } from '@/lib/data/stats'
 import { EMPTY_STREAK } from '@/lib/data/streaks'
-import type { Benchmark, Profile, Session, Streak } from '@/lib/data/types'
+import type { Benchmark, Profile, ReadinessCheck, Session, Streak } from '@/lib/data/types'
 
 /**
  * Everything the Progress screen needs, fetched once and derived in one place,
@@ -21,6 +22,8 @@ export interface TrainingData {
   loading: boolean
   sessions: Session[]
   stats: TrainingStats
+  load: LoadSummary
+  readiness: ReadinessCheck[]
   streak: Streak
   benchmarks: Benchmark[]
   profile: Profile | null
@@ -29,6 +32,8 @@ export interface TrainingData {
 }
 
 const SESSION_LIMIT = 500
+/** Enough for the trend strip; nobody is reading a check-in from last spring. */
+const READINESS_LIMIT = 30
 
 export function useTrainingData(): TrainingData {
   const repositories = useRepositories()
@@ -58,6 +63,10 @@ export function useTrainingData(): TrainingData {
     queryKey: ['badges', 'earned'],
     queryFn: () => repositories.badges.listEarned(),
   })
+  const readinessQuery = useQuery({
+    queryKey: ['readiness', 'recent'],
+    queryFn: () => repositories.readiness.listRecent(READINESS_LIMIT),
+  })
 
   const sessions = useMemo(() => sessionsQuery.data ?? [], [sessionsQuery.data])
   const metrics = useMemo(() => metricsQuery.data ?? [], [metricsQuery.data])
@@ -66,6 +75,8 @@ export function useTrainingData(): TrainingData {
   const profile = profileQuery.data ?? null
 
   const stats = useMemo(() => computeStats(sessions, metrics), [sessions, metrics])
+  const load = useMemo(() => computeLoad(sessions, metrics), [sessions, metrics])
+  const readiness = useMemo(() => readinessQuery.data ?? [], [readinessQuery.data])
 
   const badgeInput = useMemo<BadgeInput>(
     () => ({
@@ -119,6 +130,8 @@ export function useTrainingData(): TrainingData {
     loading,
     sessions,
     stats,
+    load,
+    readiness,
     streak,
     benchmarks,
     profile,

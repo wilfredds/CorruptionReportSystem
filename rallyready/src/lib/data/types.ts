@@ -206,6 +206,31 @@ export interface ProgramEnrollment {
   status: EnrollmentStatus
 }
 
+/* ------------------------------------------------ Readiness (Phase 6) */
+
+/**
+ * The daily check-in, each answer 1 (bad) to 5 (good). Soreness is stored the
+ * same way round as the others — 5 means "fresh", not "agony" — so that a
+ * higher number always means a better day.
+ */
+export interface ReadinessAnswers {
+  sleep: number
+  soreness: number
+  energy: number
+}
+
+export interface ReadinessCheck extends ReadinessAnswers {
+  id: string
+  userId: string | null
+  /** `YYYY-MM-DD`, local. One check per day; a second one replaces the first. */
+  date: string
+  createdAt: string
+}
+
+export interface NewReadinessCheck extends ReadinessAnswers {
+  date: string
+}
+
 export interface Streak {
   /** Consecutive weeks containing at least one session. */
   currentStreak: number

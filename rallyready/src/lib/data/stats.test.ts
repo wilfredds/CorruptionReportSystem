@@ -70,6 +70,32 @@ describe('computeStats', () => {
     expect(stats.weekly.at(-2)?.sessions).toBe(0)
   })
 
+  it('weighs each week by effort, not just by minutes', () => {
+    // Same duration, opposite efforts — minutes cannot tell these two weeks
+    // apart and load has to.
+    const brutal = session({ startedAt: at(2026, 8, 4), durationSec: 600 })
+    const gentle = session({ startedAt: at(2026, 7, 21), durationSec: 600 })
+    const stats = computeStats(
+      [brutal, gentle],
+      [metric(brutal.id, 'rpe', 9), metric(gentle.id, 'rpe', 2)],
+      TODAY,
+      4,
+    )
+    expect(stats.weekly.at(-1)?.minutes).toBe(stats.weekly.at(-3)?.minutes)
+    expect(stats.weekly.at(-1)?.load).toBe(90)
+    expect(stats.weekly.at(-3)?.load).toBe(20)
+  })
+
+  it('assumes a moderate effort for a week of unrated sessions', () => {
+    const stats = computeStats(
+      [session({ startedAt: at(2026, 8, 4), durationSec: 600 })],
+      [],
+      TODAY,
+      2,
+    )
+    expect(stats.weekly.at(-1)?.load).toBe(50)
+  })
+
   it('labels each bucket with the Monday that opens it', () => {
     const stats = computeStats([session({ startedAt: at(2026, 8, 4) })], [], TODAY, 2)
     expect(stats.weekly.at(-1)?.weekStart).toBe('2026-08-03')
