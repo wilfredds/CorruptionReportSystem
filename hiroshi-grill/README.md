@@ -31,14 +31,18 @@ npm run dev                    # http://localhost:3000
 ```bash
 npm run build && npm run start # production build
 npm run lint
+npm run db:test                # apply the schema to a scratch DB, test the policies
 ```
+
+Database setup — creating the Supabase project, the environment variables, and
+the staff accounts — is in [`supabase/README.md`](supabase/README.md).
 
 ## Milestone status
 
 | # | Milestone | State |
 | --- | --- | --- |
 | 1 | Scaffold, design tokens, public site | **Done** |
-| 2 | Supabase tables, RLS policies | Not started |
+| 2 | Supabase tables, RLS policies | **Done** — 37 policy tests pass |
 | 3 | `/api/reservations` — server validation + rate limit | Not started |
 | 4 | Supabase Auth login at `/portal` | Placeholder page only |
 | 5 | `/portal/dashboard` with role-aware controls | Not started |
@@ -92,12 +96,32 @@ gets rejected as yesterday's.
 **No secrets in the bundle** — see `.env.example`. The service-role key bypasses
 Row Level Security completely and must never carry a `NEXT_PUBLIC_` prefix.
 
+**Row Level Security** (`supabase/schema.sql`) — the piece that makes the rest
+real. Every table denies by default, so what a role can do is exactly what a
+policy says and nothing else. A customer with the public key and dev tools open
+still cannot read one reservation, because the database refuses before any of
+our code runs.
+
+Three gaps in the spec's own policies are fixed there and marked ✱: the public
+insert was unbounded enough to let anyone file a pre-confirmed booking; crew had
+no UPDATE policy at all and so could not do the one job crew exists for; and
+phone-number masking moved from React into a SQL view, because a UI mask lasts
+only until someone opens the network tab.
+
+**Tested, not asserted** — `npm run db:test` builds a scratch database, applies
+the real schema, and runs 37 assertions covering every line of the spec's §9
+checklist, impersonating each role the way a real request does. Loosen a policy
+and it goes red. It needs no Supabase project, so it runs offline in a second.
+
+**No self-service roles** — there is no insert policy on `profiles`, so no
+request from any browser with any key creates a host or an owner. Accounts are
+made with `npm run staff:create`, which is the one deliberate, human-run use of
+the service key.
+
 ### Still to come
 
-Row Level Security (milestone 2) is the piece that makes the rest real: it is
-Postgres refusing a customer's read of the reservations table before any of our
-code runs. Rate limiting on the reservation and login endpoints, and per-role
-testing, land in milestones 3 and 6.
+Rate limiting on the reservation and login endpoints lands in milestone 3, and
+Turnstile in milestone 6.
 
 ## Layout
 
@@ -114,7 +138,19 @@ src/
     menu.ts           packages, à la carte, house rules      ⚠️ placeholders
     reservation.ts    the shared Zod schema
     format.ts         peso formatting
+    supabase/
+      env.ts          reads the keys; the dangerous one throws in the browser
+      client.ts       browser client (anon key, subject to RLS)
+      server.ts       server client, plus the RLS-bypassing admin client
+      types.ts        database types
   proxy.ts            per-request CSP nonce
+supabase/
+  schema.sql          tables, policies, triggers, the masked staff view
+  verify-rls.sql      37 policy tests
+  local/              Supabase shim so the tests run without a project
+scripts/
+  create-staff.mjs    the only way an account gets a role
+  db-test.sh          npm run db:test
 ```
 
 ## Design tokens
