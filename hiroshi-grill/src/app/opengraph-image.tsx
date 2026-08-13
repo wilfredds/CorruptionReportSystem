@@ -27,11 +27,25 @@ const LACQUER = "#B01E24";
 const SUMI = "#17130F";
 const GOLD = "#C9A24B";
 
+/**
+ * Read from disk, not the network — see src/assets/README.md.
+ *
+ * Returns null rather than throwing if the file is not there. A missing font is
+ * a reason for the card to look plainer, never a reason for the route to answer
+ * 500 — a broken image is how a shared link turns back into a grey box, which
+ * is the exact thing this route exists to prevent.
+ */
+async function loadFraunces(): Promise<Buffer | null> {
+  try {
+    return await readFile(path.join(process.cwd(), "src/assets/Fraunces-SemiBold.ttf"));
+  } catch (error) {
+    console.error("[og] Fraunces not found, falling back to the default font:", error);
+    return null;
+  }
+}
+
 export default async function OpengraphImage() {
-  /* Read from disk, not the network — see src/assets/README.md. */
-  const fraunces = await readFile(
-    path.join(process.cwd(), "src/assets/Fraunces-SemiBold.ttf"),
-  );
+  const fraunces = await loadFraunces();
 
   return new ImageResponse(
     (
@@ -112,7 +126,9 @@ export default async function OpengraphImage() {
     ),
     {
       ...size,
-      fonts: [{ name: "Fraunces", data: fraunces, style: "normal", weight: 600 }],
+      fonts: fraunces
+        ? [{ name: "Fraunces", data: fraunces, style: "normal" as const, weight: 600 as const }]
+        : [],
     },
   );
 }
