@@ -126,9 +126,18 @@ export default async function OpengraphImage() {
     ),
     {
       ...size,
-      fonts: fraunces
-        ? [{ name: "Fraunces", data: fraunces, style: "normal" as const, weight: 600 as const }]
-        : [],
+      /* The key is OMITTED when the font is missing, not set to []. Satori
+         throws "No fonts are loaded" on an empty array — so the fallback that
+         was supposed to keep this route alive would have killed it instead.
+         With no `fonts` key at all it uses its own default, which is the
+         behaviour intended here. */
+      ...(fraunces
+        ? {
+            fonts: [
+              { name: "Fraunces", data: fraunces, style: "normal" as const, weight: 600 as const },
+            ],
+          }
+        : {}),
     },
   );
 }
