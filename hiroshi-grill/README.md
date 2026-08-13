@@ -7,8 +7,8 @@ Two faces, one codebase:
 
 - **Public site** — branding, unli sets, rice & ramen menu, house rules,
   location, and a reservation request form. No login.
-- **Staff portal** — sign-in at `/portal`, with a role-aware dashboard for crew,
-  host and owner. _(Sign-in works; the bookings table is milestone 5.)_
+- **Staff portal** — sign-in at `/portal`, and a dashboard listing each day's
+  bookings with the controls each role is allowed.
 
 ## Stack
 
@@ -46,7 +46,7 @@ the staff accounts — is in [`supabase/README.md`](supabase/README.md).
 | 2 | Supabase tables, RLS policies | **Done** — 37 policy tests pass |
 | 3 | `/api/reservations` — server validation + rate limit | **Done** — 29 endpoint tests |
 | 4 | Supabase Auth login at `/portal` | **Done** — 32 sign-in tests |
-| 5 | `/portal/dashboard` with role-aware controls | Not started |
+| 5 | `/portal/dashboard` with role-aware controls | **Done** — 28 dashboard tests |
 | 6 | Honeypot/Turnstile, per-role testing | Honeypot wired; Turnstile pending |
 | 7 | SEO + deploy | Metadata & JSON-LD done |
 
@@ -142,8 +142,8 @@ only until someone opens the network tab.
 **Tested, not asserted** — two suites, both offline and both fast.
 `npm run db:test` builds a scratch database, applies the real schema and runs 43
 assertions covering the spec's §9 checklist, impersonating each role the way a
-real request does. `npm test` drives the reservation endpoint and sign-in through
-60 cases,
+real request does. `npm test` drives the reservation endpoint, sign-in and the
+dashboard's role rules through 88 cases,
 most of which check that something did *not* happen — the honeypot request never
 reached the database, the oversized body was never parsed, the pre-confirmed
 payload never got through. Those are the paths clicking around never exercises,
@@ -186,6 +186,22 @@ nothing in the browser needs to read the session — which means we can take the
 hardening and put the cookie out of reach of any XSS. A stolen session is worse
 than a stolen password, because it skips the login entirely.
 
+**The dashboard asks the database what this caller may see** — `getDashboard`
+takes no `role` parameter. It selects from `staff_reservations` with the caller's
+own session, and the view masks phone numbers in SQL, so a crew session never
+receives the digits at all. Reading the base table and declining to render the
+column would have put every guest's number in the page source of a page that
+merely chose not to show it.
+
+**The status-change action does not check the caller's role** — on purpose. A
+server action is a public HTTP endpoint, so an `if (role === 'crew') reject`
+there would be a second copy of a rule that already lives in the policies, and
+two copies drift. It issues the UPDATE and lets Postgres answer; `.select()` on
+the end makes a refusal visible, because an update blocked by a `using` clause is
+not an error, it just matches zero rows. Verified by logging in as crew,
+injecting a cancel button the UI never draws, and clicking it — the booking did
+not change.
+
 **Three layers on the dashboard, and only one of them counts** — the proxy
 redirects, the page calls `requireStaff()` for itself in case a path is ever left
 out of the matcher, and Row Level Security decides what the data actually is. The
@@ -225,6 +241,8 @@ src/
     reservations/
       handler.ts      the endpoint's logic, with side effects injected
       insert.ts       the write — anon key, so RLS still judges it
+      status.ts       what each role may do; the UI's mirror of the policies
+      dashboard.ts    the day's bookings, read through the masked view
     format.ts         peso formatting
     supabase/
       env.ts          reads the keys; the dangerous one throws in the browser
@@ -239,6 +257,7 @@ supabase/
 tests/
   reservation-handler.test.ts   npm test
   login.test.ts
+  reservation-status.test.ts
 scripts/
   create-staff.mjs    the only way an account gets a role
   db-test.sh          npm run db:test
