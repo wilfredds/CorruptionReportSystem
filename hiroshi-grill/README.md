@@ -35,8 +35,11 @@ npm test                       # endpoint tests — no server, no database neede
 npm run db:test                # apply the schema to a scratch DB, test the policies
 ```
 
-Database setup is in [`supabase/README.md`](supabase/README.md); going live is
-in [`DEPLOY.md`](DEPLOY.md).
+Database setup is in [`supabase/README.md`](supabase/README.md); the Vercel
+reference is [`DEPLOY.md`](DEPLOY.md). To take this from finished code to a
+restaurant actually using it, follow [`GOLIVE.md`](GOLIVE.md) — it is the whole
+sequence in order, from replacing the placeholder data to verifying the live
+site.
 
 ## Milestone status
 
@@ -60,6 +63,9 @@ it can be corrected in one place:
 
 The address, phone number and hours are also fed to Google as structured data.
 Publishing wrong ones there is worse than publishing none.
+
+[`GOLIVE.md`](GOLIVE.md) Phase A lists every placeholder field and what each one
+feeds, so none get missed.
 
 ## What is already secure, and why
 

@@ -1,5 +1,10 @@
 # Deploying
 
+> **Doing this for the first time?** Follow [`GOLIVE.md`](GOLIVE.md) instead —
+> it is the full sequence in order, with the Supabase setup and the local
+> verification that should happen before any of this. This file is the Vercel
+> reference you come back to afterwards.
+
 ## Before the first deploy — the blocking items
 
 Two things must be true or the site will be live and wrong. Neither is a code
