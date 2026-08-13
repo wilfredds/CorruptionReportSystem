@@ -1,6 +1,7 @@
-import { RESERVATION_LIMIT, checkRateLimit } from "@/lib/rate-limit";
+import { RESERVATION_LIMIT, checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { handleReservationRequest } from "@/lib/reservations/handler";
 import { insertReservation } from "@/lib/reservations/insert";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 /**
  * POST /api/reservations
@@ -21,6 +22,14 @@ export async function POST(request: Request) {
         RESERVATION_LIMIT.limit,
         RESERVATION_LIMIT.windowSeconds,
       ),
+    verifyCaptcha: async (token, req) => {
+      const result = await verifyTurnstile(token, clientIp(req.headers), {
+        /* Server-only. A Turnstile SECRET key in the browser bundle would let
+           anyone mint their own passes. */
+        secret: process.env.TURNSTILE_SECRET_KEY,
+      });
+      return result.ok;
+    },
     insert: insertReservation,
   });
 }

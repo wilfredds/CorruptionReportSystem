@@ -3,6 +3,8 @@
 import { useId, useState, useSyncExternalStore } from "react";
 
 import { unliPackages } from "@/lib/menu";
+import { TURNSTILE_FIELD } from "@/lib/turnstile";
+import { TurnstileWidget } from "./turnstile-widget";
 import {
   latestBookableDate,
   todayInRestaurantTimezone,
@@ -28,6 +30,17 @@ type Status =
   | { kind: "sending" }
   | { kind: "sent" }
   | { kind: "failed"; message: string };
+
+/**
+ * A Turnstile token is single use. If a submit fails for any reason, the token
+ * that came with it is spent — so the widget has to be reset or the guest's
+ * next attempt is refused with "timeout-or-duplicate", which looks to them like
+ * the form is simply broken.
+ */
+function resetTurnstile() {
+  const turnstile = (window as unknown as { turnstile?: { reset: () => void } }).turnstile;
+  turnstile?.reset();
+}
 
 /** No-op subscribe: the booking window never changes while the tab is open. */
 const noopSubscribe = () => () => {};
@@ -56,7 +69,7 @@ function useBookingWindow() {
   return { min, max };
 }
 
-export function ReserveForm() {
+export function ReserveForm({ turnstileSiteKey }: { turnstileSiteKey?: string }) {
   const formId = useId();
   const [form, setForm] = useState<ReservationFormValues>(emptyForm);
   const [errors, setErrors] = useState<ReservationErrors>({});
@@ -72,6 +85,13 @@ export function ReserveForm() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    /* Cloudflare's script writes a hidden input into this form. We submit as
+       JSON rather than a native form POST, so it has to be read out by hand
+       instead of arriving in the FormData. */
+    const widgetToken =
+      (event.currentTarget.elements.namedItem(TURNSTILE_FIELD) as HTMLInputElement | null)
+        ?.value ?? "";
 
     /* This check is for the guest's benefit — instant, friendly feedback. It is
        NOT what keeps bad data out of the database: anyone can skip it entirely
@@ -91,7 +111,7 @@ export function ReserveForm() {
       const response = await fetch("/api/reservations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, [TURNSTILE_FIELD]: widgetToken }),
       });
 
       if (response.ok) {
@@ -106,11 +126,17 @@ export function ReserveForm() {
          quietly becomes yesterday. Show the server's verdict; it is the one
          that decides. */
       if (response.status === 400) {
-        const payload = (await response.json()) as { errors?: ReservationErrors };
-        setErrors(payload.errors ?? {});
-        setStatus({ kind: "idle" });
+        const payload = (await response.json()) as {
+          errors?: ReservationErrors & { captcha?: string };
+        };
+        const { captcha, ...fieldErrors } = payload.errors ?? {};
+        setErrors(fieldErrors);
+        setStatus(captcha ? { kind: "failed", message: captcha } : { kind: "idle" });
+        resetTurnstile();
         return;
       }
+
+      resetTurnstile();
 
       if (response.status === 429) {
         setStatus({
@@ -126,6 +152,7 @@ export function ReserveForm() {
         message: "We could not save that request. Please try again, or give us a call.",
       });
     } catch {
+      resetTurnstile();
       /* fetch itself failed — no network, or the request never landed. */
       setStatus({
         kind: "failed",
@@ -303,6 +330,8 @@ export function ReserveForm() {
               onChange={(e) => update("website", e.target.value)}
             />
           </div>
+
+          <TurnstileWidget siteKey={turnstileSiteKey} />
 
           <button
             type="submit"

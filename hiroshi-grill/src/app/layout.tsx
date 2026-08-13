@@ -72,12 +72,17 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en-PH" className={`${fraunces.variable} ${hanken.variable} h-full`}>
       <body className="flex min-h-full flex-col">
         {children}
-        {/* Structured data. `JSON.stringify` on an object we built ourselves is
-            safe here — the content is ours, not user input. Never interpolate
-            visitor-supplied text into a script tag like this. */}
+        {/* Structured data.
+            This is the ONLY dangerouslySetInnerHTML in the project, and
+            `react/no-danger` is set to error so it stays that way — adding a
+            second one is a build failure, not a code-review conversation.
+            It is safe because the object comes from restaurant.ts, which we
+            wrote; nothing a visitor ever typed passes through here. Never
+            interpolate user text into a script tag like this. */}
         <script
           type="application/ld+json"
           nonce={nonce}
+          // eslint-disable-next-line react/no-danger -- our own static data, see above
           dangerouslySetInnerHTML={{ __html: JSON.stringify(restaurantJsonLd(siteUrl)) }}
         />
       </body>

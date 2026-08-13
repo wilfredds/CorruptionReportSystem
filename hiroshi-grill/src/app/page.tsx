@@ -5,6 +5,7 @@ import { ReserveForm } from "@/components/reserve-form";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { UnliPackages } from "@/components/unli-packages";
+import { turnstileSiteKey } from "@/lib/turnstile";
 import { Visit } from "@/components/visit";
 
 /**
@@ -22,7 +23,7 @@ export default function HomePage() {
         <UnliPackages />
         <AlaCarteMenu />
         <HouseRules />
-        <ReserveForm />
+        <ReserveForm turnstileSiteKey={turnstileSiteKey()} />
         <Visit />
       </main>
       <SiteFooter />

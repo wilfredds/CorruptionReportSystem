@@ -1,4 +1,5 @@
 import { validateReservation, type ReservationPayload } from "../reservation.ts";
+import { TURNSTILE_FIELD } from "../turnstile.ts";
 
 /**
  * The reservation endpoint's logic, with its side effects passed in.
@@ -19,6 +20,8 @@ import { validateReservation, type ReservationPayload } from "../reservation.ts"
 export type ReservationDeps = {
   /** Returns true when the caller is within budget. */
   rateLimit: (request: Request) => Promise<boolean>;
+  /** Returns true when the bot challenge passed, or is not configured. */
+  verifyCaptcha: (token: string | null, request: Request) => Promise<boolean>;
   /** Writes the row. Throws on failure. */
   insert: (payload: ReservationPayload) => Promise<void>;
 };
@@ -142,7 +145,36 @@ export async function handleReservationRequest(
     return json({ ok: false, errors: result.errors }, 400);
   }
 
-  /* 6. Write it. The insert runs as the public `anon` role, so the row still
+  /* 6. The bot challenge, if one is configured.
+
+        Deliberately AFTER validation, which is free and local, so a flood of
+        malformed requests costs us nothing at Cloudflare. And deliberately
+        after the rate limit, so it cannot be used to make us generate traffic.
+
+        A failure here is reported as a field error on the widget rather than a
+        generic refusal, because the usual cause is not an attack — it is a
+        guest whose token expired while they filled the form in. */
+  const captchaToken = (body as Record<string, unknown>)[TURNSTILE_FIELD];
+  const humanEnough = await deps
+    .verifyCaptcha(typeof captchaToken === "string" ? captchaToken : null, request)
+    .catch((error) => {
+      /* Same rule as the rate limiter: a check that cannot answer must not take
+         the booking form down with it. */
+      console.error("[reservations] captcha check threw; allowing the request:", error);
+      return true;
+    });
+
+  if (!humanEnough) {
+    return json(
+      {
+        ok: false,
+        errors: { captcha: "Please complete the challenge below and try again." },
+      },
+      400,
+    );
+  }
+
+  /* 7. Write it. The insert runs as the public `anon` role, so the row still
         has to satisfy the RLS policy — which pins it to status = 'pending'.
         Using the service-role key here would have been easier and would have
         thrown that away. */

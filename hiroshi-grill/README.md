@@ -47,7 +47,7 @@ the staff accounts — is in [`supabase/README.md`](supabase/README.md).
 | 3 | `/api/reservations` — server validation + rate limit | **Done** — 29 endpoint tests |
 | 4 | Supabase Auth login at `/portal` | **Done** — 32 sign-in tests |
 | 5 | `/portal/dashboard` with role-aware controls | **Done** — 28 dashboard tests |
-| 6 | Honeypot/Turnstile, per-role testing | Honeypot wired; Turnstile pending |
+| 6 | Honeypot/Turnstile, per-role testing | **Done** — Turnstile optional; CSP under test |
 | 7 | SEO + deploy | Metadata & JSON-LD done |
 
 ## ⚠️ Before this goes public
@@ -142,8 +142,8 @@ only until someone opens the network tab.
 **Tested, not asserted** — two suites, both offline and both fast.
 `npm run db:test` builds a scratch database, applies the real schema and runs 43
 assertions covering the spec's §9 checklist, impersonating each role the way a
-real request does. `npm test` drives the reservation endpoint, sign-in and the
-dashboard's role rules through 88 cases,
+real request does. `npm test` drives the reservation endpoint, sign-in, the
+dashboard's role rules, Turnstile and the CSP itself through 126 cases,
 most of which check that something did *not* happen — the honeypot request never
 reached the database, the oversized body was never parsed, the pre-confirmed
 payload never got through. Those are the paths clicking around never exercises,
@@ -215,9 +215,53 @@ URL parser and then checked, which catches `//evil.example`, a backslash prefix,
 `javascript:` and `/portal/../../etc/passwd` alike — the last of which got past
 the first, string-matching version.
 
-### Still to come
+**Bot protection, two layers** (`src/lib/turnstile.ts`) — the honeypot is free,
+invisible and stops commodity spam bots. Cloudflare Turnstile costs a round trip
+and can occasionally make a real guest click something, but it stops the bot
+written for *this* form that knows to leave the honeypot alone. Turnstile is
+optional: with no keys set, the widget does not render and bookings still work.
+A security feature that breaks the product when unconfigured gets removed rather
+than configured.
 
-Turnstile on the public form, in milestone 6.
+**The CSP detail that would have wasted an afternoon** — `'strict-dynamic'`
+makes browsers **ignore host allowlists in `script-src` entirely**. Adding
+`https://challenges.cloudflare.com` there does nothing at all. The widget script
+is allowed because it is injected by Next's own already-trusted bundle, and
+under `'strict-dynamic'` that trust is inherited. `frame-src` is a normal host
+list, so Cloudflare *is* named there for the challenge iframe — and only when
+Turnstile is switched on. Verified in a browser: the script is fetched with no
+nonce of its own and no CSP refusal.
+
+### The §6 checklist, honestly
+
+| Item | State |
+| --- | --- |
+| HTTPS everywhere | Automatic on Vercel; HSTS set so the browser insists |
+| Never trust the client | Every rule re-checked on the server or in RLS |
+| Secrets in env vars | ✅ and the service key throws if read in a browser |
+| Parameterized queries | ✅ via the Supabase client; no string-built SQL |
+| Server-side validation | ✅ one Zod schema, run again on the request |
+| Rate limit bookings + login | ✅ in Postgres, so it works across instances |
+| Bot protection | ✅ honeypot always, Turnstile when configured |
+| Escape all output | ✅ and `react/no-danger` is a lint **error** |
+| Security headers | ✅ CSP with a nonce, HSTS, frame options, and tests |
+| Least privilege | ✅ no policy lets anyone create a staff role |
+| Audit trail | ✅ trigger-written and append-only |
+| Strong password policy | ⚠️ **partly** — see below |
+
+The password item is the one that is not fully done, and it is worth saying so
+rather than ticking it. Supabase handles hashing (bcrypt) and `staff:create`
+generates a 24-byte random password, so nobody picks a weak one at setup. But
+minimum-strength rules and leaked-password checks are **dashboard settings** in
+Supabase (Authentication → Policies) that this repo cannot set for you, and
+there is no forced rotation after the first sign-in. Turn those on when you
+create the project.
+
+Two more things this project does not do, listed so they are decisions rather
+than oversights: there is no email confirmation flow for staff (accounts are
+created already confirmed, because the owner hands the password over in person),
+and a guest whose browser blocks Cloudflare will not be able to submit the form
+once Turnstile is on — the phone number on the page is the fallback.
 
 ## Layout
 
@@ -234,7 +278,9 @@ src/
     restaurant.ts     business details + Schema.org markup   ⚠️ placeholders
     menu.ts           packages, à la carte, house rules      ⚠️ placeholders
     reservation.ts    the shared Zod schema
+    csp.ts            the Content-Security-Policy, as testable data
     rate-limit.ts     client IP, salted hashing, the limit check
+    turnstile.ts      Cloudflare verification, optional by design
     auth/
       login.ts        sign-in logic, with side effects injected
       session.ts      getUser() + profile lookup; requireStaff()
@@ -258,6 +304,8 @@ tests/
   reservation-handler.test.ts   npm test
   login.test.ts
   reservation-status.test.ts
+  turnstile.test.ts
+  csp.test.ts
 scripts/
   create-staff.mjs    the only way an account gets a role
   db-test.sh          npm run db:test

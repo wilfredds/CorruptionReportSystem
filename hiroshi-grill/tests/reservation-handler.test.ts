@@ -54,12 +54,18 @@ let inserted: ReservationPayload[];
 let rateLimitCalls: number;
 let allowRequests: boolean;
 let insertThrows: boolean;
+let captchaCalls: (string | null)[];
+let captchaPasses: boolean;
 
 function deps(): ReservationDeps {
   return {
     rateLimit: async () => {
       rateLimitCalls += 1;
       return allowRequests;
+    },
+    verifyCaptcha: async (token) => {
+      captchaCalls.push(token);
+      return captchaPasses;
     },
     insert: async (payload) => {
       if (insertThrows) throw new Error("connection refused to db-prod-1.internal:5432");
@@ -73,6 +79,8 @@ beforeEach(() => {
   rateLimitCalls = 0;
   allowRequests = true;
   insertThrows = false;
+  captchaCalls = [];
+  captchaPasses = true;
 });
 
 describe("a genuine booking", () => {
@@ -265,5 +273,58 @@ describe("when the database is down", () => {
     assert.ok(!payload.error.includes("db-prod-1"), "must not leak internal hostnames");
     assert.ok(!payload.error.includes("5432"), "must not leak internal ports");
     assert.match(payload.error, /try again|call us/i, "should tell the guest what to do");
+  });
+});
+
+describe("the bot challenge", () => {
+  test("passes the widget token through to the verifier", async () => {
+    await handleReservationRequest(
+      post(validBody({ "cf-turnstile-response": "0.token-from-widget" })),
+      deps(),
+    );
+
+    assert.deepEqual(captchaCalls, ["0.token-from-widget"]);
+  });
+
+  test("reports null when the client sent no token", async () => {
+    await handleReservationRequest(post(validBody()), deps());
+    assert.deepEqual(captchaCalls, [null], "the verifier decides whether that matters");
+  });
+
+  test("refuses the booking when the challenge fails", async () => {
+    captchaPasses = false;
+
+    const response = await handleReservationRequest(post(validBody()), deps());
+    const payload = (await response.json()) as { errors: Record<string, string> };
+
+    assert.equal(response.status, 400);
+    assert.equal(inserted.length, 0, "a failed challenge must never reach the database");
+    assert.ok(payload.errors.captcha, "should point at the widget, not a random field");
+  });
+
+  test("is checked after validation, so junk costs nothing at Cloudflare", async () => {
+    const response = await handleReservationRequest(post(validBody({ name: "" })), deps());
+
+    assert.equal(response.status, 400);
+    assert.equal(captchaCalls.length, 0, "a malformed payload should not reach the verifier");
+  });
+
+  test("is not consulted at all for a honeypot hit", async () => {
+    await handleReservationRequest(post(validBody({ website: "spam" })), deps());
+    assert.equal(captchaCalls.length, 0);
+  });
+
+  test("a verifier that throws must not take the endpoint down", async () => {
+    const throwingDeps: ReservationDeps = {
+      ...deps(),
+      verifyCaptcha: async () => {
+        throw new Error("challenges.cloudflare.com ETIMEDOUT");
+      },
+    };
+
+    const response = await handleReservationRequest(post(validBody()), throwingDeps);
+
+    assert.equal(response.status, 201, "the booking should still go through");
+    assert.equal(inserted.length, 1);
   });
 });
