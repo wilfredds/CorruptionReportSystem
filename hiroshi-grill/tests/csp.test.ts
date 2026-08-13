@@ -46,6 +46,63 @@ describe("script-src", () => {
   });
 });
 
+describe("the development escape hatch", () => {
+  /**
+   * React's dev bundle calls eval() to reconstruct callstacks across the
+   * server/client boundary, so `next dev` needs 'unsafe-eval' or the console
+   * fills with errors. React never calls eval() in its production build.
+   *
+   * The whole risk here is that the dev relaxation leaks into production. These
+   * tests are the tripwire for exactly that.
+   */
+  const dev = directive(buildCsp(NONCE, { dev: true }), "script-src")!;
+  const prod = directive(buildCsp(NONCE, { dev: false }), "script-src")!;
+
+  test("dev allows eval, so the dev console is usable", () => {
+    assert.ok(dev.includes("'unsafe-eval'"), dev);
+  });
+
+  test("production does not, and that is the point", () => {
+    assert.ok(!prod.includes("'unsafe-eval'"), prod);
+  });
+
+  test("omitting the flag entirely gives the production policy", () => {
+    // Fail closed: a caller that forgets to say anything must not get eval.
+    assert.equal(directive(buildCsp(NONCE), "script-src"), prod);
+    assert.equal(directive(buildCsp(NONCE, {}), "script-src"), prod);
+  });
+
+  test("dev still refuses inline scripts", () => {
+    // 'unsafe-eval' is the only thing dev is allowed to relax. If this ever
+    // fails, the dev build stopped resembling the thing being shipped.
+    assert.ok(!dev.includes("'unsafe-inline'"), dev);
+  });
+
+  test("dev keeps the nonce and strict-dynamic", () => {
+    assert.ok(dev.includes(`'nonce-${NONCE}'`));
+    assert.ok(dev.includes("'strict-dynamic'"));
+  });
+
+  test("dev loosens script-src and nothing else", () => {
+    const full = buildCsp(NONCE, { dev: true });
+    const baseline = buildCsp(NONCE);
+    for (const name of [
+      "default-src",
+      "style-src",
+      "img-src",
+      "font-src",
+      "connect-src",
+      "frame-src",
+      "object-src",
+      "base-uri",
+      "form-action",
+      "frame-ancestors",
+    ]) {
+      assert.equal(directive(full, name), directive(baseline, name), `${name} should be unchanged`);
+    }
+  });
+});
+
 describe("the directives that stop the classics", () => {
   const csp = buildCsp(NONCE);
 
@@ -79,8 +136,8 @@ describe("the directives that stop the classics", () => {
 });
 
 describe("Turnstile changes the policy only when it is configured", () => {
-  const off = buildCsp(NONCE, false);
-  const on = buildCsp(NONCE, true);
+  const off = buildCsp(NONCE, { turnstile: false });
+  const on = buildCsp(NONCE, { turnstile: true });
 
   test("no Cloudflare anywhere when it is off", () => {
     assert.ok(!off.includes("cloudflare"), off);

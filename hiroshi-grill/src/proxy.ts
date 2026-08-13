@@ -14,7 +14,13 @@ export async function proxy(request: NextRequest) {
      cryptographically random — Math.random() would be guessable and therefore
      worthless as a nonce. */
   const nonce = btoa(crypto.randomUUID());
-  const csp = buildCsp(nonce, Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY));
+  const csp = buildCsp(nonce, {
+    turnstile: Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
+    /* `=== "development"` and not `!== "production"` — if NODE_ENV is ever
+       unset or misspelt we want the strict policy, not the loose one. A
+       security control should fail closed. */
+    dev: process.env.NODE_ENV === "development",
+  });
 
   /* Pass the policy inward on the request so Next can read the nonce and stamp
      it onto the script tags it renders, plus the bare nonce on `x-nonce` for

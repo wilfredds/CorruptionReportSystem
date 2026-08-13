@@ -28,7 +28,39 @@ const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
  * again, the alternative is to drop the nonce and allow `'unsafe-inline'`
  * scripts — a real weakening, not a free lunch.
  */
-export function buildCsp(nonce: string, turnstileEnabled = false): string {
+
+export type CspOptions = {
+  /** Turnstile is configured, so Cloudflare's origin has to be reachable. */
+  turnstile?: boolean;
+
+  /**
+   * This is a development build.
+   *
+   * React's *development* bundle calls `eval()` — it uses it to rebuild
+   * callstacks that crossed the server/client boundary, so that a server
+   * component error points at your code instead of at a stream decoder. Under a
+   * policy with no `'unsafe-eval'` the browser refuses, and `next dev` fills the
+   * console with "eval() is not supported in this environment".
+   *
+   * So dev gets `'unsafe-eval'` and production does not. React never calls
+   * `eval()` in its production build, which is what makes this affordable: the
+   * relaxation buys a working dev console and costs nothing that ships.
+   *
+   * Note this stays effective alongside `'strict-dynamic'`. That keyword tells
+   * browsers to ignore host and `'self'` expressions in `script-src`, but
+   * `'unsafe-eval'` is explicitly NOT one of the things it ignores — so adding
+   * it here really does open eval, and its absence in production really does
+   * close it.
+   *
+   * Defaults to false on purpose. Every caller that forgets to pass anything
+   * gets the locked-down policy; opening eval has to be a deliberate act.
+   */
+  dev?: boolean;
+};
+
+export function buildCsp(nonce: string, options: CspOptions = {}): string {
+  const { turnstile: turnstileEnabled = false, dev = false } = options;
+
   return [
     "default-src 'self'",
 
@@ -37,7 +69,7 @@ export function buildCsp(nonce: string, turnstileEnabled = false): string {
        the rest of the bundle without us listing every chunk. Browsers that
        understand it ignore the 'self' beside it; older ones fall back to
        'self', so both are listed. */
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
 
     /* Styles still need 'unsafe-inline': React writes inline style attributes
        and Next inlines the stylesheet on first paint. Inline *styles* cannot
