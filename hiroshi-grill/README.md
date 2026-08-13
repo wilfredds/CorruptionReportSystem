@@ -35,8 +35,8 @@ npm test                       # endpoint tests — no server, no database neede
 npm run db:test                # apply the schema to a scratch DB, test the policies
 ```
 
-Database setup — creating the Supabase project, the environment variables, and
-the staff accounts — is in [`supabase/README.md`](supabase/README.md).
+Database setup is in [`supabase/README.md`](supabase/README.md); going live is
+in [`DEPLOY.md`](DEPLOY.md).
 
 ## Milestone status
 
@@ -48,7 +48,7 @@ the staff accounts — is in [`supabase/README.md`](supabase/README.md).
 | 4 | Supabase Auth login at `/portal` | **Done** — 32 sign-in tests |
 | 5 | `/portal/dashboard` with role-aware controls | **Done** — 28 dashboard tests |
 | 6 | Honeypot/Turnstile, per-role testing | **Done** — Turnstile optional; CSP under test |
-| 7 | SEO + deploy | Metadata & JSON-LD done |
+| 7 | SEO + deploy | Site ready; deploy needs your Supabase project |
 
 ## ⚠️ Before this goes public
 
@@ -215,6 +215,19 @@ URL parser and then checked, which catches `//evil.example`, a backslash prefix,
 `javascript:` and `/portal/../../etc/passwd` alike — the last of which got past
 the first, string-matching version.
 
+**SEO that cannot drift from the content** — `robots.ts`, `sitemap.ts`, the
+favicon and the Open Graph image are all generated from the same
+`restaurant.ts`, so changing the restaurant's name updates the social card too.
+The share image matters more than it sounds for a place in Cavite: on Facebook
+and Messenger it is the entire first impression, and without one the link is a
+grey box.
+
+One thing `robots.txt` is *not*: `Disallow: /portal` keeps the staff pages out
+of Google and does nothing whatsoever to stop someone typing the URL. It is a
+request to well-behaved crawlers. What protects the portal is the login and
+Row Level Security — if robots.txt were the only thing in the way, the
+reservations would already be public.
+
 **Bot protection, two layers** (`src/lib/turnstile.ts`) — the honeypot is free,
 invisible and stops commodity spam bots. Cloudflare Turnstile costs a round trip
 and can occasionally make a real guest click something, but it stops the bot
@@ -272,6 +285,10 @@ src/
     page.tsx          the public landing page
     api/reservations/route.ts   POST — a thin adapter over handler.ts
     portal/           sign-in, server actions, and the dashboard
+    robots.ts         robots.txt
+    sitemap.ts        sitemap.xml
+    icon.tsx          generated favicon
+    opengraph-image.tsx  generated social card
     globals.css       design tokens (Tailwind v4 @theme)
   components/         one file per section of the landing page
   lib/
@@ -279,6 +296,7 @@ src/
     menu.ts           packages, à la carte, house rules      ⚠️ placeholders
     reservation.ts    the shared Zod schema
     csp.ts            the Content-Security-Policy, as testable data
+    site.ts           one canonical origin, shared by four consumers
     rate-limit.ts     client IP, salted hashing, the limit check
     turnstile.ts      Cloudflare verification, optional by design
     auth/

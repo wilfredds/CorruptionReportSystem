@@ -3,6 +3,7 @@ import { Fraunces, Hanken_Grotesk } from "next/font/google";
 import { headers } from "next/headers";
 
 import { restaurant, restaurantJsonLd } from "@/lib/restaurant";
+import { siteUrl as resolveSiteUrl } from "@/lib/site";
 import "./globals.css";
 
 /* next/font downloads these at *build* time and serves them from our own
@@ -22,7 +23,7 @@ const hanken = Hanken_Grotesk({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hiroshi-grill.vercel.app";
+const siteUrl = resolveSiteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -52,6 +53,10 @@ export const metadata: Metadata = {
     description: restaurant.description,
   },
   robots: { index: true, follow: true },
+  /* One canonical URL, so the same page reached via a preview domain, a
+     trailing slash or a tracking query does not read as three pages competing
+     with each other in search results. */
+  alternates: { canonical: siteUrl },
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
