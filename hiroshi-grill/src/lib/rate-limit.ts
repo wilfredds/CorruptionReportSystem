@@ -35,9 +35,7 @@ export const LOGIN_LIMIT = { limit: 10, windowSeconds: 10 * 60 } as const;
  * header the platform controls, and fall back to the client-controlled one only
  * for local development, where there is no attacker to worry about.
  */
-export function clientIp(request: Request): string {
-  const headers = request.headers;
-
+export function clientIp(headers: Headers): string {
   const vercel = headers.get("x-vercel-forwarded-for");
   if (vercel) return vercel.split(",")[0]!.trim();
 
@@ -129,16 +127,21 @@ export function bucketFor(scope: string, ip: string): string {
  */
 export async function checkRateLimit(
   scope: string,
-  request: Request,
+  headers: Headers,
   limit: number,
   windowSeconds: number,
+  options: { failClosed?: boolean } = {},
 ): Promise<boolean> {
+  /* What to do when the limiter itself cannot answer. See the note above the
+     function for why the reservation form and the login page differ. */
+  const onFailure = options.failClosed ? false : true;
+
   try {
     /* Bucket derivation lives inside the try on purpose. It reads configuration
        and hashes, both of which can fail, and a throw escaping this function
        would surface as an unhandled 500 on a booking rather than as a rate
        limiter that quietly stopped working. */
-    const bucket = bucketFor(scope, clientIp(request));
+    const bucket = bucketFor(scope, clientIp(headers));
 
     const supabase = await createClient();
     const { data, error } = await supabase.rpc("check_rate_limit", {
@@ -148,13 +151,52 @@ export async function checkRateLimit(
     });
 
     if (error) {
-      console.error("[rate-limit] check failed, allowing the request:", error.message);
-      return true;
+      console.error("[rate-limit] check failed:", error.message);
+      return onFailure;
     }
 
     return data !== false;
   } catch (error) {
-    console.error("[rate-limit] check threw, allowing the request:", error);
-    return true;
+    console.error("[rate-limit] check threw:", error);
+    return onFailure;
   }
+}
+
+/**
+ * Rate limits a sign-in attempt, on two independent buckets.
+ *
+ * Both are needed, because they stop different attacks:
+ *
+ *   by IP    — one machine working through a list of email addresses.
+ *   by email — many machines all guessing at one account, where each
+ *              individual address stays comfortably under the per-IP cap.
+ *
+ * Checking only the first is the common mistake, and it leaves the owner's
+ * account open to exactly the attack worth worrying about.
+ *
+ * This one fails CLOSED, unlike the reservation form. The reasoning is not
+ * "logins are more important" in the abstract — it is that failing closed here
+ * costs almost nothing. The limiter and Supabase Auth are the same service, so
+ * if this check cannot reach the database, the sign-in was going to fail
+ * anyway. We give up a case that was already lost, and in exchange an outage
+ * can never become an unlimited window for guessing passwords.
+ */
+export async function checkLoginRateLimit(headers: Headers, email: string): Promise<boolean> {
+  const [ipOk, emailOk] = await Promise.all([
+    checkRateLimit("login-ip", headers, LOGIN_LIMIT.limit, LOGIN_LIMIT.windowSeconds, {
+      failClosed: true,
+    }),
+    /* The email is hashed the same way an IP is — the buckets table never
+       learns which staff addresses exist, let alone which are under attack. */
+    checkEmailBucket(email),
+  ]);
+
+  return ipOk && emailOk;
+}
+
+async function checkEmailBucket(email: string): Promise<boolean> {
+  const headers = new Headers({ "x-real-ip": email.trim().toLowerCase() });
+  return checkRateLimit("login-email", headers, LOGIN_LIMIT.limit, LOGIN_LIMIT.windowSeconds, {
+    failClosed: true,
+  });
 }

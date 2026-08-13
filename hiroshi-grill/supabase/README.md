@@ -49,7 +49,7 @@ npm run db:test
 ```
 
 This drops and recreates a local `hiroshi_test` database, applies the real
-`schema.sql`, and runs 37 assertions covering every row in the spec's §9
+`schema.sql`, and runs 43 assertions covering every row in the spec's §9
 checklist. It needs a local Postgres (or
 `docker run -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:16`), but **no
 Supabase project** — `local/00-supabase-shim.sql` stands in for the `auth`
@@ -94,8 +94,17 @@ phone numbers in React for v1. A UI mask lasts until someone opens the network
 tab and reads the JSON that was sent to draw it. `staff_reservations` masks in
 SQL, so a crew session never receives the digits.
 
+## A note on the browser client
+
+There isn't one, on purpose. Sign-in is a server action and the portal is
+server-rendered, so nothing in the browser ever reads the session — which is
+what lets the session cookie be `httpOnly` and stay out of reach of any XSS.
+
+If milestone 5 needs live updates, do it through a server action or a route
+handler. Adding `createBrowserClient` back means turning that hardening off,
+and it should be a decision rather than a side effect.
+
 ## Still to come
 
-Rate limiting (milestone 3) and the login itself (milestone 4) are not here.
-Neither is the owner's daily-summary query — it is a plain count over
-`staff_reservations` and belongs with the dashboard in milestone 5.
+The owner's daily-summary query is a plain count over `staff_reservations` and
+belongs with the dashboard in milestone 5.

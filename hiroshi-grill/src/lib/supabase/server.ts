@@ -3,6 +3,7 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+import { hardenedCookieOptions } from "./cookie-options";
 import { publicSupabaseEnv, serviceRoleKey } from "./env";
 import type { Database } from "./types";
 
@@ -33,7 +34,7 @@ export async function createClient() {
       setAll(cookiesToSet) {
         try {
           for (const { name, value, options } of cookiesToSet) {
-            cookieStore.set(name, value, options);
+            cookieStore.set(name, value, hardenedCookieOptions(options));
           }
         } catch {
           /* Server components are not allowed to set cookies. Refreshing the

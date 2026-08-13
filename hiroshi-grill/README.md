@@ -7,8 +7,8 @@ Two faces, one codebase:
 
 - **Public site** — branding, unli sets, rice & ramen menu, house rules,
   location, and a reservation request form. No login.
-- **Staff portal** — login required, role-aware dashboard for crew, host and
-  owner. _(Milestones 4–5, not built yet.)_
+- **Staff portal** — sign-in at `/portal`, with a role-aware dashboard for crew,
+  host and owner. _(Sign-in works; the bookings table is milestone 5.)_
 
 ## Stack
 
@@ -45,7 +45,7 @@ the staff accounts — is in [`supabase/README.md`](supabase/README.md).
 | 1 | Scaffold, design tokens, public site | **Done** |
 | 2 | Supabase tables, RLS policies | **Done** — 37 policy tests pass |
 | 3 | `/api/reservations` — server validation + rate limit | **Done** — 29 endpoint tests |
-| 4 | Supabase Auth login at `/portal` | Placeholder page only |
+| 4 | Supabase Auth login at `/portal` | **Done** — 32 sign-in tests |
 | 5 | `/portal/dashboard` with role-aware controls | Not started |
 | 6 | Honeypot/Turnstile, per-role testing | Honeypot wired; Turnstile pending |
 | 7 | SEO + deploy | Metadata & JSON-LD done |
@@ -142,7 +142,8 @@ only until someone opens the network tab.
 **Tested, not asserted** — two suites, both offline and both fast.
 `npm run db:test` builds a scratch database, applies the real schema and runs 43
 assertions covering the spec's §9 checklist, impersonating each role the way a
-real request does. `npm test` drives the reservation endpoint through 29 cases,
+real request does. `npm test` drives the reservation endpoint and sign-in through
+60 cases,
 most of which check that something did *not* happen — the honeypot request never
 reached the database, the oversized body was never parsed, the pre-confirmed
 payload never got through. Those are the paths clicking around never exercises,
@@ -156,10 +157,51 @@ request from any browser with any key creates a host or an owner. Accounts are
 made with `npm run staff:create`, which is the one deliberate, human-run use of
 the service key.
 
+**`getUser()`, never `getSession()`, on the server** (`src/lib/auth/session.ts`)
+— `getSession()` hands back whatever the cookie claims, unverified. The cookie
+comes from the network, and anyone can send a cookie. `getUser()` revalidates the
+token with the Auth server, and it is the only one of the two that can carry an
+access decision.
+
+**Sign-in runs on the server** (`src/app/portal/actions.ts`) — the easy version
+calls Supabase straight from the browser, which means our server never sees the
+attempt and there is nowhere to put a rate limit. §6 asks for one on the login
+endpoint, and you cannot limit a request that does not pass through you.
+
+**Login is limited by IP *and* by email** — checking only the first leaves the
+owner's account open to many machines each staying under the per-IP cap. This
+limiter fails **closed**, unlike the booking form: it and Supabase Auth are the
+same service, so if the check cannot reach the database the sign-in was going to
+fail anyway. We give up a case that was already lost, and an outage never becomes
+an unlimited window for guessing passwords.
+
+**One failure message** — "no such account" and "wrong password" as separate
+sentences is a free tool for finding out which staff addresses are real. Both say
+the same thing, and the provider's own error text never reaches the browser.
+
+**The session cookie is `httpOnly`** (`src/lib/supabase/cookie-options.ts`) —
+Supabase ships it readable by JavaScript so its browser client can use it. This
+project signs in through a server action and renders the portal on the server, so
+nothing in the browser needs to read the session — which means we can take the
+hardening and put the cookie out of reach of any XSS. A stolen session is worse
+than a stolen password, because it skips the login entirely.
+
+**Three layers on the dashboard, and only one of them counts** — the proxy
+redirects, the page calls `requireStaff()` for itself in case a path is ever left
+out of the matcher, and Row Level Security decides what the data actually is. The
+first two exist to show people a sensible page; the third is what makes the
+answer safe.
+
+**No open redirect** — `?next=` exists so a bounce through the login lands you
+where you were going, and unchecked it sends staff to a lookalike site the
+instant they sign in, when they are least suspicious. Paths are resolved with the
+URL parser and then checked, which catches `//evil.example`, a backslash prefix,
+`javascript:` and `/portal/../../etc/passwd` alike — the last of which got past
+the first, string-matching version.
+
 ### Still to come
 
-Sign-in and its own (stricter, fail-closed) rate limit land in milestone 4;
-Turnstile in milestone 6.
+Turnstile on the public form, in milestone 6.
 
 ## Layout
 
@@ -169,7 +211,7 @@ src/
     layout.tsx        fonts, metadata, JSON-LD, reads the CSP nonce
     page.tsx          the public landing page
     api/reservations/route.ts   POST — a thin adapter over handler.ts
-    portal/page.tsx   placeholder — real sign-in in milestone 4
+    portal/           sign-in, server actions, and the dashboard
     globals.css       design tokens (Tailwind v4 @theme)
   components/         one file per section of the landing page
   lib/
@@ -177,14 +219,17 @@ src/
     menu.ts           packages, à la carte, house rules      ⚠️ placeholders
     reservation.ts    the shared Zod schema
     rate-limit.ts     client IP, salted hashing, the limit check
+    auth/
+      login.ts        sign-in logic, with side effects injected
+      session.ts      getUser() + profile lookup; requireStaff()
     reservations/
       handler.ts      the endpoint's logic, with side effects injected
       insert.ts       the write — anon key, so RLS still judges it
     format.ts         peso formatting
     supabase/
       env.ts          reads the keys; the dangerous one throws in the browser
-      client.ts       browser client (anon key, subject to RLS)
       server.ts       server client, plus the RLS-bypassing admin client
+      cookie-options.ts  httpOnly/secure/sameSite on the session cookie
       types.ts        database types
   proxy.ts            per-request CSP nonce
 supabase/
@@ -193,6 +238,7 @@ supabase/
   local/              Supabase shim so the tests run without a project
 tests/
   reservation-handler.test.ts   npm test
+  login.test.ts
 scripts/
   create-staff.mjs    the only way an account gets a role
   db-test.sh          npm run db:test

@@ -15,7 +15,12 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   return handleReservationRequest(request, {
     rateLimit: (req) =>
-      checkRateLimit("reservations", req, RESERVATION_LIMIT.limit, RESERVATION_LIMIT.windowSeconds),
+      checkRateLimit(
+        "reservations",
+        req.headers,
+        RESERVATION_LIMIT.limit,
+        RESERVATION_LIMIT.windowSeconds,
+      ),
     insert: insertReservation,
   });
 }
