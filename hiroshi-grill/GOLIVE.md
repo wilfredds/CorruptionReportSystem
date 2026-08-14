@@ -1,5 +1,10 @@
 # Going live
 
+> **Just want the click-by-click list?** [`YOUR-STEPS.md`](YOUR-STEPS.md) is this
+> same sequence trimmed to the steps that need your own Supabase and Vercel
+> accounts, written as actions rather than reasoning. This file is the *why*
+> behind each one.
+
 The code is finished. Four things stand between it and a real restaurant using
 it. This is the order to do them in, and why that order.
 
