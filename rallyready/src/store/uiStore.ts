@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 import type { Adjustment } from '@/lib/data/readiness'
+import type { SkillLevel } from '@/lib/data/types'
 
 /**
  * A warm-up is good for about this long. Past it you have cooled down and the
@@ -26,6 +27,13 @@ interface UiStore {
   adjustment: Adjustment | null
   adjustmentDate: string | null
   setAdjustment(adjustment: Adjustment | null, date: string): void
+  /**
+   * The level the catalogue is filtered to. Null means "follow my profile" —
+   * once the player picks one here, their choice wins, because browsing above
+   * your level to see what is coming is a legitimate thing to want.
+   */
+  browseLevel: SkillLevel | null
+  setBrowseLevel(level: SkillLevel | null): void
 }
 
 /**
@@ -45,8 +53,10 @@ export const useUiStore = create<UiStore>()(
       adjustmentDate: null,
       setAdjustment: (adjustment, date) =>
         set({ adjustment, adjustmentDate: adjustment === null ? null : date }),
+      browseLevel: null,
+      setBrowseLevel: (browseLevel) => set({ browseLevel }),
     }),
-    { name: 'rallyready.ui', version: 3 },
+    { name: 'rallyready.ui', version: 4 },
   ),
 )
 

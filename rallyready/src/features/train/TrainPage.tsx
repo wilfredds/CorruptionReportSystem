@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Flame, Home, Play, SlidersHorizontal, Sparkles, X, Zap } from 'lucide-react'
+import { Flame, GraduationCap, Home, Play, SlidersHorizontal, Sparkles, X, Zap } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -11,7 +11,8 @@ import { Segmented } from '@/components/ui/segmented'
 import { useRepositories } from '@/lib/data/context'
 import { resolveRecommendation } from '@/lib/data/recommend'
 import { isConditioning, isPrepOrRecovery } from '@/lib/data/seed/drills'
-import type { Drill } from '@/lib/data/types'
+import type { Drill, SkillLevel } from '@/lib/data/types'
+import { buildLibrary } from '@/lib/library/entries'
 import { configFromDrill, estimateDurationSec } from '@/lib/timer/plan'
 import { formatCompactDuration, pluralize } from '@/lib/utils'
 import { useDrillConfigStore } from '@/store/drillConfigStore'
@@ -20,6 +21,7 @@ import { useUiStore } from '@/store/uiStore'
 import { TodayCard } from '../programs/components/TodayCard'
 import { CueSettingsDialog } from './components/CueSettingsDialog'
 import { DrillCard } from './components/DrillCard'
+import { FocusGrid } from './components/FocusGrid'
 import { ReadinessCard } from './components/ReadinessCard'
 import { WarmUpBar } from './components/WarmUpBar'
 import { CATEGORY_LABEL, LEVEL_LABEL } from './drillLabels'
@@ -31,6 +33,7 @@ export function TrainPage() {
   const overrides = useDrillConfigStore((state) => state.overrides)
   const setupDismissed = useUiStore((state) => state.setupPromptDismissed)
   const dismissSetup = useUiStore((state) => state.dismissSetupPrompt)
+  const storedLevel = useUiStore((state) => state.browseLevel)
   const [tab, setTab] = useState<Tab>('drills')
   const [homeOnly, setHomeOnly] = useState(false)
 
@@ -49,6 +52,11 @@ export function TrainPage() {
     queryFn: () => repositories.profiles.get(),
   })
 
+  const { data: recent = [], isLoading: historyLoading } = useQuery({
+    queryKey: ['sessions', 'any'],
+    queryFn: () => repositories.sessions.listRecent(1),
+  })
+
   // With a profile the headline drill is chosen for this player; without one it
   // is simply the first in the catalogue.
   const recommendation = profile ? resolveRecommendation(profile, drills) : null
@@ -65,6 +73,12 @@ export function TrainPage() {
     .filter((drill) => drill.slug !== featured?.slug)
 
   const configFor = (drill: Drill) => overrides[drill.slug] ?? configFromDrill(drill)
+
+  const library = buildLibrary(drills)
+  const browseLevel: SkillLevel = storedLevel ?? profile?.skillLevel ?? 'beginner'
+  // Nothing set up and nothing trained: a real first visit, not a returning
+  // player who skipped the questionnaire.
+  const isNewHere = !profileLoading && !profile && !historyLoading && recent.length === 0
 
   return (
     <>
@@ -91,15 +105,60 @@ export function TrainPage() {
         </div>
       )}
 
+      {/*
+       * A genuine first visit gets an introduction rather than a catalogue.
+       *
+       * Someone opening this for the first time does not need a readiness
+       * check or a training-load chart; they need to know what the app is for
+       * and where to put their first tap. Shown only when there is no profile
+       * *and* nothing logged — the moment there is either, it is in the way.
+       */}
+      {isNewHere && (
+        <Card className="border-primary/40 from-accent/60 mb-6 bg-gradient-to-br to-transparent">
+          <CardContent className="p-5">
+            <div className="mb-3 flex items-start gap-3">
+              <span className="bg-primary text-primary-foreground grid size-10 shrink-0 place-items-center rounded-xl">
+                <GraduationCap className="size-5" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-xl font-bold tracking-tight">Welcome to RallyReady</h2>
+                <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                  A coach for training on your own. It calls the corners out loud so you never watch
+                  the screen, warms you up, tracks what it costs you, and tells you when to back
+                  off.
+                </p>
+              </div>
+            </div>
+            <p className="text-muted-foreground mb-3 text-sm leading-relaxed">
+              <span className="text-foreground font-medium">Never played before?</span> Start with
+              the basics — how to hold the racket, how to stand, and the shots everything else is
+              built on.
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button asChild size="lg" className="flex-1">
+                <Link to="/focus/fundamentals">Learn the basics</Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="flex-1">
+                <Link to="/onboarding">I have played before</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* First on the screen because it is the first decision of the session:
           everything below reads differently once the app knows how you feel. */}
-      <ReadinessCard />
+      {!isNewHere && <ReadinessCard />}
 
       <TodayCard />
 
       {isLoading && <p className="text-muted-foreground text-sm">Loading drills…</p>}
 
-      {featured && (
+      {/* Withheld on a first visit. "Start here: Six-Corner Shadow,
+          Intermediate" sitting directly under "never played before, start with
+          the basics" is two pieces of advice contradicting each other, and it
+          puts a second accent-gradient card immediately below the first. */}
+      {featured && !isNewHere && (
         <Card className="border-primary/40 from-accent/60 mb-6 overflow-hidden bg-gradient-to-br to-transparent">
           <CardContent className="flex flex-col gap-4 p-5">
             <div>
@@ -147,7 +206,7 @@ export function TrainPage() {
 
       {/* Below the drill it is offering to improve, and dismissible. Above it,
           an unclosable prompt outranked the content it was advertising. */}
-      {!profileLoading && !profile && !setupDismissed && (
+      {!profileLoading && !profile && !setupDismissed && !isNewHere && (
         <div className="border-border mb-8 flex items-center gap-3 rounded-xl border border-dashed p-3">
           <Sparkles className="text-primary size-4 shrink-0" aria-hidden />
           <p className="text-muted-foreground min-w-0 flex-1 text-xs leading-relaxed">
@@ -170,10 +229,46 @@ export function TrainPage() {
         </div>
       )}
 
-      <section aria-labelledby="catalogue">
-        <h2 id="catalogue" className="sr-only">
-          Drill catalogue
+      {/*
+       * Goals rather than a catalogue.
+       *
+       * A flat list of twelve drills only helps someone who already knows which
+       * one fixes their problem — which is nobody new. A player does know what
+       * they want to be better at, so the app asks that and does the mapping.
+       */}
+      <section aria-labelledby="focus" className="mb-8">
+        <h2 id="focus" className="mb-1 text-lg font-semibold tracking-tight">
+          What do you want to work on?
         </h2>
+        <p className="text-muted-foreground mb-4 text-sm">
+          Pick one and the app shows you what trains it, at your level.
+        </p>
+        <FocusGrid entries={library} level={browseLevel} />
+      </section>
+
+      <section aria-labelledby="catalogue">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h2 id="catalogue" className="text-lg font-semibold tracking-tight">
+              Or browse everything
+            </h2>
+            <p className="text-muted-foreground text-xs">
+              {tab === 'drills'
+                ? 'Corner-calling footwork, called out loud.'
+                : 'Intervals and circuits. Most need no court at all.'}
+            </p>
+          </div>
+          <Button
+            variant={homeOnly ? 'default' : 'outline'}
+            size="sm"
+            className="shrink-0"
+            onClick={() => setHomeOnly((current) => !current)}
+            aria-pressed={homeOnly}
+          >
+            <Home />
+            No court
+          </Button>
+        </div>
 
         <Segmented
           label="Workout type"
@@ -185,38 +280,23 @@ export function TrainPage() {
           onChange={(next) => setTab(next as Tab)}
         />
 
-        <div className="mt-3 mb-4 flex items-center justify-between gap-3">
-          <p className="text-muted-foreground text-xs">
-            {tab === 'drills'
-              ? 'Corner-calling footwork, called out loud.'
-              : 'Intervals and circuits. Most need no court at all.'}
-          </p>
-          <Button
-            variant={homeOnly ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setHomeOnly((current) => !current)}
-            aria-pressed={homeOnly}
-          >
-            <Home />
-            No court
-          </Button>
+        <div className="mt-4">
+          {visible.length === 0 ? (
+            <p className="text-muted-foreground py-6 text-center text-sm">
+              {homeOnly
+                ? 'Nothing here works without a court. Turn the filter off to see the rest.'
+                : 'Nothing here yet.'}
+            </p>
+          ) : (
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {visible.map((drill) => (
+                <li key={drill.slug}>
+                  <DrillCard drill={drill} config={configFor(drill)} />
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-
-        {visible.length === 0 ? (
-          <p className="text-muted-foreground py-6 text-center text-sm">
-            {homeOnly
-              ? 'Nothing here works without a court. Turn the filter off to see the rest.'
-              : 'Nothing here yet.'}
-          </p>
-        ) : (
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {visible.map((drill) => (
-              <li key={drill.slug}>
-                <DrillCard drill={drill} config={configFor(drill)} />
-              </li>
-            ))}
-          </ul>
-        )}
       </section>
     </>
   )

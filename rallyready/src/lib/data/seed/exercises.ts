@@ -471,7 +471,7 @@ export const EXERCISES: Exercise[] = [
     recommendedReps: '45 seconds, changing direction every two or three steps.',
     mobility: [
       mob('Load left', {
-        legL: -34,
+        legL: 34,
         legR: 26,
         kneeL: 26,
         kneeR: 34,
@@ -482,7 +482,7 @@ export const EXERCISES: Exercise[] = [
         elbowR: 55,
       }),
       mob('Push across', {
-        legL: -14,
+        legL: 14,
         legR: 14,
         kneeL: 30,
         kneeR: 30,
@@ -493,7 +493,7 @@ export const EXERCISES: Exercise[] = [
         elbowR: 55,
       }),
       mob('Load right', {
-        legL: -26,
+        legL: 26,
         legR: 34,
         kneeL: 34,
         kneeR: 26,
@@ -504,7 +504,7 @@ export const EXERCISES: Exercise[] = [
         elbowR: 55,
       }),
       mob('Push back', {
-        legL: -14,
+        legL: 14,
         legR: 14,
         kneeL: 30,
         kneeR: 30,
@@ -538,10 +538,10 @@ export const EXERCISES: Exercise[] = [
     substitute: null,
     recommendedReps: '30 seconds: ten circles each ankle, then ten calf raises.',
     mobility: [
-      mob('Heels down', { legL: -6, legR: 6, lift: 0 }),
-      mob('Rise onto toes', { legL: -6, legR: 6, lift: 9, armL: 16, armR: 16 }),
-      mob('Hold', { legL: -6, legR: 6, lift: 10, armL: 18, armR: 18 }),
-      mob('Lower slowly', { legL: -6, legR: 6, lift: 2 }),
+      mob('Heels down', { legL: 6, legR: 6, lift: 0 }),
+      mob('Rise onto toes', { legL: 6, legR: 6, lift: 9, armL: 16, armR: 16 }),
+      mob('Hold', { legL: 6, legR: 6, lift: 10, armL: 18, armR: 18 }),
+      mob('Lower slowly', { legL: 6, legR: 6, lift: 2 }),
     ],
   },
   {
@@ -563,10 +563,10 @@ export const EXERCISES: Exercise[] = [
     substitute: 'Hold a wall or a chair back if balance is awkward.',
     recommendedReps: '30 seconds, ten swings each leg.',
     mobility: [
-      mob('Swing forward', { legR: 62, legL: -6, armL: 46, elbowL: 20 }),
-      mob('Through the middle', { legR: 4, legL: -4, armL: 46, elbowL: 20 }),
-      mob('Swing back', { legR: -46, legL: -2, armL: 46, elbowL: 20, lean: 6 }),
-      mob('Through the middle', { legR: 4, legL: -4, armL: 46, elbowL: 20 }),
+      mob('Swing forward', { legR: 62, legL: 6, armL: 46, elbowL: 20 }),
+      mob('Through the middle', { legR: 4, legL: 4, armL: 46, elbowL: 20 }),
+      mob('Swing back', { legR: -46, legL: 2, armL: 46, elbowL: 20, lean: 6 }),
+      mob('Through the middle', { legR: 4, legL: 4, armL: 46, elbowL: 20 }),
     ],
   },
   {
@@ -692,7 +692,7 @@ export const EXERCISES: Exercise[] = [
     recommendedReps: '30 seconds of continuous split-steps and pushes.',
     mobility: [
       mob('Ready', {
-        legL: -16,
+        legL: 16,
         legR: 16,
         kneeL: 10,
         kneeR: 10,
@@ -702,7 +702,7 @@ export const EXERCISES: Exercise[] = [
         elbowR: 60,
       }),
       mob('Hop', {
-        legL: -10,
+        legL: 10,
         legR: 10,
         kneeL: 16,
         kneeR: 16,
@@ -713,7 +713,7 @@ export const EXERCISES: Exercise[] = [
         elbowR: 50,
       }),
       mob('Land wide and low', {
-        legL: -42,
+        legL: 42,
         legR: 42,
         kneeL: 22,
         kneeR: 22,
@@ -724,7 +724,7 @@ export const EXERCISES: Exercise[] = [
         lean: 10,
       }),
       mob('Push off', {
-        legL: -38,
+        legL: 38,
         legR: 24,
         kneeL: 16,
         kneeR: 20,
@@ -756,7 +756,7 @@ export const EXERCISES: Exercise[] = [
     recommendedReps: '45 seconds, covering every corner at least twice.',
     mobility: [
       mob('Ready at base', {
-        legL: -12,
+        legL: 12,
         legR: 12,
         kneeL: 18,
         kneeR: 18,
@@ -766,7 +766,7 @@ export const EXERCISES: Exercise[] = [
         elbowR: 60,
       }),
       mob('Chassé across', {
-        legL: -30,
+        legL: 30,
         legR: 22,
         kneeL: 26,
         kneeR: 30,
@@ -777,7 +777,7 @@ export const EXERCISES: Exercise[] = [
         elbowR: 55,
       }),
       mob('Lunge to the net', {
-        legL: -34,
+        legL: 34,
         legR: 58,
         kneeL: 12,
         kneeR: 62,
@@ -788,7 +788,7 @@ export const EXERCISES: Exercise[] = [
         armL: -34,
       }),
       mob('Push back to base', {
-        legL: -18,
+        legL: 18,
         legR: 20,
         kneeL: 22,
         kneeR: 26,
@@ -850,7 +850,7 @@ export const EXERCISES: Exercise[] = [
     mobility: [
       mob('Step', { legL: 34, kneeL: 26, legR: -22, armR: 26, armL: -18 }),
       mob('Through', { legL: 4, legR: 4, armL: 6, armR: 6 }),
-      mob('Step', { legR: 34, kneeR: 26, legL: -22, armL: 26, armR: -18 }),
+      mob('Step', { legR: 34, kneeR: 26, legL: 22, armL: 26, armR: -18 }),
       mob('Breathe out', { legL: 4, legR: 4, armL: 10, armR: 10 }),
     ],
   },
@@ -871,7 +871,7 @@ export const EXERCISES: Exercise[] = [
     recommendedReps: '45 seconds, about 20 each side.',
     mobility: [
       mob('Split the stance', {
-        legL: -34,
+        legL: 34,
         legR: 22,
         kneeR: 30,
         lean: 14,
@@ -881,7 +881,7 @@ export const EXERCISES: Exercise[] = [
         elbowR: 20,
       }),
       mob('Press the heel down', {
-        legL: -38,
+        legL: 38,
         legR: 26,
         kneeR: 36,
         lean: 20,
@@ -891,7 +891,7 @@ export const EXERCISES: Exercise[] = [
         elbowR: 14,
       }),
       mob('Hold', {
-        legL: -38,
+        legL: 38,
         legR: 26,
         kneeR: 36,
         lean: 20,
@@ -901,7 +901,7 @@ export const EXERCISES: Exercise[] = [
         elbowR: 14,
       }),
       mob('Bend the back knee', {
-        legL: -32,
+        legL: 32,
         legR: 24,
         kneeL: 22,
         kneeR: 32,
@@ -978,17 +978,17 @@ export const EXERCISES: Exercise[] = [
     substitute: 'Sit and reach towards one foot at a time if standing is awkward.',
     recommendedReps: '45 seconds, about 20 each side.',
     mobility: [
-      mob('Heel forward', { legR: 26, legL: -10, kneeL: 16, lean: 6 }),
-      mob('Hinge at the hips', { legR: 30, legL: -12, kneeL: 22, lean: 34, armR: 54, armL: 54 }),
+      mob('Heel forward', { legR: 26, legL: 10, kneeL: 16, lean: 6 }),
+      mob('Hinge at the hips', { legR: 30, legL: 12, kneeL: 22, lean: 34, armR: 54, armL: 54 }),
       mob('Chest towards the toes', {
         legR: 32,
-        legL: -12,
+        legL: 12,
         kneeL: 24,
         lean: 46,
         armR: 62,
         armL: 62,
       }),
-      mob('Hold, flat back', { legR: 32, legL: -12, kneeL: 24, lean: 44, armR: 60, armL: 60 }),
+      mob('Hold, flat back', { legR: 32, legL: 12, kneeL: 24, lean: 44, armR: 60, armL: 60 }),
     ],
   },
   {
@@ -1010,11 +1010,11 @@ export const EXERCISES: Exercise[] = [
     substitute: 'Kneel on something soft, or do it standing in a split stance.',
     recommendedReps: '45 seconds, about 20 each side.',
     mobility: [
-      mob('Half kneel', { legR: 62, kneeR: 96, legL: -30, kneeL: 128, armL: 16, armR: 16 }),
+      mob('Half kneel', { legR: 62, kneeR: 96, legL: 30, kneeL: 128, armL: 16, armR: 16 }),
       mob('Tuck the pelvis', {
         legR: 64,
         kneeR: 98,
-        legL: -34,
+        legL: 34,
         kneeL: 130,
         lean: -7,
         armL: 20,
@@ -1023,7 +1023,7 @@ export const EXERCISES: Exercise[] = [
       mob('Ease forward', {
         legR: 72,
         kneeR: 104,
-        legL: -40,
+        legL: 40,
         kneeL: 134,
         lean: -9,
         armL: 24,
@@ -1032,7 +1032,7 @@ export const EXERCISES: Exercise[] = [
       mob('Hold, chest tall', {
         legR: 70,
         kneeR: 102,
-        legL: -38,
+        legL: 38,
         kneeL: 132,
         lean: -8,
         armL: 22,

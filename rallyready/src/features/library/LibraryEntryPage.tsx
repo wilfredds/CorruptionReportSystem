@@ -20,6 +20,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useRepositories } from '@/lib/data/context'
 import { findExercise } from '@/lib/data/seed/exercises'
 import { findTechniqueTopic } from '@/lib/data/seed/technique'
+
+import { TechniqueFigurePanel } from './components/TechniqueFigure'
 import { buildLibrary, findEntry, KIND_LABEL, type LibraryKind } from '@/lib/library/entries'
 
 import { ExerciseDemo } from '../conditioning/components/ExerciseDemo'
@@ -130,6 +132,23 @@ export function LibraryEntryPage() {
                 {exercise.substitute}
               </p>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Above the prose, because a grip or a swing is a picture first and a
+          paragraph second — which is exactly the feedback that put it here. */}
+      {topic?.diagram && (
+        <Card className="mb-5">
+          <CardContent className="p-5">
+            <div className="mx-auto w-full max-w-xs">
+              <TechniqueFigurePanel diagram={topic.diagram} />
+            </div>
+            <p className="text-muted-foreground mt-3 text-center text-xs leading-relaxed">
+              {topic.diagram.kind === 'grip'
+                ? `${topic.diagram.grip.faceNote}. Drawn right-handed — mirror it if you play left.`
+                : 'Drawn right-handed — mirror it if you play left.'}
+            </p>
           </CardContent>
         </Card>
       )}

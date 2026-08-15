@@ -67,6 +67,19 @@ deliberately absent: curated third-party video. See
   same backup twice changes nothing.
 - **Share a session.** Drawn as an image and handed to the OS share sheet, which
   is what reaches Messenger, Facebook and Instagram.
+- **Start from what you want, not from a list.** Eight goals in your own words —
+  "I want to be quicker", "I want to last three games" — each opening onto
+  everything that trains it, filtered to your level. A flat catalogue only helps
+  someone who already knows which drill fixes their problem.
+- **The basics, drawn.** How to hold the racket, the backhand grip, the ready
+  stance, the clear, the smash and the low serve, as a numbered path in teaching
+  order. Grips get the handle in cross-section with the exact bevel picked out;
+  swings get a jointed figure with a racket in hand. A grip is close to
+  impossible to learn from prose, and "shake hands with it" tells a beginner
+  nothing about which of the eight bevels anything sits on.
+- **Beginner, intermediate and advanced kept apart.** You see your own level by
+  default and can raise it whenever you like. Nothing is ever locked — the app
+  says how much more is waiting.
 - **A reference that is actually written.** Every drill, exercise and technique
   in one filterable list, each with coaching cues, the faults that spoil it, how
   much of it to do, and one tap to start it pre-configured. Search reads the

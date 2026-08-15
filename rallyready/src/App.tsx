@@ -23,6 +23,7 @@ import { ProgramDetailPage } from '@/features/programs/ProgramDetailPage'
 import { ProgramsPage } from '@/features/programs/ProgramsPage'
 import { DrillRunPage } from '@/features/train/DrillRunPage'
 import { DrillSetupPage } from '@/features/train/DrillSetupPage'
+import { FocusPage } from '@/features/train/FocusPage'
 import { SessionSummaryPage } from '@/features/train/SessionSummaryPage'
 import { TrainPage } from '@/features/train/TrainPage'
 
@@ -77,6 +78,7 @@ function AppRoutes() {
         <Route element={<AppShell />}>
           <Route path="/" element={<TrainPage />} />
           <Route path="/train/:slug" element={<DrillSetupPage />} />
+          <Route path="/focus/:id" element={<FocusPage />} />
           <Route path="/session/:id" element={<SessionSummaryPage />} />
           <Route path="/progress" element={<ProgressPage />} />
           <Route path="/benchmark" element={<BenchmarkPage />} />

@@ -15,10 +15,11 @@ the way.
 | 3 — Stamina & conditioning              | ✅ Done                        |
 | 4 — Multi-week programs                 | ✅ Done                        |
 | 5 — Curated library                     | ✅ Done                        |
-| **6 — Load, readiness, why**            | ✅ **Done — ready for review** |
+| 6 — Load, readiness, why                | ✅ Done                        |
+| **7 — Finding your way in**             | ✅ **Done — ready for review** |
 
-All six phases are built. `npm run verify` is green: 0 type errors, 0 lint
-errors/warnings, 310 unit tests passing, production build clean.
+All seven phases are built. `npm run verify` is green: 0 type errors, 0 lint
+errors/warnings, 341 unit tests passing, production build clean.
 
 Earlier phases, one line each — the detail is in the git history:
 
@@ -29,6 +30,76 @@ Earlier phases, one line each — the detail is in the git history:
   catalogue, and drawn demos.
 - **4** — the periodiser, four built-in programs, and today's session on Train.
 - **5** — the technique reference and one filterable library over everything.
+
+---
+
+## Phase 7 — finding your way in
+
+A badminton coach and varsity player was handed the app and said, in Tagalog,
+the most useful thing anyone has said about it: put it in categories. If a
+player wants to improve their agility they should tap Agility and be shown the
+drills that do that. Separate beginner from intermediate and advanced. And for
+beginners, the basics — how to hold the racket, the backhand grip, the swing of
+a smash, proper footwork — **with pictures**.
+
+He was right on every count, and the two gaps he found were real.
+
+**A flat catalogue only helps someone who already knows the answer.** Twelve
+drills in a list is useful if you know that a six-corner shadow drill is the
+thing that fixes your movement. Nobody new knows that. What a player does know
+is what they want to be better at — so Train now opens with eight goals in the
+player's own words ("I want to be quicker", "I want to last three games"), each
+mapped onto the categories the catalogue already carried. The flat list is still
+there underneath, as "or browse everything".
+
+**Levels are now a filter, not a badge.** A beginner sees beginner material by
+default and can move the level up whenever they like. Nothing is ever locked —
+a hidden count says how much more is there, because permanently hiding things
+from someone is its own kind of insult. Power is the one area that can be empty
+for a beginner, deliberately: plyometrics punish cold, untrained legs, which is
+why the periodiser keeps them out of base weeks too. The card reads "for later"
+rather than "nothing", which is the truth.
+
+**The basics, drawn.** Six new topics — the forehand grip, the backhand grip,
+the ready stance, the overhead clear, the smash and the low serve — plus three
+existing footwork ones, presented as a numbered path in teaching order rather
+than alphabetically, because the order _is_ the pedagogy. Every one carries a
+diagram the app draws from numbers:
+
+- **Grips** get a racket alongside the handle in cross-section, with the exact
+  bevel highlighted. The cross-section alone is how every coaching manual draws
+  a grip, and on its own it is an octagon with a squiggle beside it — manuals
+  get away with it because there is a photograph on the facing page. The racket
+  anchors what you are looking down, and carries a second real instruction
+  (hold it low) the cross-section cannot show.
+- **Swings** reuse the warm-up skeleton with a racket in hand, and the motion
+  arc follows the racket head rather than the wrist.
+
+**A first visit now gets an introduction.** No profile and nothing logged means
+a welcome card that says what the app is and offers one obvious first tap. The
+recommended drill is withheld until then — "Start here: Six-Corner Shadow,
+Intermediate" directly under "never played before?" is two pieces of advice
+arguing with each other.
+
+### The figures are testable now
+
+Every defect in these drawings across the whole project has been found by
+rendering one and squinting at it: a figure floating above the floor, an arrow
+attached to a faded far-side limb, a racket swinging off the canvas. Squinting
+does not scale to fifty poses, so the geometry moved out of the component into
+`lib/figures/skeleton.ts` and the checks became arithmetic — feet on the floor,
+nothing outside the canvas, labels short enough not to clip, a wide stance
+actually wider than the hips, and every keyframe visibly different from the one
+before it.
+
+It immediately found a bug that had been shipping for weeks. Positive angles
+mean "away from the centreline" on both sides, because the renderer does the
+mirroring — but the warm-up poses were written `legL: -16, legR: 16`, which
+draws a figure leaning to one side with its feet together. Thirty-three angles
+across the exercise catalogue were wrong, so **"land wide, low" had been drawn
+as a lean** in the split-step figure the user looks at every warm-up. Also
+caught: a calf stretch reaching past the edge of its canvas, and three of the
+new swings whose frames barely differed.
 
 ---
 

@@ -1,4 +1,5 @@
 import type { DrillCategory, DrillLocation, SkillLevel } from '../types'
+import type { MobilityPose } from './exercises'
 
 /**
  * The technique reference (§4 Phase 5).
@@ -18,6 +19,36 @@ import type { DrillCategory, DrillLocation, SkillLevel } from '../types'
 
 /** Whether a topic can be practised alone, or genuinely needs a feeder. */
 export type PracticeMode = 'solo' | 'partner'
+
+/**
+ * How the handle sits in the hand, looking down it from the butt cap.
+ *
+ * Bevel 0 is flat on top and the rest run clockwise, which is how a coach
+ * counts them out loud. A grip is the one thing in badminton that prose simply
+ * cannot carry — "shake hands with it" tells a beginner nothing about which
+ * bevel anything is on, and that is the entire instruction.
+ */
+export interface GripSpec {
+  /** Where the web between thumb and index sits. */
+  vBevel: number
+  /** Bevel the thumb presses flat, or null when it wraps around. */
+  thumbBevel: number | null
+  /** Angle of the string face seen edge-on, degrees clockwise from vertical. */
+  faceDeg: number
+  faceNote: string
+}
+
+/**
+ * The picture a topic is drawn with, if it has one. Everything is drawn from
+ * numbers rather than shipped as an image: it works offline, costs nothing,
+ * follows the theme, and can be corrected in a line of code.
+ */
+export type TechniqueDiagram =
+  | { kind: 'grip'; grip: GripSpec }
+  /** A swing, as keyframes of the jointed figure with a racket in hand. */
+  | { kind: 'swing'; poses: MobilityPose[]; racket: 'left' | 'right' }
+  /** A body position with no racket — stances and landings. */
+  | { kind: 'pose'; poses: MobilityPose[] }
 
 export interface TechniqueSection {
   heading: string
@@ -47,10 +78,580 @@ export interface TechniqueTopic {
   faults: string[]
   /** Drills that train this, by slug. */
   drills: string[]
+  /** A drawn illustration, for the topics where words are not enough. */
+  diagram?: TechniqueDiagram
+  /**
+   * Marks the handful of topics a complete beginner should read before
+   * anything else. These are what the Fundamentals path is built from.
+   */
+  fundamental?: boolean
   reference?: ExternalReference
 }
 
+/* ------------------------------------------------------------ swing frames */
+
+/**
+ * Keyframes for the drawn swings. Written as named constants rather than inline
+ * so the numbers can be compared side by side — a smash and a clear differ by
+ * about fifteen degrees at contact and by where the follow-through finishes,
+ * and that is much easier to keep honest when they sit next to each other.
+ *
+ * All right-handed. A left-hander mirrors everything; the app says so in the
+ * topic rather than drawing a second set.
+ */
+const OVERHEAD_CLEAR: MobilityPose[] = [
+  {
+    label: 'Turn side-on',
+    armR: 138,
+    elbowR: 55,
+    armL: 148,
+    elbowL: 18,
+    legL: 12,
+    legR: 10,
+    kneeL: 10,
+    kneeR: 8,
+    twist: 34,
+    lean: -6,
+  },
+  {
+    label: 'Racket behind',
+    armR: 158,
+    elbowR: 112,
+    armL: 158,
+    elbowL: 8,
+    legL: 14,
+    legR: 8,
+    kneeL: 12,
+    kneeR: 6,
+    twist: 30,
+    lean: -12,
+  },
+  {
+    label: 'Contact high, in front',
+    armR: 176,
+    elbowR: 6,
+    armL: 74,
+    elbowL: 26,
+    legL: 8,
+    legR: 8,
+    kneeL: 4,
+    kneeR: 4,
+    twist: 8,
+    lean: 3,
+  },
+  {
+    label: 'Through and across',
+    armR: 62,
+    elbowR: 28,
+    armL: 22,
+    elbowL: 12,
+    legL: 6,
+    legR: 18,
+    kneeL: 8,
+    kneeR: 10,
+    twist: -14,
+    lean: 9,
+  },
+]
+
+const SMASH: MobilityPose[] = [
+  {
+    label: 'Turn and load',
+    armR: 140,
+    elbowR: 60,
+    armL: 150,
+    elbowL: 16,
+    legL: 14,
+    legR: 10,
+    kneeL: 16,
+    kneeR: 10,
+    twist: 38,
+    lean: -10,
+  },
+  {
+    label: 'Elbow leads first',
+    armR: 162,
+    elbowR: 124,
+    armL: 160,
+    elbowL: 6,
+    legL: 16,
+    legR: 8,
+    kneeL: 14,
+    kneeR: 8,
+    twist: 32,
+    lean: -16,
+  },
+  {
+    label: 'Contact in front',
+    armR: 168,
+    elbowR: 4,
+    armL: 66,
+    elbowL: 30,
+    legL: 8,
+    legR: 8,
+    twist: 6,
+    lean: 10,
+    lift: 4,
+  },
+  {
+    label: 'Steep follow-through',
+    armR: 44,
+    elbowR: 34,
+    armL: 18,
+    elbowL: 14,
+    legL: 8,
+    legR: 20,
+    kneeL: 12,
+    kneeR: 14,
+    twist: -18,
+    lean: 16,
+  },
+]
+
+const READY_STANCE: MobilityPose[] = [
+  {
+    label: 'Base — racket up',
+    armR: 42,
+    elbowR: 62,
+    armL: 34,
+    elbowL: 40,
+    legL: 15,
+    legR: 15,
+    kneeL: 20,
+    kneeR: 20,
+    lean: 8,
+  },
+  // A visible hop. Any smaller and the three frames blur into one picture,
+  // which is precisely what a split step is not.
+  {
+    label: 'Split step — hop',
+    armR: 46,
+    elbowR: 58,
+    armL: 38,
+    elbowL: 38,
+    legL: 8,
+    legR: 8,
+    kneeL: 10,
+    kneeR: 10,
+    lean: 6,
+    lift: 13,
+  },
+  {
+    label: 'Land wide, knees soft',
+    armR: 40,
+    elbowR: 64,
+    armL: 32,
+    elbowL: 42,
+    legL: 26,
+    legR: 26,
+    kneeL: 30,
+    kneeR: 30,
+    lean: 10,
+  },
+]
+
+const LOW_SERVE: MobilityPose[] = [
+  {
+    label: 'Side-on, shuttle out',
+    armR: 30,
+    elbowR: 74,
+    armL: 58,
+    elbowL: 24,
+    legL: 8,
+    legR: 14,
+    kneeL: 10,
+    kneeR: 14,
+    twist: 32,
+    lean: 8,
+  },
+  {
+    label: 'Push — no backswing',
+    armR: 44,
+    elbowR: 44,
+    armL: 40,
+    elbowL: 20,
+    legL: 6,
+    legR: 16,
+    kneeL: 8,
+    kneeR: 12,
+    twist: 24,
+    lean: 10,
+  },
+  {
+    label: 'Finish low, racket up',
+    // The racket carries on up towards the net after contact. Held closer to
+    // the push position, the last two frames were near-identical and the whole
+    // sequence read as a single held pose.
+    armR: 95,
+    elbowR: 6,
+    armL: 24,
+    elbowL: 16,
+    legL: 4,
+    legR: 18,
+    kneeL: 6,
+    kneeR: 8,
+    twist: 14,
+    lean: 6,
+  },
+]
+
+const NET_LUNGE: MobilityPose[] = [
+  {
+    label: 'Base',
+    armR: 40,
+    elbowR: 58,
+    armL: 32,
+    elbowL: 40,
+    legL: 14,
+    legR: 14,
+    kneeL: 20,
+    kneeR: 20,
+    lean: 8,
+  },
+  {
+    label: 'Long last stride',
+    armR: 62,
+    elbowR: 30,
+    armL: 26,
+    elbowL: 30,
+    legL: 8,
+    legR: 34,
+    kneeR: 30,
+    lean: 16,
+  },
+  // Thigh out, shin vertical: knee stacked over the ankle rather than past it,
+  // which is the difference between a lunge and a knee injury.
+  {
+    label: 'Heel first, knee out',
+    armR: 70,
+    elbowR: 10,
+    armL: 20,
+    elbowL: 26,
+    // Trail leg straight, lead thigh almost horizontal: the hip drops, which is
+    // what makes this read as a lunge rather than as a slightly longer stride.
+    legL: 4,
+    kneeL: 0,
+    legR: 68,
+    kneeR: 64,
+    lean: 22,
+  },
+]
+
 export const TECHNIQUE_TOPICS: TechniqueTopic[] = [
+  {
+    slug: 'how-to-hold-the-racket',
+    title: 'How to hold the racket',
+    summary:
+      'The basic forehand grip. Everything else in badminton is built on this one, and holding it wrong puts a ceiling on every shot you will ever hit.',
+    category: 'net',
+    level: 'beginner',
+    practiceMode: 'solo',
+    location: 'anywhere',
+    readMinutes: 3,
+    fundamental: true,
+    diagram: {
+      kind: 'grip',
+      grip: {
+        // The V sits on the bevel up and to the left of flat-top, which is what
+        // "shake hands with it" produces for a right-hander.
+        vBevel: 7,
+        thumbBevel: null,
+        faceDeg: 0,
+        faceNote: 'String face vertical, edge leading',
+      },
+    },
+    sections: [
+      {
+        heading: 'Shake hands with it',
+        body: [
+          'Hold the racket in your other hand with the strings vertical — edge towards you, face pointing left and right. Now shake hands with the handle. That is the basic forehand grip, and you will use it for most of a rally.',
+          'The V made by your thumb and index finger should sit along the narrow top-left edge of the handle, as in the diagram. If the V has ended up on the flat face of the handle, you have found the panhandle grip by accident — the racket face will be pointing at the ceiling and every overhead will feel impossible.',
+          'Left-handed? Everything here mirrors: your V sits on the top-right edge instead.',
+        ],
+      },
+      {
+        heading: 'Long grip, spread fingers',
+        body: [
+          'Hold it near the bottom of the handle, not up by the shaft. A long grip is a longer lever, and a longer lever is free power you do not have to generate.',
+          'Spread the fingers slightly rather than bunching them into a fist. The gap between index and middle finger is where the fine control for net shots comes from — a fist has none.',
+        ],
+      },
+      {
+        heading: 'Loose until the moment of contact',
+        body: [
+          'The grip stays relaxed through the whole swing and squeezes only at impact. This is the single biggest source of easy power for a club player, and it is free.',
+          'A tight grip does three bad things at once: it slows the racket head down, it removes the finger control that makes delicate shots possible, and it tires your forearm out long before your legs go.',
+          'A test: if your forearm aches after a session and your legs feel fine, you are strangling the handle.',
+        ],
+      },
+    ],
+    cues: [
+      'Shake hands with the handle — V on the narrow edge.',
+      'Hold it low on the grip for a longer lever.',
+      'Fingers spread, not bunched into a fist.',
+      'Loose all the way through, squeeze only at contact.',
+    ],
+    faults: [
+      'The panhandle grip — V on the flat face, racket pointing skyward.',
+      'Choking up the handle and losing reach and power.',
+      'Squeezing hard for the whole rally.',
+      'A fist grip with no gaps, which kills every touch shot.',
+    ],
+    drills: ['net-footwork'],
+  },
+  {
+    slug: 'the-backhand-grip',
+    title: 'The backhand grip',
+    summary:
+      'Thumb flat on the wide bevel. This is the one change that turns a hopeless backhand into a usable one, and most players never make it.',
+    category: 'net',
+    level: 'beginner',
+    practiceMode: 'solo',
+    location: 'anywhere',
+    readMinutes: 3,
+    fundamental: true,
+    diagram: {
+      kind: 'grip',
+      grip: {
+        // Rotated an eighth of a turn from the forehand, thumb flat behind.
+        vBevel: 6,
+        thumbBevel: 2,
+        faceDeg: 0,
+        faceNote: 'Face square to where the shuttle is going',
+      },
+    },
+    sections: [
+      {
+        heading: 'Why the thumb matters',
+        body: [
+          'On a forehand, your whole arm and body are behind the shot. On a backhand you have almost nothing — unless you give yourself something to push against. That something is the thumb, laid flat along the wide bevel of the handle.',
+          'Wrap the thumb around the grip like a fist instead, and there is nothing behind the racket at the moment of contact. That is why so many players cannot clear from the backhand rear court: not weakness, just no thumb.',
+        ],
+      },
+      {
+        heading: 'Making the change',
+        body: [
+          'From the basic forehand grip, rotate the racket a small amount in your fingers — about an eighth of a turn anticlockwise for a right-hander — until the pad of your thumb lies flat on the wider bevel.',
+          'It is a rotation in the fingers, not a release and regrasp. You will not have time for a regrasp in a rally, and the change has to happen before the swing starts, not during it.',
+        ],
+      },
+      {
+        heading: 'Practise it off court',
+        body: [
+          'This costs nothing and can be done on a sofa. Hold the racket in forehand, roll it to the thumb grip, roll it back. A hundred of those, and it stops being something you have to think about.',
+          'Thinking about it is exactly what makes it too slow in a rally.',
+        ],
+      },
+    ],
+    cues: [
+      'Thumb pad flat on the wide bevel, pointing up the handle.',
+      'Rotate the racket in the fingers — never release and regrasp.',
+      'Change the grip before the swing, not during it.',
+      'Back to basic forehand as soon as the shot is gone.',
+    ],
+    faults: [
+      'Thumb wrapped around the handle, with nothing to push against.',
+      'Changing grip halfway through the swing.',
+      'Staying in the backhand grip after the shot.',
+      'Trying to muscle a backhand clear from a forehand grip.',
+    ],
+    drills: ['net-footwork', 'deception-reaction'],
+  },
+  {
+    slug: 'the-ready-stance',
+    title: 'The ready stance',
+    summary:
+      'Where you stand and how you hold yourself between shots. Get this wrong and you are late to everything, however fast you are.',
+    category: 'footwork',
+    level: 'beginner',
+    practiceMode: 'solo',
+    location: 'anywhere',
+    readMinutes: 3,
+    fundamental: true,
+    diagram: { kind: 'swing', poses: READY_STANCE, racket: 'right' },
+    sections: [
+      {
+        heading: 'The position',
+        body: [
+          'Feet a little wider than your shoulders. Knees bent — properly bent, not a token dip. Weight on the balls of your feet, heels barely touching. Chest slightly forward over your toes.',
+          'The racket is up, held in front of you at around chest height, not hanging by your knee. From up there it can go anywhere; from down there every high shot starts with a wasted movement.',
+        ],
+      },
+      {
+        heading: 'Why bent knees are not optional',
+        body: [
+          'A straight-legged player has to bend before they can push. That bend costs a beat, and a beat is the difference between reaching a net shot and watching it land.',
+          'Bent knees are also how you absorb a landing. Standing tall and landing tall is how ankles and knees get hurt.',
+        ],
+      },
+      {
+        heading: 'It is a position you return to',
+        body: [
+          'The ready stance is not somewhere you stand at the start of a rally. It is somewhere you come back to after every single shot — which is what the base and recovery topic is about, and why footwork drills are built around returning to the middle rather than around getting to the corners.',
+        ],
+      },
+    ],
+    cues: [
+      'Feet wider than the shoulders, weight on the balls of the feet.',
+      'Knees genuinely bent — you should feel your thighs.',
+      'Racket up at chest height, in front of you.',
+      'Return here after every shot, not just at the start.',
+    ],
+    faults: [
+      'Standing upright with straight legs, then having to bend before moving.',
+      'Racket hanging down by the knee.',
+      'Flat on the heels.',
+      'Watching the rally from wherever the last shot left you.',
+    ],
+    drills: ['four-corner-footwork', 'six-corner-shadow'],
+  },
+  {
+    slug: 'the-overhead-clear',
+    title: 'The overhead clear',
+    summary:
+      'The shot that buys you time. The same swing becomes your smash and your drop, so this is the one to build first.',
+    category: 'rear-court',
+    level: 'beginner',
+    practiceMode: 'solo',
+    location: 'anywhere',
+    readMinutes: 4,
+    fundamental: true,
+    diagram: { kind: 'swing', poses: OVERHEAD_CLEAR, racket: 'right' },
+    sections: [
+      {
+        heading: 'Turn side-on first',
+        body: [
+          'Before anything else, turn. Chest to the side wall, non-racket shoulder pointing where the shuttle is coming from. Facing the net square and reaching up is the single most common way a beginner loses half their power.',
+          'The non-racket arm comes up and points at the shuttle. That is not decoration — it turns your shoulders, keeps you balanced, and gives you something to pull down against.',
+        ],
+      },
+      {
+        heading: 'Throw, do not swipe',
+        body: [
+          'The action is a throw. Elbow leads, the racket drops behind your back, then the forearm rotates through and the racket head catches up at the last moment. If you have ever thrown a ball properly, you already own this movement.',
+          'Contact is high and slightly in front of you, with the arm almost straight. Taking it from behind your head kills the power and the control at the same time — the racket is still accelerating and you have nowhere to go.',
+        ],
+      },
+      {
+        heading: 'Where it should land',
+        body: [
+          'A good clear lands close to the opponent’s back line and travels high enough that they cannot attack it. High and deep. A flat clear that lands mid-court is a gift.',
+          'Practising alone, you cannot see where it lands — so practise the movement, not the outcome, and use the shadow drills to groove the turn and the throw until they are automatic.',
+        ],
+      },
+    ],
+    cues: [
+      'Turn side-on before you do anything else.',
+      'Non-racket arm up, pointing at the shuttle.',
+      'Elbow leads; the racket head arrives last.',
+      'Contact high and in front, arm nearly straight.',
+    ],
+    faults: [
+      'Facing the net square and reaching straight up.',
+      'Taking the shuttle behind the head.',
+      'Swinging with a stiff, straight arm from the start.',
+      'No non-racket arm — balance and rotation both gone.',
+    ],
+    drills: ['rear-court-scissor', 'six-corner-shadow', 'multifeed-shadow'],
+  },
+  {
+    slug: 'the-smash',
+    title: 'The smash',
+    summary:
+      'The clear’s swing, aimed down. Power comes from rotation and a late, relaxed racket head — not from hitting it harder.',
+    category: 'rear-court',
+    level: 'intermediate',
+    practiceMode: 'solo',
+    location: 'anywhere',
+    readMinutes: 4,
+    fundamental: true,
+    diagram: { kind: 'swing', poses: SMASH, racket: 'right' },
+    sections: [
+      {
+        heading: 'The same swing, steeper',
+        body: [
+          'A smash is not a different technique from a clear. It is the same turn and the same throw, with contact slightly further in front and the racket face angled down at the moment it meets the shuttle.',
+          'This matters for a reason beyond economy of learning: if your clear and your smash start identically, your opponent cannot read which one is coming. If you wind up differently for a smash, you have announced it.',
+        ],
+      },
+      {
+        heading: 'Where the power actually comes from',
+        body: [
+          'Not the arm. The chain runs from the legs, through the hip and shoulder rotation, into the forearm rotation at the last instant, and finally into the fingers squeezing at contact. Players who try to generate it all with the arm hit slower smashes and get sore shoulders.',
+          'The racket head must be travelling fastest at the moment of contact, which means it has to be relaxed right up until then. A tight arm accelerates early and is already slowing down when it reaches the shuttle.',
+        ],
+      },
+      {
+        heading: 'Steep beats fast',
+        body: [
+          'A steep smash from mid-court is worth more than a flat rocket from the back. Angle is what makes it unreturnable; speed alone just gives them a faster shuttle to block.',
+          'From the very back of the court, a smash is usually the wrong shot. Clear, or drop, and wait for a shorter one.',
+        ],
+      },
+    ],
+    cues: [
+      'Identical setup to your clear — give nothing away.',
+      'Rotate: legs, hips, shoulders, forearm, fingers.',
+      'Relaxed arm until contact, then squeeze.',
+      'Contact further in front, face angled down.',
+    ],
+    faults: [
+      'Arming it — all shoulder, no rotation.',
+      'A different, bigger backswing that telegraphs the shot.',
+      'Smashing from the back line because it feels good.',
+      'Gripping tightly through the whole swing.',
+    ],
+    drills: ['multifeed-shadow', 'rear-court-scissor', 'tabata-shadow'],
+  },
+  {
+    slug: 'the-low-serve',
+    title: 'The low serve',
+    summary:
+      'A push, not a swing. The most-played shot in doubles and the one most matches are quietly lost to.',
+    category: 'net',
+    level: 'beginner',
+    practiceMode: 'solo',
+    location: 'anywhere',
+    readMinutes: 3,
+    fundamental: true,
+    diagram: { kind: 'swing', poses: LOW_SERVE, racket: 'right' },
+    sections: [
+      {
+        heading: 'What it has to do',
+        body: [
+          'The shuttle should cross the net as low as it possibly can and land just past the front service line. That is the whole job. Anything that floats up gives your opponent a free attack before the rally has started.',
+          'You serve more often than you play any other single shot. A player with a reliable low serve wins points they never had to work for.',
+        ],
+      },
+      {
+        heading: 'Push it, do not swing at it',
+        body: [
+          'There is almost no backswing. Hold the shuttle out in front, let it go, and push through it with the racket face — the motion is closer to placing something on a shelf than to hitting anything.',
+          'Stand side-on with your weight already forward, racket foot back. Contact is below the waist, and the racket head must be below your hand at the moment you strike — that is the rule as well as the technique.',
+        ],
+      },
+      {
+        heading: 'Practising alone',
+        body: [
+          'This is the one shot you can genuinely practise by yourself with no partner and no court: a shuttle, a racket, and a line on the floor at the right distance. Serve a tube of shuttles, pick them up, do it again.',
+          'Fifty low serves a day for two weeks will change your doubles more than any amount of smashing.',
+        ],
+      },
+    ],
+    cues: [
+      'Almost no backswing — push, do not swing.',
+      'Weight forward, side-on, racket foot back.',
+      'Contact below the waist, racket head below the hand.',
+      'Aim to skim the tape and land just over the front line.',
+    ],
+    faults: [
+      'A full swing that sends the shuttle up and long.',
+      'Standing square to the net.',
+      'Lifting the racket head above the hand at contact — a fault, and a fault you will be called on.',
+      'Watching the receiver instead of the shuttle.',
+    ],
+    drills: ['net-footwork'],
+  },
   {
     slug: 'the-split-step',
     title: 'The split step',
@@ -61,6 +662,8 @@ export const TECHNIQUE_TOPICS: TechniqueTopic[] = [
     practiceMode: 'solo',
     location: 'anywhere',
     readMinutes: 4,
+    fundamental: true,
+    diagram: { kind: 'swing', poses: READY_STANCE, racket: 'right' },
     sections: [
       {
         heading: 'What it is',
@@ -108,6 +711,7 @@ export const TECHNIQUE_TOPICS: TechniqueTopic[] = [
     practiceMode: 'solo',
     location: 'court',
     readMinutes: 4,
+    fundamental: true,
     sections: [
       {
         heading: 'Base is a bet, not a place',
@@ -202,6 +806,8 @@ export const TECHNIQUE_TOPICS: TechniqueTopic[] = [
     practiceMode: 'solo',
     location: 'court',
     readMinutes: 4,
+    fundamental: true,
+    diagram: { kind: 'swing', poses: NET_LUNGE, racket: 'right' },
     sections: [
       {
         heading: 'The shape',
@@ -288,11 +894,14 @@ export const TECHNIQUE_TOPICS: TechniqueTopic[] = [
   },
   {
     slug: 'grips',
-    title: 'Grips, and changing between them',
+    title: 'Changing grips mid-rally',
     summary:
-      'Four grips cover almost every shot. The skill is not holding them — it is swapping between them in the time you have.',
+      'Four grips cover almost every shot. Holding them is the easy part — swapping between them in the time a rally gives you is the skill.',
     category: 'net',
-    level: 'beginner',
+    // The two grips themselves are separate beginner topics with diagrams. This
+    // one is about the changeover, which is a rally-speed problem and only
+    // becomes the limiting factor once both grips are solid.
+    level: 'intermediate',
     practiceMode: 'solo',
     location: 'anywhere',
     readMinutes: 4,
@@ -300,8 +909,8 @@ export const TECHNIQUE_TOPICS: TechniqueTopic[] = [
       {
         heading: 'The four',
         body: [
-          'Basic forehand: shake hands with the handle, so the V between thumb and index finger sits along the narrow edge. This is the default and where you return between shots.',
-          'Backhand (thumb grip): the thumb lies flat along the wider bevel, giving you something to push against. This is what makes a backhand clear or a backhand net kill possible at all.',
+          'Basic forehand: shake hands with the handle, so the V between thumb and index finger sits along the narrow edge. This is the default and where you return between shots. It has its own topic, with a diagram.',
+          'Backhand (thumb grip): the thumb lies flat along the wider bevel, giving you something to push against. This is what makes a backhand clear or a backhand net kill possible at all — also its own topic.',
           'Panhandle: the racket face is square in front of you, as if holding a frying pan. It is a specialist grip — net kills straight in front, and very little else.',
           'Bevel grip: between forehand and thumb grip, used for backhand rear-court shots and defensive drives on the backhand side.',
         ],
