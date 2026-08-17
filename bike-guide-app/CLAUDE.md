@@ -47,39 +47,71 @@ Unlike the corruption reporting project, **these JS files have real content**.
 `js/firebase-config.js` initialises Firebase from a CDN module. The web API key
 is a public identifier, not a secret — `firestore.rules` is what protects data.
 
-Collections in use: `users/{deviceId}/rides`, `users/{deviceId}/challenge`,
-`premiumRequests`, `premiumUsers/{deviceId}`.
+Collections in use: `users/{uid}` (profile), `users/{uid}/rides`,
+`users/{uid}/challenge`, `premiumRequests`, `premiumUsers/{uid}` — where `uid`
+is a Firebase Auth UID.
 
-### The identity model is weak — know this before changing rules
+**Anonymous Authentication must be enabled** in the Firebase console
+(Authentication → Sign-in method → Anonymous). Without it every Firestore call
+fails, because the rules require `request.auth != null`.
 
-There is **no authentication**. A user is a `bikeUserId`, a `crypto.randomUUID()`
-generated in the browser (`index.html`) and kept in localStorage. The rules
-engine cannot verify it: a caller picks whichever ID it likes. So the rules
-**cannot enforce ownership**, and no amount of rewriting them will change that.
+### Identity: Firebase Anonymous Auth
 
-What they do achieve:
+`js/auth.js` owns identity. It signs in with **Firebase Anonymous
+Authentication** — no email, no password, nothing the user sees — and exposes
+`uid()`, a promise resolving to the Firebase Auth UID.
 
-- **no enumeration** — `list` is denied on `users` and `premiumUsers`, so
-  nobody can walk the collection and harvest everyone's data. Given the
-  identity model this is the single most valuable restriction available.
-- **premium cannot be self-granted** — `premiumUsers` is read-only to clients.
-  If a client could write there it would just set `activated: true`.
+**Anything touching Firestore must `await uid()`.** Never read an identity from
+localStorage. The UID is not known until sign-in resolves, which is why the data
+functions are all async.
+
+This replaced a model where a user was a `crypto.randomUUID()` in localStorage,
+sent as part of the document path. The rules engine could not verify such a
+value — a caller claimed whichever ID it liked — so ownership was unenforceable
+and anyone who learned a UUID could read that user's rides. Ownership is now
+checked server-side against `request.auth.uid`.
+
+It also fixed a live bug: `tracker.js` used
+`localStorage.getItem('bikeUserId') || 'anonymous'`, so any device without that
+key read and wrote a single shared `anonymous` bucket, and those users saw each
+other's rides.
+
+### The migration bridge — this is temporary, delete it
+
+Existing users have data under their old localStorage UUID. After signing in
+they get a different UID, so their rides would be stranded.
+
+A profile document at `users/{uid}` may claim one `legacyId`. The rules
+(`claimsLegacy()`) grant that account read and delete on `users/{legacyId}/**`
+and `premiumUsers/{legacyId}` — exactly what the one-time copy in
+`migrateLegacyData()` needs, and nothing more. `legacyId` is **write-once**: the
+update rule rejects any change, so a profile cannot be repointed from one victim
+to the next.
+
+It is not airtight. Someone who already knows a victim's old UUID can claim it.
+That is strictly narrower than the previous model, where knowing the UUID gave
+full access, but it is still a bridge and not a destination.
+
+**Once the userbase has opened the app once, delete `claimsLegacy()` and every
+`|| claimsLegacy(...)` clause from `firestore.rules`, plus the legacy branch in
+`checkPremiumActivation()`.** Keeping it forever preserves a weakness that
+exists only to rescue old data.
+
+### What the rules enforce
+
+- **ownership** — a user reads and writes only `users/{their own uid}/**`
+- **no enumeration** — `list` denied on `users` and `premiumUsers`
+- **premium cannot be self-granted** — `premiumUsers` is read-only to clients;
+  only an admin flips `activated`
 - **payment references are write-only** — `premiumRequests` accepts a create
-  and denies every read, so GCash references cannot be read back out.
-- writes are shape-checked, and unknown collections are denied.
-
-Security therefore rests on the UUID being unguessable: a capability URL. Much
-better than open, but not authentication.
-
-**The real fix is Firebase Anonymous Auth** (`signInAnonymously`), which gives a
-genuine `request.auth.uid` that rules can compare against the document path. It
-is a small code change with one real catch: existing users' localStorage IDs
-will not match their new auth UID, so their ride history is orphaned unless it
-is migrated. That is a product decision, not a mechanical one.
+  from a signed-in user, whose `deviceId` must equal their own UID, and denies
+  every read
+- writes are shape-checked; unknown collections denied
 
 ### Testing and deploying rules
 
-Covered by 18 assertions in `../firestore-tests/bikeguide.test.mjs`:
+Covered by 35 assertions in `../firestore-tests/bikeguide.test.mjs`, including
+cross-user denial and the write-once `legacyId` guarantee:
 
 ```bash
 cd ../firestore-tests && npm install && npm run test:bikeguide

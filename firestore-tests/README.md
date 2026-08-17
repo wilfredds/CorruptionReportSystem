@@ -37,7 +37,7 @@ Current coverage:
 | Suite | Assertions |
 |---|---|
 | `corruption.test.mjs` | 25 |
-| `bikeguide.test.mjs` | 18 |
+| `bikeguide.test.mjs` | 35 |
 
 ## Adding a rule
 
