@@ -63,11 +63,19 @@ Flutter coverage is sparse and often returns no match.
 
 - `.github/workflows/autocare-ci.yml` — lint, typecheck, test, migrate, seed,
   DB tests and build for `autocare`. Path-filtered to `autocare/**`.
+- `.github/workflows/firestore-rules-ci.yml` — runs the 60 security-rules
+  assertions in `firestore-tests/` against the real Firestore emulator.
+  Path-filtered to `firestore-tests/**` and either `firestore.rules`.
 - `.github/workflows/deploy-web.yml` — builds `cyclemind_ai` for web in mock
   mode and publishes to GitHub Pages.
 
-There is **no CI for `rallyready`** or the two static sites. Run their checks
-locally before claiming they pass.
+There is **no CI for `rallyready`**, and none for the static sites' own
+JavaScript — only their Firestore rules are covered. Run `npm run verify` in
+`rallyready` yourself before claiming its checks pass.
+
+Note that `node --check` does **not** validate syntax: it exits 0 on a
+syntactically invalid file. Use a real parser (acorn, esbuild) if you need to
+confirm a script parses.
 
 ## Conventions
 

@@ -1,0 +1,77 @@
+name: Firestore Rules CI
+
+# Runs the security-rules test suites for the two static Firebase projects,
+# corruption-reporting-system-final and bike-guide-app.
+#
+# These rules are the only thing standing between the public internet and the
+# data — the Firebase web API keys in both projects are public identifiers, not
+# secrets. A rules file is easy to loosen by accident and the failure is silent:
+# nothing errors, data just quietly becomes readable. Neither site has a build
+# step that would catch it, so without this workflow the assertions only ever
+# ran on somebody's laptop.
+#
+# The suites run against the real Firestore emulator, not a mock, so what CI
+# checks is what Firebase will actually enforce.
+#
+# Only runs when the rules or their tests change — the other projects in this
+# repository are unrelated and have their own workflow.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "firestore-tests/**"
+      - "corruption-reporting-system-final/firestore.rules"
+      - "bike-guide-app/firestore.rules"
+      - ".github/workflows/firestore-rules-ci.yml"
+  pull_request:
+    paths:
+      - "firestore-tests/**"
+      - "corruption-reporting-system-final/firestore.rules"
+      - "bike-guide-app/firestore.rules"
+      - ".github/workflows/firestore-rules-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: firestore-tests
+
+jobs:
+  rules:
+    name: Test Firestore security rules
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: firestore-tests/package-lock.json
+
+      # The Firestore emulator is a Java process. ubuntu-latest ships a JDK, but
+      # pinning one keeps the run reproducible when the image changes.
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Each suite boots the emulator, loads its rules file, exercises it as an
+      # anonymous visitor, a signed-in non-owner and an owner, then shuts down.
+      # A denied-case regression fails the build.
+      - name: Test the corruption reporting rules
+        run: npm run test:corruption
+
+      - name: Test the Bike Guide rules
+        run: npm run test:bikeguide
