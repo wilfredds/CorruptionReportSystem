@@ -24,6 +24,17 @@ anonymous visitor, a signed-in non-admin and an admin, then shuts down.
 Run one suite at a time with `npm run test:corruption` or
 `npm run test:bikeguide`.
 
+## In CI
+
+`.github/workflows/firestore-rules-ci.yml` runs both suites on every push to
+`main` and every pull request that touches either `firestore.rules` or this
+directory. It boots the same emulator CI-side, so what the workflow checks is
+what Firebase will actually enforce.
+
+The workflow was verified to fail, not just to pass: temporarily loosening
+`users/{userId}/rides` to `allow read: if true` turned five denial assertions
+red and exited non-zero. A suite that cannot go red guards nothing.
+
 ## Why bother
 
 These rules are the only thing standing between the public internet and the
