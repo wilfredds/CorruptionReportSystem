@@ -117,9 +117,21 @@ cross-user denial and the write-once `legacyId` guarantee:
 cd ../firestore-tests && npm install && npm run test:bikeguide
 ```
 
-Add a denial test before loosening a rule. Deployment is manual and not
-automated — until `firebase deploy --only firestore:rules` is run, the rules in
-this repo are not the rules in production.
+Add a denial test before loosening a rule.
+
+Deployment is manual. `firebase.json` points the CLI at `firestore.rules` and
+`.firebaserc` pins the project to `bikeguide-ph`, so from this directory:
+
+```bash
+firebase login          # once, per machine
+firebase deploy --only firestore:rules
+```
+
+**Enable Anonymous sign-in first** (console → Authentication → Sign-in method →
+Anonymous). The rules require `request.auth != null`, so deploying them before
+the provider is on breaks every Firestore call for every user.
+
+Until the deploy is run, the rules in this repo are not the rules in production.
 
 ## Scope note
 
