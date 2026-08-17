@@ -23,85 +23,153 @@ const testEnv = await initializeTestEnvironment({
 
 await testEnv.clearFirestore();
 
-const UID = 'device-uuid-1';
+const ALICE = 'alice-uid';
+const BOB = 'bob-uid';
+const LEGACY = 'legacy-uuid-alice';
 
 await testEnv.withSecurityRulesDisabled(async (ctx) => {
   const db = ctx.firestore();
-  await setDoc(doc(db, 'users', UID, 'rides', 'ride1'), { distance: 10 });
-  await setDoc(doc(db, 'premiumUsers', UID), { activated: true });
-  await setDoc(doc(db, 'premiumRequests', 'req1'), { deviceId: UID, gcashRef: 'ABC', status: 'pending' });
+  // Alice's authenticated account, claiming her old device ID.
+  await setDoc(doc(db, 'users', ALICE), { createdAt: '2026-08-17', legacyId: LEGACY });
+  await setDoc(doc(db, 'users', ALICE, 'rides', 'r1'), { distanceKm: 10 });
+  // Bob has an account with no legacy claim.
+  await setDoc(doc(db, 'users', BOB), { createdAt: '2026-08-17' });
+  // Alice's pre-auth data, still at the old path.
+  await setDoc(doc(db, 'users', LEGACY, 'rides', 'old1'), { distanceKm: 42 });
+  await setDoc(doc(db, 'users', LEGACY, 'challenge', 'day_01'), { day: 1, completed: true });
+  await setDoc(doc(db, 'premiumUsers', LEGACY), { activated: true });
+  await setDoc(doc(db, 'premiumUsers', ALICE), { activated: true });
+  await setDoc(doc(db, 'premiumRequests', 'req1'), { deviceId: ALICE, gcashRef: 'ABC', status: 'pending' });
 });
 
 const anon = testEnv.unauthenticatedContext().firestore();
+const alice = testEnv.authenticatedContext(ALICE).firestore();
+const bob = testEnv.authenticatedContext(BOB).firestore();
 
-// --- ride data ---------------------------------------------------------------
+// --- ownership is now actually enforced ------------------------------------
 
-await check('can read own ride by known device id', () =>
-  assertSucceeds(getDoc(doc(anon, 'users', UID, 'rides', 'ride1'))));
+await check('unauthenticated CANNOT read anyone\'s rides', () =>
+  assertFails(getDoc(doc(anon, 'users', ALICE, 'rides', 'r1'))));
 
-await check('can log a ride with a server timestamp', () =>
-  assertSucceeds(addDoc(collection(anon, 'users', UID, 'rides'),
-    { distance: 5, duration: 20, timestamp: serverTimestamp() })));
+await check('unauthenticated CANNOT write rides', () =>
+  assertFails(setDoc(doc(anon, 'users', ALICE, 'rides', 'r2'), { distanceKm: 1 })));
 
-await check('CANNOT log a ride with a client-chosen timestamp', () =>
-  assertFails(addDoc(collection(anon, 'users', UID, 'rides'),
-    { distance: 5, timestamp: new Date(2020, 1, 1) })));
+await check('owner CAN read own ride', () =>
+  assertSucceeds(getDoc(doc(alice, 'users', ALICE, 'rides', 'r1'))));
 
-await check('CANNOT store a 5k-character note on a ride', () =>
-  assertFails(addDoc(collection(anon, 'users', UID, 'rides'),
-    { notes: 'x'.repeat(5000), timestamp: serverTimestamp() })));
+await check('owner CAN list own rides', () =>
+  assertSucceeds(getDocs(collection(alice, 'users', ALICE, 'rides'))));
 
-await check('can delete own ride', () =>
-  assertSucceeds(deleteDoc(doc(anon, 'users', UID, 'rides', 'ride1'))));
+await check('another user CANNOT read someone else\'s rides', () =>
+  assertFails(getDoc(doc(bob, 'users', ALICE, 'rides', 'r1'))));
 
-await check('challenge day accepts a boolean completion', () =>
-  assertSucceeds(setDoc(doc(anon, 'users', UID, 'challenge', 'day_01'), { completed: true })));
+await check('another user CANNOT list someone else\'s rides', () =>
+  assertFails(getDocs(collection(bob, 'users', ALICE, 'rides'))));
 
-// --- enumeration is what actually matters here -------------------------------
+await check('another user CANNOT write into someone else\'s rides', () =>
+  assertFails(setDoc(doc(bob, 'users', ALICE, 'rides', 'evil'), { distanceKm: 1 })));
+
+await check('another user CANNOT delete someone else\'s ride', () =>
+  assertFails(deleteDoc(doc(bob, 'users', ALICE, 'rides', 'r1'))));
+
+await check('owner CAN log a ride', () =>
+  assertSucceeds(addDoc(collection(alice, 'users', ALICE, 'rides'),
+    { distanceKm: 5, durationMinutes: 20, timestamp: serverTimestamp() })));
+
+await check('CANNOT store a 5k-character ride note', () =>
+  assertFails(addDoc(collection(alice, 'users', ALICE, 'rides'),
+    { notes: 'x'.repeat(5000) })));
+
+await check('owner CAN mark a challenge day complete', () =>
+  assertSucceeds(setDoc(doc(alice, 'users', ALICE, 'challenge', 'day_02'),
+    { day: 2, completed: true })));
+
+await check('another user CANNOT mark someone else\'s challenge day', () =>
+  assertFails(setDoc(doc(bob, 'users', ALICE, 'challenge', 'day_03'),
+    { day: 3, completed: true })));
+
+// --- enumeration -------------------------------------------------------------
 
 await check('CANNOT enumerate the users collection', () =>
-  assertFails(getDocs(collection(anon, 'users'))));
+  assertFails(getDocs(collection(alice, 'users'))));
 
-await check('CANNOT read the unused parent user document', () =>
-  assertFails(getDoc(doc(anon, 'users', UID))));
+await check('CANNOT read another user\'s profile', () =>
+  assertFails(getDoc(doc(bob, 'users', ALICE))));
 
-await check('CANNOT enumerate premiumUsers', () =>
-  assertFails(getDocs(collection(anon, 'premiumUsers'))));
+await check('owner CAN read own profile', () =>
+  assertSucceeds(getDoc(doc(alice, 'users', ALICE))));
 
-// --- premium cannot be self-granted ------------------------------------------
+// --- the migration bridge ----------------------------------------------------
 
-await check('can check own premium status', () =>
-  assertSucceeds(getDoc(doc(anon, 'premiumUsers', UID))));
+await check('legacy claimant CAN read their old rides', () =>
+  assertSucceeds(getDocs(collection(alice, 'users', LEGACY, 'rides'))));
+
+await check('legacy claimant CAN read their old challenge progress', () =>
+  assertSucceeds(getDocs(collection(alice, 'users', LEGACY, 'challenge'))));
+
+await check('legacy claimant CAN delete the old copy after migrating', () =>
+  assertSucceeds(deleteDoc(doc(alice, 'users', LEGACY, 'challenge', 'day_01'))));
+
+await check('a user with NO legacy claim CANNOT read that legacy data', () =>
+  assertFails(getDocs(collection(bob, 'users', LEGACY, 'rides'))));
+
+await check('unauthenticated CANNOT read legacy data', () =>
+  assertFails(getDocs(collection(anon, 'users', LEGACY, 'rides'))));
+
+await check('legacy claimant CANNOT write into the legacy subtree', () =>
+  assertFails(setDoc(doc(alice, 'users', LEGACY, 'rides', 'injected'), { distanceKm: 1 })));
+
+await check('legacyId is write-once — cannot be repointed at another victim', () =>
+  assertFails(updateDoc(doc(alice, 'users', ALICE), { legacyId: 'someone-elses-uuid' })));
+
+await check('a new profile CANNOT carry unexpected fields', () =>
+  assertFails(setDoc(doc(bob, 'users', BOB), { createdAt: 'x', isAdmin: true })));
+
+// --- premium cannot be self-granted -----------------------------------------
+
+await check('owner CAN check own premium status', () =>
+  assertSucceeds(getDoc(doc(alice, 'premiumUsers', ALICE))));
+
+await check('legacy claimant CAN check premium bought under the old ID', () =>
+  assertSucceeds(getDoc(doc(alice, 'premiumUsers', LEGACY))));
+
+await check('another user CANNOT read someone else\'s premium record', () =>
+  assertFails(getDoc(doc(bob, 'premiumUsers', ALICE))));
 
 await check('CANNOT grant itself premium', () =>
-  assertFails(setDoc(doc(anon, 'premiumUsers', 'device-uuid-2'), { activated: true })));
+  assertFails(setDoc(doc(alice, 'premiumUsers', ALICE), { activated: true })));
 
-await check('CANNOT flip an existing premium record', () =>
-  assertFails(updateDoc(doc(anon, 'premiumUsers', UID), { activated: true })));
+await check('CANNOT enumerate premiumUsers', () =>
+  assertFails(getDocs(collection(alice, 'premiumUsers'))));
 
 // --- payment references are write-only ---------------------------------------
 
-await check('can submit a premium request', () =>
-  assertSucceeds(addDoc(collection(anon, 'premiumRequests'),
-    { deviceId: UID, gcashRef: 'REF123', amount: 79, status: 'pending', submittedAt: serverTimestamp() })));
+await check('signed-in user CAN submit a premium request', () =>
+  assertSucceeds(addDoc(collection(alice, 'premiumRequests'),
+    { deviceId: ALICE, gcashRef: 'REF123', amount: 79, status: 'pending', submittedAt: serverTimestamp() })));
+
+await check('CANNOT file a request under another user\'s id', () =>
+  assertFails(addDoc(collection(bob, 'premiumRequests'),
+    { deviceId: ALICE, gcashRef: 'REF123', amount: 79, status: 'pending', submittedAt: serverTimestamp() })));
+
+await check('unauthenticated CANNOT submit a premium request', () =>
+  assertFails(addDoc(collection(anon, 'premiumRequests'),
+    { deviceId: 'whoever', gcashRef: 'REF', status: 'pending', submittedAt: serverTimestamp() })));
 
 await check('CANNOT submit a pre-approved premium request', () =>
-  assertFails(addDoc(collection(anon, 'premiumRequests'),
-    { deviceId: UID, gcashRef: 'REF123', amount: 79, status: 'approved', submittedAt: serverTimestamp() })));
+  assertFails(addDoc(collection(alice, 'premiumRequests'),
+    { deviceId: ALICE, gcashRef: 'REF123', amount: 79, status: 'approved', submittedAt: serverTimestamp() })));
 
 await check('CANNOT read back premium requests (GCash refs)', () =>
-  assertFails(getDoc(doc(anon, 'premiumRequests', 'req1'))));
-
-await check('CANNOT list premium requests', () =>
-  assertFails(getDocs(collection(anon, 'premiumRequests'))));
+  assertFails(getDoc(doc(alice, 'premiumRequests', 'req1'))));
 
 await check('CANNOT approve a premium request', () =>
-  assertFails(updateDoc(doc(anon, 'premiumRequests', 'req1'), { status: 'approved' })));
+  assertFails(updateDoc(doc(alice, 'premiumRequests', 'req1'), { status: 'approved' })));
 
 // --- catch-all ---------------------------------------------------------------
 
 await check('arbitrary collections are denied', () =>
-  assertFails(setDoc(doc(anon, 'whatever', 'x'), { a: 1 })));
+  assertFails(setDoc(doc(alice, 'whatever', 'x'), { a: 1 })));
 
 await testEnv.cleanup();
 
