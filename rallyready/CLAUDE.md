@@ -10,15 +10,29 @@ vite-plugin-pwa
 
 ## Node version
 
-**Requires Node 22.22.2 or newer.** `jsdom@30` (engines `^22.22.2 || ^24.15.0
-|| >=26.0.0`) and the `undici@8` it pulls in (engines `>=22.19.0`) both demand
-it.
+`package.json` declares:
 
-On Node 20 the failure is misleading: every vitest worker dies before running a
-test with `TypeError: webidl.util.markAsUncloneable is not a function`, and the
-summary reads `Test Files no tests` — which looks like a config problem rather
-than a version one. `package.json` declares no `engines` field, so nothing warns
-you up front.
+```json
+"engines": { "node": "^22.22.2 || ^24.15.0 || >=26.0.0" }
+```
+
+That range is `jsdom@30`'s, copied deliberately rather than loosened to
+`>=22.22.2`. It is the exact intersection of what the toolchain needs —
+`undici@8` wants `>=22.19.0`, `vite@8` wants `^20.19.0 || >=22.12.0`,
+`vitest@4` wants `^20.0.0 || ^22.0.0 || >=24.0.0` — and jsdom is the binding
+constraint in every case. A looser `>=22.22.2` would wrongly admit Node 23 and
+25, which jsdom excludes.
+
+Without a satisfying Node the failure is misleading: every vitest worker dies
+before running a test with `TypeError: webidl.util.markAsUncloneable is not a
+function`, and the summary reads `Test Files no tests`, which looks like a
+config problem rather than a version one. That is exactly what happened when
+CI first ran on Node 20.
+
+**`engines` is advisory by default** — npm prints an `EBADENGINE` warning and
+carries on. To make a wrong Node version fail at install time instead, add
+`engine-strict=true` to an `.npmrc`. That is not set here, because it also
+affects anyone else installing the project.
 
 ## Commands
 
