@@ -48,8 +48,15 @@ service cloud.firestore {
     // It is not airtight: someone who already knows a victim's old UUID can
     // claim it. But knowing that UUID granted *full* access under the previous
     // rules, so this is strictly narrower than the model it replaces, not a new
-    // hole. Once the userbase has opened the app once, delete this function and
-    // the `|| claimsLegacy(...)` clauses — see CLAUDE.md.
+    // hole.
+    //
+    // TEMPORARY — delete this function and its five `|| claimsLegacy(userId)`
+    // call sites once users have migrated. Do NOT remove it early: the
+    // migration only runs when a user opens the app with these rules deployed,
+    // and removing the bridge before that strands their rides, challenge
+    // progress and paid premium at a path nobody can read. CLAUDE.md has the
+    // preconditions, the full list of code to remove alongside it, and the
+    // tests to invert.
     function claimsLegacy(legacyId) {
       return isSignedIn()
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))

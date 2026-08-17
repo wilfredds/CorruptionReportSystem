@@ -92,10 +92,50 @@ It is not airtight. Someone who already knows a victim's old UUID can claim it.
 That is strictly narrower than the previous model, where knowing the UUID gave
 full access, but it is still a bridge and not a destination.
 
-**Once the userbase has opened the app once, delete `claimsLegacy()` and every
-`|| claimsLegacy(...)` clause from `firestore.rules`, plus the legacy branch in
-`checkPremiumActivation()`.** Keeping it forever preserves a weakness that
-exists only to rescue old data.
+### Removing the bridge — do not do this early
+
+The bridge is **load-bearing until the migration has actually run**, and the
+migration only runs when a user opens the app *with the rules deployed*. Delete
+it before that and every pre-auth user's rides, challenge progress and paid
+premium are stranded at `users/{oldUuid}`, which nobody can then read or delete.
+That is irreversible.
+
+**Preconditions — all three, in order:**
+
+1. The rules are deployed (`firebase deploy --only firestore:rules`).
+2. Anonymous sign-in is enabled, so `migrateLegacyData()` can actually run.
+3. Enough time has passed that active users have opened the app at least once.
+   There is no signal for this in the app; judge it from your own usage data, or
+   accept that stragglers lose their history.
+
+A safe way to check progress: `users/{oldUuid}` subtrees disappear as they are
+migrated, because the copy deletes the originals. When few or none remain, the
+window has closed.
+
+**Then remove, in one change:**
+
+| File | What goes |
+|---|---|
+| `firestore.rules` | `claimsLegacy()` (the function) and all five `\|\| claimsLegacy(userId)` clauses — two under `rides`, two under `challenge`, one under `premiumUsers` |
+| `js/auth.js` | `migrateLegacyData()`, the `legacyId` claim in `ensureProfile()`, the exported `legacyId()`, and the `LEGACY_KEY` / `MIGRATED_KEY` constants |
+| `js/premium.js` | the `legacyId` import and the legacy lookup in `checkPremiumActivation()` |
+| `firestore.rules` | drop `legacyId` from `isValidProfile()`'s allowed keys, and the write-once check in the `users/{userId}` update rule |
+
+**Then fix the tests** in `../firestore-tests/bikeguide.test.mjs`. Five
+assertions currently prove the bridge *works* and will fail once it is gone —
+invert them rather than deleting them, so the suite proves legacy paths are now
+closed:
+
+- `legacy claimant CAN read their old rides`
+- `legacy claimant CAN read their old challenge progress`
+- `legacy claimant CAN delete the old copy after migrating`
+- `legacy claimant CAN check premium bought under the old ID`
+- `legacyId is write-once — cannot be repointed at another victim`
+
+The three that must keep passing unchanged are the denial cases: a user with no
+legacy claim, an unauthenticated caller, and a claimant trying to *write* into
+the legacy subtree. `firestore-rules-ci.yml` runs the suite, so a half-done
+removal fails CI rather than shipping.
 
 ### What the rules enforce
 
