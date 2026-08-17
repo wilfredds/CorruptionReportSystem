@@ -232,13 +232,15 @@
                         
                         <form id="loginForm">
                             <div class="mb-3">
-                                <label class="form-label"><i class="fas fa-user"></i> Username</label>
-                                <input type="text" class="form-control" id="username" value="admin" required>
+                                <label class="form-label" for="username"><i class="fas fa-user"></i> Email</label>
+                                <input type="email" class="form-control" id="username"
+                                       autocomplete="username" placeholder="admin@example.com" required>
                             </div>
-                            
+
                             <div class="mb-3">
-                                <label class="form-label"><i class="fas fa-lock"></i> Password</label>
-                                <input type="password" class="form-control" id="password" value="admin123" required>
+                                <label class="form-label" for="password"><i class="fas fa-lock"></i> Password</label>
+                                <input type="password" class="form-control" id="password"
+                                       autocomplete="current-password" required>
                             </div>
                             
                             <button type="submit" class="btn btn-primary w-100 py-3" id="loginBtn">
@@ -400,6 +402,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
         // Firebase Configuration - REPLACE WITH YOUR OWN!
         const firebaseConfig = {
@@ -413,70 +416,76 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        
+        const auth = getAuth(app);
+
         // Make db and functions available globally
         window.db = db;
         window.doc = doc;
         window.updateDoc = updateDoc;
         window.deleteDoc = deleteDoc;
 
-        // Login handling
+        // Authentication
+        //
+        // This uses Firebase Authentication, not a credential check in this
+        // file. The previous implementation downloaded the whole /admins
+        // collection and compared passwords here, which meant every admin
+        // password was readable by anyone who opened devtools, and the
+        // dashboard could be unlocked by setting a sessionStorage flag.
+        //
+        // Now the browser proves who it is to Firebase, and firestore.rules
+        // decides what that identity may do. Nothing in this file grants
+        // access: hiding the login section is only cosmetic, and a user who
+        // forces the dashboard open still cannot read a single report, because
+        // every query is authorised server-side against the /admins allowlist.
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const username = document.getElementById('username').value;
+            const email = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const loginError = document.getElementById('loginError');
             const loginBtn = document.getElementById('loginBtn');
-            
+
+            loginError.classList.add('d-none');
             loginBtn.disabled = true;
             loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Logging in...';
-            
+
             try {
-                // Check credentials against Firebase
-                const adminsRef = collection(db, 'admins');
-                const querySnapshot = await getDocs(adminsRef);
-                
-                let authenticated = false;
-                querySnapshot.forEach((doc) => {
-                    const admin = doc.data();
-                    if (admin.username === username && admin.password === password) {
-                        authenticated = true;
-                        sessionStorage.setItem('adminLoggedIn', 'true');
-                        sessionStorage.setItem('adminName', username);
-                    }
-                });
-                
-                if (authenticated) {
-                    showDashboard();
-                } else {
-                    loginError.classList.remove('d-none');
-                    document.getElementById('loginErrorMsg').textContent = 'Invalid username or password!';
-                }
+                await signInWithEmailAndPassword(auth, email, password);
+                // onAuthStateChanged below takes it from here.
             } catch (error) {
                 loginError.classList.remove('d-none');
-                document.getElementById('loginErrorMsg').textContent = 'Error: ' + error.message;
+                // Deliberately vague: distinguishing "no such user" from "wrong
+                // password" tells an attacker which admin emails are real.
+                const code = error && error.code ? error.code : '';
+                document.getElementById('loginErrorMsg').textContent =
+                    code === 'auth/too-many-requests'
+                        ? 'Too many attempts. Try again later.'
+                        : 'Invalid email or password!';
             } finally {
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login to Dashboard';
             }
         });
 
-        // Check if already logged in
-        if (sessionStorage.getItem('adminLoggedIn') === 'true') {
-            showDashboard();
-        }
+        // Single source of truth for whether a dashboard is on screen. Fires on
+        // load, on sign-in, on sign-out and on token expiry.
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                showDashboard(user);
+            } else {
+                document.getElementById('loginSection').style.display = 'block';
+                document.getElementById('dashboardSection').style.display = 'none';
+            }
+        });
 
-        function showDashboard() {
+        function showDashboard(user) {
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('dashboardSection').style.display = 'block';
-            document.getElementById('adminName').textContent = sessionStorage.getItem('adminName') || 'Admin';
+            document.getElementById('adminName').textContent = user.email || 'Admin';
             loadReports();
         }
 
         window.logout = function() {
-            sessionStorage.removeItem('adminLoggedIn');
-            sessionStorage.removeItem('adminName');
-            location.reload();
+            signOut(auth).catch(() => {}).then(() => location.reload());
         }
 
         // Load reports from Firebase
@@ -554,11 +563,20 @@
                 
             } catch (error) {
                 console.error('Error loading reports:', error);
+
+                // A signed-in account that is not on the /admins allowlist gets
+                // permission-denied here. That is the rules doing their job, so
+                // say so plainly rather than showing a raw SDK error.
+                const denied = error && error.code === 'permission-denied';
+                const message = denied
+                    ? 'This account is signed in but is not an administrator. Ask an existing admin to add your user ID to the "admins" collection.'
+                    : `Error loading reports: ${error.message}`;
+
                 document.getElementById('reportsTableBody').innerHTML = `
                     <tr>
                         <td colspan="8" class="text-center py-5 text-danger">
                             <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
-                            <p>Error loading reports: ${error.message}</p>
+                            <p>${message}</p>
                         </td>
                     </tr>
                 `;

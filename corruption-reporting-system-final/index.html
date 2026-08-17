@@ -1040,11 +1040,11 @@
             
             // Smart AI responses based on keywords
             if (msg.includes('how') && (msg.includes('report') || msg.includes('submit'))) {
-                return '📝 To report corruption:<br>1. Scroll to the report form<br>2. Fill in the department and description<br>3. You can leave your name blank for anonymity<br>4. Click Submit!<br><br>Your report is encrypted and stored securely.';
+                return '📝 To report corruption:<br>1. Scroll to the report form<br>2. Fill in the department and description<br>3. You can leave your name blank for anonymity<br>4. Click Submit!<br><br>Your report is sent over an encrypted connection and can only be read by authorised administrators.';
             }
             
             if (msg.includes('anonymous') || msg.includes('safe') || msg.includes('privacy')) {
-                return '🔒 Your anonymity is 100% protected:<br>• No login required<br>• Name field is optional<br>• We don\'t track IP addresses<br>• Data is encrypted with military-grade security<br>• Only admin IDs are visible, never personal info';
+                return '🔒 How your privacy is handled:<br>• No login required<br>• The name and contact fields are optional — leave them blank to stay anonymous<br>• Your report travels over an encrypted (HTTPS) connection and is stored encrypted at rest<br>• Only authorised administrators can read submitted reports<br><br>Please note: anything you type into the report is visible to those administrators, so leave out details you do not want them to see. This site cannot promise that your internet provider or network operator does not see that you visited it.';
             }
             
             if (msg.includes('what happen') || msg.includes('after') || msg.includes('process')) {
@@ -1090,7 +1090,7 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, doc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         // Firebase Configuration - REPLACE WITH YOUR OWN!
         const firebaseConfig = {
@@ -1107,11 +1107,29 @@
 
         // Load total reports count
         async function loadReportsCount() {
+            // This used to call getDocs(collection(db, "reports")) and use
+            // snapshot.size. That downloaded every report — including each
+            // reporter's name, contact number and description — into any
+            // visitor's browser, just to render a number. The security rules
+            // now (correctly) refuse public reads of /reports.
+            //
+            // The count instead comes from a single public document,
+            // meta/publicStats, which holds nothing sensitive. Populating it
+            // needs a Cloud Function on report creation; until one exists the
+            // counter simply stays hidden, which is the right trade.
+            const el = document.getElementById('totalReportsCount');
+            if (!el) return;
             try {
-                const querySnapshot = await getDocs(collection(db, "reports"));
-                document.getElementById('totalReportsCount').textContent = querySnapshot.size;
+                const snap = await getDoc(doc(db, 'meta', 'publicStats'));
+                const count = snap.exists() ? snap.data().reportCount : null;
+                if (typeof count === 'number') {
+                    el.textContent = count;
+                } else {
+                    el.textContent = '—';
+                }
             } catch (error) {
                 console.error("Error loading count:", error);
+                el.textContent = '—';
             }
         }
 

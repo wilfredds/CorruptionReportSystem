@@ -38,8 +38,20 @@ but do it deliberately and wire up the `<script type="module">` tags.
 
 - `index.html` (~1200 lines) — public report form plus an inline help/chat
   responder
-- `admin.html` (~670 lines) — review interface
+- `admin.html` (~670 lines) — review interface, Firebase Auth login
+- `firestore.rules` — the actual access control; see below
 - `css/style.css` · `assets/images/`
+
+### The homepage report counter
+
+`loadReportsCount()` reads `meta/publicStats`, not the `reports` collection. It
+used to call `getDocs(collection(db, 'reports'))` and use `snapshot.size`, which
+downloaded every report — names, contact numbers, descriptions — into any
+visitor's browser just to render a number.
+
+Nothing populates `meta/publicStats` yet, so the counter shows `—`. Making it
+live needs a Cloud Function incrementing `reportCount` on report creation. Do
+not "fix" it by reading the reports collection again.
 
 ## Firebase and security
 
@@ -47,16 +59,53 @@ but do it deliberately and wire up the `<script type="module">` tags.
 Firebase web API keys are public identifiers, not secrets, and are meant to
 ship to the browser. They are **not** an access control mechanism.
 
-What actually protects the data is Firestore security rules, and **there are no
-`firestore.rules` in this project**. Before this handles real reports, rules
-need to exist and be deployed: unauthenticated users should be able to create a
-report and nothing else, and reads should be restricted to admins. Assume the
-current configuration is open until proven otherwise.
+What protects the data is `firestore.rules`. In short:
 
-The UI tells users their report is "encrypted and stored securely". Nothing in
-this codebase encrypts anything. Either implement it or correct the copy —
-this is a promise made to people reporting corruption, so the gap matters more
-than usual.
+- **anyone may create a report**, anonymously, with a pinned document shape —
+  a submitter cannot set their own status or attach extra fields
+- **nobody may read a report except an admin**; reports name both the accused
+  and, optionally, the reporter
+- **admins may only change `status`** — the description, name and contact
+  number are evidence and are immutable after submission
+- the `admins` allowlist is **unreadable by every client**. `exists()` in rules
+  is a server-side lookup, so membership is checked without shipping the list
+- `meta/publicStats` is the one publicly readable document, for the homepage
+  counter
+
+Rules are covered by 25 assertions in `../firestore-tests/corruption.test.mjs`.
+Run them with `cd ../firestore-tests && npm install && npm run test:corruption`.
+**Add a denial test before loosening any rule.**
+
+### Admin authentication
+
+Admins sign in with **Firebase Authentication** (email + password). To add one:
+create the user in the Firebase console, then add a document to `admins` whose
+**ID is that user's Auth UID**. The body can be empty; an email field is useful
+for auditing. Never store a password in Firestore.
+
+This replaced an earlier scheme that downloaded the whole `admins` collection
+and compared passwords in client-side JavaScript — which exposed every admin
+password to anyone who opened devtools, and let the dashboard be unlocked by
+setting a `sessionStorage` flag. If you are tempted to add a "quick" client-side
+check again, don't: hiding UI is cosmetic, and only the rules actually gate data.
+
+### Deploying rules
+
+Not automated. Review, then:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+Until that is run, the rules in this repo are **not** the rules in production.
+
+### Honest copy
+
+The site previously told users their report was "encrypted with military-grade
+security" and that "we don't track IP addresses". Neither was true. The copy now
+describes what actually happens: HTTPS in transit, encrypted at rest, readable
+by administrators. Keep it that way — these are promises made to people
+reporting corruption, who may be taking a real risk.
 
 ## Design work
 

@@ -1,0 +1,114 @@
+rules_version = '2';
+
+// Firestore security rules for the corruption reporting system.
+//
+// Threat model: anyone on the internet can call the Firestore REST/SDK API with
+// this project's web API key. That key is a public identifier, not a secret —
+// these rules are the ONLY thing protecting the data. Assume every request is
+// hostile and that the client code is fully under the attacker's control.
+//
+// The data here is unusually sensitive: reports may name people who are
+// committing corruption, and reporters may have supplied their own name and
+// contact number. A leak can put a real person at risk, so reads are closed by
+// default and never opened to the public.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------- helpers
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // An admin is a signed-in user whose UID has a document in /admins.
+    //
+    // exists() is evaluated server-side by the rules engine, so this works even
+    // though clients are denied all read access to /admins below. That is what
+    // lets the admin allowlist stay completely private — nothing has to ship
+    // the list to the browser to check membership.
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // --------------------------------------------------------------- reports
+
+    match /reports/{reportId} {
+
+      // Anyone may file a report, including anonymously and without signing in.
+      // That is the entire point of the site, so create stays open — but the
+      // document shape is pinned so the collection cannot be used as free
+      // storage and a submitter cannot pre-set their own status.
+      allow create: if isValidNewReport();
+
+      // Reading a report exposes the reporter and the accusation. Admins only.
+      allow read: if isAdmin();
+
+      // Admins trigage reports by moving the status. Nothing else may change —
+      // the original description, name and contact number are evidence and
+      // must stay exactly as submitted.
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status in ['Pending', 'Under Review', 'Resolved', 'Rejected'];
+
+      allow delete: if isAdmin();
+    }
+
+    function isValidNewReport() {
+      let d = request.resource.data;
+      return d.keys().hasOnly([
+               'name', 'contactNumber', 'department', 'location',
+               'description', 'status', 'date', 'timestamp'
+             ])
+        && d.keys().hasAll(['department', 'description', 'status', 'timestamp'])
+        // A new report always starts as Pending; only an admin can move it on.
+        && d.status == 'Pending'
+        // serverTimestamp() resolves to request.time, so this forces the client
+        // to use the server clock rather than a time of its choosing.
+        && d.timestamp == request.time
+        && d.department is string && d.department.size() > 0 && d.department.size() <= 200
+        && d.description is string && d.description.size() > 0 && d.description.size() <= 10000
+        && (!('name' in d) || (d.name is string && d.name.size() <= 200))
+        && (!('contactNumber' in d) || (d.contactNumber is string && d.contactNumber.size() <= 100))
+        && (!('location' in d) || (d.location is string && d.location.size() <= 500))
+        && (!('date' in d) || (d.date is string && d.date.size() <= 32));
+    }
+
+    // ---------------------------------------------------------------- admins
+
+    // The admin allowlist. Membership is checked server-side by isAdmin(), so
+    // no client ever needs to read this — and none may.
+    //
+    // Each document ID is a Firebase Auth UID. Create them from the Firebase
+    // console (or the Admin SDK); the document body can be empty, though
+    // storing an email or display name is handy for auditing. Never store a
+    // password here: Firebase Auth holds credentials, not Firestore.
+    match /admins/{uid} {
+      allow read, write: if false;
+    }
+
+    // ------------------------------------------------------------------ meta
+
+    // A single public document for figures the homepage can show without
+    // exposing report contents, e.g. { reportCount: 42 }.
+    //
+    // Clients may read it and may never write it. Keeping it accurate needs a
+    // Cloud Function on report creation, or a manual update — see
+    // CLAUDE.md. Until something populates it the homepage simply
+    // hides its counter, which is the correct trade: a public count is not
+    // worth exposing every reporter's name and contact number.
+    match /meta/publicStats {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------- catch-all
+
+    // Anything not matched above is denied outright, so a future feature has to
+    // opt in here deliberately rather than inheriting access by accident.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

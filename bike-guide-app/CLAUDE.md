@@ -44,12 +44,54 @@ Unlike the corruption reporting project, **these JS files have real content**.
 
 ## Firebase
 
-`js/firebase-config.js` initialises Firebase from a CDN module. As with the
-sibling project, the web API key is a public identifier rather than a secret —
-but there are **no `firestore.rules` in this project**, so server-side access
-control is unverified. Check before storing anything user-specific.
+`js/firebase-config.js` initialises Firebase from a CDN module. The web API key
+is a public identifier, not a secret — `firestore.rules` is what protects data.
+
+Collections in use: `users/{deviceId}/rides`, `users/{deviceId}/challenge`,
+`premiumRequests`, `premiumUsers/{deviceId}`.
+
+### The identity model is weak — know this before changing rules
+
+There is **no authentication**. A user is a `bikeUserId`, a `crypto.randomUUID()`
+generated in the browser (`index.html`) and kept in localStorage. The rules
+engine cannot verify it: a caller picks whichever ID it likes. So the rules
+**cannot enforce ownership**, and no amount of rewriting them will change that.
+
+What they do achieve:
+
+- **no enumeration** — `list` is denied on `users` and `premiumUsers`, so
+  nobody can walk the collection and harvest everyone's data. Given the
+  identity model this is the single most valuable restriction available.
+- **premium cannot be self-granted** — `premiumUsers` is read-only to clients.
+  If a client could write there it would just set `activated: true`.
+- **payment references are write-only** — `premiumRequests` accepts a create
+  and denies every read, so GCash references cannot be read back out.
+- writes are shape-checked, and unknown collections are denied.
+
+Security therefore rests on the UUID being unguessable: a capability URL. Much
+better than open, but not authentication.
+
+**The real fix is Firebase Anonymous Auth** (`signInAnonymously`), which gives a
+genuine `request.auth.uid` that rules can compare against the document path. It
+is a small code change with one real catch: existing users' localStorage IDs
+will not match their new auth UID, so their ride history is orphaned unless it
+is migrated. That is a product decision, not a mechanical one.
+
+### Testing and deploying rules
+
+Covered by 18 assertions in `../firestore-tests/bikeguide.test.mjs`:
+
+```bash
+cd ../firestore-tests && npm install && npm run test:bikeguide
+```
+
+Add a denial test before loosening a rule. Deployment is manual and not
+automated — until `firebase deploy --only firestore:rules` is run, the rules in
+this repo are not the rules in production.
 
 ## Scope note
 
-`premium.html` implies a paid tier. There is no payment integration in this
-codebase; treat it as a placeholder unless told otherwise.
+`premium.html` implies a paid tier. Payment is manual: the user submits a GCash
+reference, and an admin flips `premiumUsers/{deviceId}.activated` from the
+console. There is no payment-provider integration and no automated verification
+that the reference is real.
