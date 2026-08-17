@@ -61,21 +61,27 @@ Flutter coverage is sparse and often returns no match.
 
 ## CI
 
-- `.github/workflows/autocare-ci.yml` — lint, typecheck, test, migrate, seed,
-  DB tests and build for `autocare`. Path-filtered to `autocare/**`.
-- `.github/workflows/firestore-rules-ci.yml` — runs the 60 security-rules
-  assertions in `firestore-tests/` against the real Firestore emulator.
-  Path-filtered to `firestore-tests/**` and either `firestore.rules`.
-- `.github/workflows/deploy-web.yml` — builds `cyclemind_ai` for web in mock
-  mode and publishes to GitHub Pages.
+Every project now has a workflow, each path-filtered to its own directory:
 
-There is **no CI for `rallyready`**, and none for the static sites' own
-JavaScript — only their Firestore rules are covered. Run `npm run verify` in
-`rallyready` yourself before claiming its checks pass.
+| Workflow | Covers |
+|---|---|
+| `autocare-ci.yml` | lint, typecheck, test, migrate, seed, DB tests, build |
+| `rallyready-ci.yml` | `npm run verify` — typecheck, lint, 341 tests, build |
+| `firestore-rules-ci.yml` | 60 rules assertions against the real Firestore emulator |
+| `static-sites-ci.yml` | parses all JS in the two static sites |
+| `deploy-web.yml` | builds `cyclemind_ai` for web and publishes to Pages |
+
+Known coverage gaps, so nobody assumes more than is there:
+
+- **`cyclemind_ai` is only built, never tested.** `flutter test` runs nowhere,
+  and cannot run in this environment either.
+- **The static sites are syntax-checked, not behaviour-tested.** There are no
+  unit tests for them; `static-sites-ci.yml` catches typos, not logic.
 
 Note that `node --check` does **not** validate syntax: it exits 0 on a
-syntactically invalid file. Use a real parser (acorn, esbuild) if you need to
-confirm a script parses.
+syntactically invalid file. `.github/scripts/check-static-js.mjs` uses
+`vm.SourceTextModule` instead, which genuinely throws on bad syntax — verified
+against a deliberately broken file. Don't "simplify" it back to `node --check`.
 
 ## Conventions
 

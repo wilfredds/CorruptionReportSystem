@@ -56,8 +56,10 @@ see fewer, something is being skipped.
 
 ## Gotchas
 
-- **There is no CI for this project.** Nothing runs `npm run verify` on push,
-  so run it yourself before saying the work is done.
+- `.github/workflows/rallyready-ci.yml` runs `npm run verify` on every push to
+  `main` and every PR touching `rallyready/**`. It runs the same single command
+  you would, rather than reimplementing the steps, so CI and local cannot drift.
+  Still run `verify` locally first — CI is a safety net, not a substitute.
 - Supabase credentials come from environment variables; the app expects them at
   build time via Vite's `import.meta.env`.
 - `npm install` warns about a deprecated transitive `glob@11.1.0`. Harmless.
