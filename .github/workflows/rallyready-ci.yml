@@ -39,10 +39,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Node 22, not 20. This project's test stack requires it:
+      #   jsdom@30  engines ^22.22.2 || ^24.15.0 || >=26.0.0
+      #   undici@8  engines >=22.19.0   (pulled in by jsdom)
+      # On Node 20 every vitest worker dies before running a single test with
+      # "TypeError: webidl.util.markAsUncloneable is not a function", which
+      # reports as "no tests" rather than as a version problem. Do not lower
+      # this to match the autocare workflow.
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: rallyready/package-lock.json
 
