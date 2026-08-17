@@ -1,0 +1,62 @@
+name: RallyReady CI
+
+# Type-checks, lints, tests and builds the RallyReady app.
+#
+# The project already defines `npm run verify` as its single gate — typecheck,
+# lint, test, build in that order — so this workflow runs the same command a
+# developer would, rather than reimplementing the steps and letting the two
+# drift apart.
+#
+# Only runs when something under rallyready/ changes — the other projects in
+# this repository are unrelated and have their own workflow.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "rallyready/**"
+      - ".github/workflows/rallyready-ci.yml"
+  pull_request:
+    paths:
+      - "rallyready/**"
+      - ".github/workflows/rallyready-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: rallyready
+
+jobs:
+  verify:
+    name: Typecheck, lint, test and build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Node 22, not 20. This project's test stack requires it:
+      #   jsdom@30  engines ^22.22.2 || ^24.15.0 || >=26.0.0
+      #   undici@8  engines >=22.19.0   (pulled in by jsdom)
+      # On Node 20 every vitest worker dies before running a single test with
+      # "TypeError: webidl.util.markAsUncloneable is not a function", which
+      # reports as "no tests" rather than as a version problem. Do not lower
+      # this to match the autocare workflow.
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: rallyready/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # typecheck && lint && test && build. Run as separate steps as well as
+      # via `verify` would duplicate work; this keeps CI and local identical.
+      - name: Verify
+        run: npm run verify

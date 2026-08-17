@@ -1,0 +1,61 @@
+name: Static Sites CI
+
+# Syntax-checks the JavaScript in the two static sites,
+# corruption-reporting-system-final and bike-guide-app.
+#
+# Neither has a build step, a bundler or a test suite, so nothing sits between
+# a typo and production. A syntax error in a module is especially quiet: the
+# browser drops the whole script, the page still renders, and only the
+# behaviour goes missing — easy to miss in review and easy to ship.
+#
+# The checker parses every .js file and every inline <script> block without
+# executing any of it, using Node's stdlib only. There is nothing to install.
+#
+# This does NOT verify behaviour — it catches syntax, not logic. Firestore
+# rules for these sites are covered separately by firestore-rules-ci.yml.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "corruption-reporting-system-final/**"
+      - "bike-guide-app/**"
+      - ".github/scripts/check-static-js.mjs"
+      - ".github/workflows/static-sites-ci.yml"
+  pull_request:
+    paths:
+      - "corruption-reporting-system-final/**"
+      - "bike-guide-app/**"
+      - ".github/scripts/check-static-js.mjs"
+      - ".github/workflows/static-sites-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    name: Parse static site JavaScript
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # --experimental-vm-modules enables vm.SourceTextModule, which compiles
+      # ES module source and throws on invalid syntax without running it.
+      #
+      # Do not "simplify" this to `node --check`: that command exits 0 even on
+      # a syntactically invalid file, so it would turn this job into a no-op.
+      - name: Check JavaScript syntax
+        run: >-
+          node --experimental-vm-modules --no-warnings
+          .github/scripts/check-static-js.mjs
+          corruption-reporting-system-final
+          bike-guide-app
