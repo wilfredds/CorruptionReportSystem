@@ -78,10 +78,22 @@ Run them with `cd ../firestore-tests && npm install && npm run test:corruption`.
 
 ### Admin authentication
 
-Admins sign in with **Firebase Authentication** (email + password). To add one:
-create the user in the Firebase console, then add a document to `admins` whose
-**ID is that user's Auth UID**. The body can be empty; an email field is useful
-for auditing. Never store a password in Firestore.
+Admins sign in with **Firebase Authentication**, via
+`signInWithEmailAndPassword` in `admin.html`.
+
+Setup, in order — the dashboard has no working login until all three are done:
+
+1. **Enable the Email/Password provider.** Firebase console → Authentication →
+   Sign-in method → Email/Password → Enable. Without this, no admin user can be
+   created and every sign-in attempt fails.
+2. **Create the user.** Authentication → Users → Add user. Copy the generated
+   **UID**.
+3. **Add the allowlist entry.** Create a document in `admins` whose **ID is that
+   UID**. The body may be empty; an `email` field helps auditing. Repeat 2–3 per
+   admin.
+
+Never store a password in Firestore. Firebase Auth holds credentials; `admins`
+holds only UIDs.
 
 This replaced an earlier scheme that downloaded the whole `admins` collection
 and compared passwords in client-side JavaScript — which exposed every admin
@@ -91,13 +103,20 @@ check again, don't: hiding UI is cosmetic, and only the rules actually gate data
 
 ### Deploying rules
 
-Not automated. Review, then:
+Not automated. `firebase.json` points the CLI at `firestore.rules` and
+`.firebaserc` pins the project to `corruption-reporting-system`, so from this
+directory:
 
 ```bash
+firebase login          # once, per machine
 firebase deploy --only firestore:rules
 ```
 
-Until that is run, the rules in this repo are **not** the rules in production.
+Do this **after** the admin setup above. Deploying first locks admins out of a
+dashboard they cannot yet sign in to.
+
+Until the deploy is run, the rules in this repo are **not** the rules in
+production.
 
 ### Honest copy
 
