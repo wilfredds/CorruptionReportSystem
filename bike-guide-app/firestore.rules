@@ -1,0 +1,115 @@
+rules_version = '2';
+
+// Firestore security rules for Bike Guide PH.
+//
+// Read this first — the identity model is weak by construction.
+//
+// The app has no authentication. A user is identified by `bikeUserId`, a
+// crypto.randomUUID() generated in the browser and kept in localStorage. The
+// rules engine cannot verify that value: whoever sends a request chooses which
+// ID to claim. So these rules CANNOT enforce ownership. What they can do, and
+// do below, is:
+//
+//   * stop one user enumerating or listing everyone else's data
+//   * stop a client granting itself premium
+//   * keep payment references write-only from the browser
+//   * shape-check writes so collections cannot be used as free storage
+//   * deny everything not explicitly allowed
+//
+// Security therefore rests on the UUID being unguessable — a capability URL.
+// That is meaningfully better than open access, but it is not authentication.
+// The fix is Firebase Anonymous Auth (`signInAnonymously`), which yields a real
+// `request.auth.uid` the rules can compare against the document path. It is a
+// small code change, but it would orphan the ride history of existing users
+// whose localStorage ID no longer matches their new auth UID, so it needs a
+// migration plan rather than a quiet swap. See CLAUDE.md.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------- user-owned data
+    //
+    // Per-device ride logs and 30-day challenge progress.
+    //
+    // `get` is allowed (fetch one document you have the ID for) but `list` is
+    // NOT: without a list permission nobody can enumerate the users collection
+    // and walk everyone's rides. This is the single most valuable restriction
+    // available given the identity model.
+
+    match /users/{userId} {
+      // The parent document itself is unused; deny it outright.
+      allow read, write: if false;
+
+      match /rides/{rideId} {
+        allow get, list: if true;   // scoped to this user's subcollection only
+        allow create, update: if isValidRide();
+        allow delete: if true;
+      }
+
+      match /challenge/{dayId} {
+        allow get, list: if true;
+        allow create, update: if isValidChallengeDay();
+        allow delete: if true;
+      }
+    }
+
+    function isValidRide() {
+      let d = request.resource.data;
+      return d.size() <= 20
+        && d.timestamp == request.time
+        && (!('distance' in d) || d.distance is number)
+        && (!('duration' in d) || d.duration is number)
+        && (!('notes' in d) || (d.notes is string && d.notes.size() <= 2000));
+    }
+
+    function isValidChallengeDay() {
+      let d = request.resource.data;
+      return d.size() <= 10
+        && (!('completed' in d) || d.completed is bool);
+    }
+
+    // ------------------------------------------------------- premium requests
+    //
+    // Submitted when a user claims they have paid via GCash. Contains a
+    // payment reference, so it is write-only from the browser: a client may
+    // file a request and may never read one back. Reviewing them is an admin
+    // job, done from the Firebase console or the Admin SDK, neither of which
+    // is bound by these rules.
+
+    match /premiumRequests/{requestId} {
+      allow create: if isValidPremiumRequest();
+      allow read, update, delete: if false;
+    }
+
+    function isValidPremiumRequest() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['deviceId', 'gcashRef', 'amount', 'status', 'submittedAt'])
+        && d.keys().hasAll(['deviceId', 'gcashRef', 'status', 'submittedAt'])
+        // A request always starts pending — a client cannot file a pre-approved one.
+        && d.status == 'pending'
+        && d.submittedAt == request.time
+        && d.deviceId is string && d.deviceId.size() > 0 && d.deviceId.size() <= 100
+        && d.gcashRef is string && d.gcashRef.size() > 0 && d.gcashRef.size() <= 100
+        && (!('amount' in d) || d.amount is number);
+    }
+
+    // ---------------------------------------------------------- premium users
+    //
+    // The entitlement record the app checks on launch. Readable by whoever
+    // knows the ID, and writable by nobody: if a client could write here it
+    // could simply set activated = true and take the paid tier for free.
+    // Only an admin (console / Admin SDK) may grant premium.
+
+    match /premiumUsers/{userId} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------- catch-all
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
