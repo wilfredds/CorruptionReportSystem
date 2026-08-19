@@ -49,7 +49,7 @@ npm run format
 ```
 
 `npm run verify` is the single gate. Prefer it over running the four
-individually. Baseline is **341 tests across 20 files, all passing** — if you
+individually. Baseline is **421 tests across 26 files, all passing** — if you
 see fewer, something is being skipped.
 
 ## What matters here
@@ -65,13 +65,22 @@ see fewer, something is being skipped.
   that assume a second person are out of scope.
 - **Curated third-party video is deliberately absent.** See the README's
   library section and `PROGRESS.md` for the reasoning before adding it.
+- **Safety features are never paywalled.** The warm-up, the daily readiness
+  check and the training-load warning stay free for everyone. `ALWAYS_FREE` in
+  `lib/premium/entitlements.ts` records this, and a test fails the build if one
+  of them turns up in the paid list. Do not move that line.
+- **No payment provider is wired.** Premium is a local entitlement plus an
+  upgrade screen that says so on the page. Anything that looks like it takes
+  money must keep saying it does not until a provider and server-side receipt
+  verification exist.
 
 ## Layout
 
 - `src/features/` — `train`, `progress`, `programs`, `conditioning`,
   `benchmark`, `library`, `auth`, `profile`, `onboarding`, `design-system`
 - `src/lib/` — `audio`, `timer`, `programs`, `data`, `supabase`, `auth`,
-  `figures`, `library`, `share`, `theme.ts`
+  `coach`, `figures`, `games`, `library`, `premium`, `share`, `social`,
+  `theme.ts`
 - `src/store/` — Zustand state · `src/hooks/` · `src/components/`
 - `supabase/schema.sql` — database schema
 - `scripts/generate-seed-sql.mjs` — run via `npm run seed:sql`
