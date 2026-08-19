@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Syntax check for the two static sites' JavaScript.
 //
-// corruption-reporting-system-final and bike-guide-app have no build step, so
-// nothing between a typo and production. A syntax error in a module means the
+// corruption-reporting-system-final, bike-guide-app and portfolio have no build
+// step, so nothing sits between a typo and production. A syntax error in a module means the
 // browser silently drops the whole script — the page renders, the behaviour
 // just never attaches, which is easy to miss in review.
 //

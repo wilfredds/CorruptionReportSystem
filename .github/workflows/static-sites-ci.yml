@@ -1,10 +1,10 @@
 name: Static Sites CI
 
-# Syntax-checks the JavaScript in the two static sites,
-# corruption-reporting-system-final and bike-guide-app.
+# Syntax-checks the JavaScript in the static sites:
+# corruption-reporting-system-final, bike-guide-app and portfolio.
 #
-# Neither has a build step, a bundler or a test suite, so nothing sits between
-# a typo and production. A syntax error in a module is especially quiet: the
+# None of them has a build step, a bundler or a test suite, so nothing sits
+# between a typo and production. A syntax error in a module is especially quiet: the
 # browser drops the whole script, the page still renders, and only the
 # behaviour goes missing — easy to miss in review and easy to ship.
 #
@@ -21,12 +21,14 @@ on:
     paths:
       - "corruption-reporting-system-final/**"
       - "bike-guide-app/**"
+      - "portfolio/**"
       - ".github/scripts/check-static-js.mjs"
       - ".github/workflows/static-sites-ci.yml"
   pull_request:
     paths:
       - "corruption-reporting-system-final/**"
       - "bike-guide-app/**"
+      - "portfolio/**"
       - ".github/scripts/check-static-js.mjs"
       - ".github/workflows/static-sites-ci.yml"
   workflow_dispatch:
@@ -59,3 +61,4 @@ jobs:
           .github/scripts/check-static-js.mjs
           corruption-reporting-system-final
           bike-guide-app
+          portfolio
