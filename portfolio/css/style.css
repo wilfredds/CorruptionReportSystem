@@ -719,3 +719,5 @@ code {
 
 /* The trailing slash in a project title reads as punctuation, not a word. */
 .page-head h1 .slash { color: var(--faint); font-weight: 400; }
+
+.contact-box p strong { color: var(--text); font-weight: 600; }
