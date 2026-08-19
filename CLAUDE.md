@@ -1,6 +1,6 @@
 # CorruptionReportSystem — repository guide
 
-This repository is a **monorepo of five unrelated projects**. Despite the
+This repository is a **monorepo of six unrelated projects**. Despite the
 repository name, most of the code here has nothing to do with corruption
 reporting — the name is historical. There is no shared build, no workspace
 tooling, and no dependency between projects. Treat each directory as its own
@@ -13,9 +13,10 @@ codebase and work inside it.
 | `cyclemind_ai/` | AI cycling coach and bike doctor | Flutter, Riverpod, Firebase | **No — no Flutter SDK** |
 | `corruption-reporting-system-final/` | Corruption reporting site | Static HTML/CSS/JS, Firebase | No build step |
 | `bike-guide-app/` | Cycling guide PWA | Static HTML/CSS/JS, Firebase | No build step |
+| `portfolio/` | Personal portfolio site | Static HTML/CSS/JS | No build step |
 
-Each project has its own `CLAUDE.md` with specifics. Read that one before
-working in it.
+Each project has its own `CLAUDE.md` (or, for `portfolio/`, a `README.md`)
+with specifics. Read that one before working in it.
 
 ## Environment
 
@@ -68,7 +69,7 @@ Every project now has a workflow, each path-filtered to its own directory:
 | `autocare-ci.yml` | lint, typecheck, test, migrate, seed, DB tests, build |
 | `rallyready-ci.yml` | `npm run verify` — typecheck, lint, 341 tests, build |
 | `firestore-rules-ci.yml` | 60 rules assertions against the real Firestore emulator |
-| `static-sites-ci.yml` | parses all JS in the two static sites |
+| `static-sites-ci.yml` | parses all JS in the three static sites |
 | `deploy-web.yml` | builds `cyclemind_ai` for web and publishes to Pages |
 
 Known coverage gaps, so nobody assumes more than is there:
@@ -76,7 +77,8 @@ Known coverage gaps, so nobody assumes more than is there:
 - **`cyclemind_ai` is only built, never tested.** `flutter test` runs nowhere,
   and cannot run in this environment either.
 - **The static sites are syntax-checked, not behaviour-tested.** There are no
-  unit tests for them; `static-sites-ci.yml` catches typos, not logic.
+  unit tests for them; `static-sites-ci.yml` catches typos, not logic. This
+  covers `portfolio/` too.
 
 Note that `node --check` does **not** validate syntax: it exits 0 on a
 syntactically invalid file. `.github/scripts/check-static-js.mjs` uses

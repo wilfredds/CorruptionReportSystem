@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Francis Wilfred Antiporda — Full-stack Developer</title>
+<meta name="description" content="Full-stack developer from the Philippines. Next.js, React, Flutter and Firebase. Five shipped projects: a car-care job system, a badminton training PWA, an AI cycling coach, a cycling guide and a corruption reporting site.">
+<meta name="author" content="Francis Wilfred Antiporda">
+<meta name="theme-color" content="#0a0c0b">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Francis Wilfred Antiporda — Full-stack Developer">
+<meta property="og:description" content="Five shipped projects across Next.js, React, Flutter and Firebase — with the tests and CI to back them.">
+<meta property="og:image" content="assets/img/avatar.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%230a0c0b'/><text y='72' x='16' font-size='62' font-family='monospace' fill='%237ee787'>&gt;</text></svg>">
+<link rel="apple-touch-icon" href="assets/img/avatar-sm.jpg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/boot.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<nav class="nav" aria-label="Primary">
+  <div class="wrap nav-inner">
+    <a class="nav-brand" href="#top"><span class="caret">&gt;</span> francis<span class="caret">_</span></a>
+    <ul class="nav-links">
+      <li><a href="#about">about</a></li>
+      <li><a href="#skills">skills</a></li>
+      <li><a href="#projects">projects</a></li>
+      <li><a href="#timeline">timeline</a></li>
+      <li><a href="#contact">contact</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main">
+<span id="top"></span>
+
+<!-- ============================================================== hero -- -->
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="term" id="hero-term">
+        <div class="term-bar">
+          <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+          <span class="term-title">francis@portfolio: ~</span>
+        </div>
+        <div class="term-body">
+          <span class="line"><span class="prompt">$</span><span class="cmdtext">whoami</span></span>
+          <span class="line out-strong">francis &mdash; full-stack developer, Philippines</span>
+          <span class="line"><span class="prompt">$</span><span class="cmdtext">ls ~/projects</span></span>
+          <span class="line out">autocare/  rallyready/  cyclemind_ai/  bike-guide-app/  corruption-watch/</span>
+          <span class="line"><span class="prompt">$</span><span class="cmdtext">cat status.txt</span></span>
+          <span class="line out">open to full-stack roles and freelance work</span>
+          <span class="line"><span class="prompt">$</span><span class="cursor" aria-hidden="true"></span></span>
+        </div>
+      </div>
+
+      <h1>Francis Wilfred Antiporda</h1>
+      <p class="hero-role">full-stack developer &mdash; web, mobile, and the boring parts in between</p>
+      <p class="hero-blurb">
+        I build software people actually use: a job system that replaced a car shop's
+        paper notebook, a training app for a sport with no coach in the room, and an
+        AI cycling companion. Five projects, shipped, tested and running in CI.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#projects">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          View projects
+        </a>
+        <a class="btn" href="resume.html">Résumé</a>
+        <a class="btn" href="mailto:frncishub@gmail.com">Email me</a>
+      </div>
+    </div>
+
+    <figure class="portrait reveal">
+      <img src="assets/img/portrait.jpg" width="720" height="960"
+           alt="Francis Wilfred Antiporda" fetchpriority="high">
+      <figcaption><span>~/me.jpg</span> <b>online</b></figcaption>
+    </figure>
+  </div>
+</header>
+
+<!-- ============================================================= stats -- -->
+<section class="section" aria-label="At a glance">
+  <div class="wrap">
+    <div class="stats reveal">
+      <div class="stat"><b data-count="5">5</b><span>projects shipped</span></div>
+      <div class="stat"><b data-count="413">413</b><span>automated tests</span></div>
+      <div class="stat"><b data-count="5">5</b><span>CI pipelines</span></div>
+      <div class="stat"><b data-count="3">3</b><span>databases in prod</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= about -- -->
+<section class="section" id="about">
+  <div class="wrap">
+    <div class="section-head">
+      <h2><span class="prompt">$</span>cat about.md</h2>
+      <p>~/about</p>
+    </div>
+
+    <div class="about-grid">
+      <div class="prose reveal">
+        <p>
+          I'm a developer from the Philippines who likes problems with a real person
+          on the other end of them. <strong>AutoCare</strong> exists because a car
+          care shop was tracking every job in a notebook and losing money to
+          arithmetic. <strong>RallyReady</strong> exists because training badminton
+          alone means nobody calls the corners for you. <strong>Bike Guide PH</strong>
+          exists because beginner riders here have nowhere local to learn gearing.
+        </p>
+        <p>
+          I work across the stack &mdash; <strong>Next.js and Prisma</strong> on
+          Postgres, <strong>React and TypeScript</strong> on Supabase,
+          <strong>Flutter and Riverpod</strong> on Firebase &mdash; and I care about
+          the parts that do not demo well: database constraints that make bad data
+          impossible, security rules with assertions behind them, and CI that fails
+          before a user does.
+        </p>
+        <p>
+          Every project here is in one repository with its own pipeline. Nothing on
+          this page is a tutorial clone.
+        </p>
+      </div>
+
+      <aside class="facts reveal">
+        <dl>
+          <dt>location</dt><dd>Philippines</dd>
+          <dt>focus</dt><dd>Full-stack</dd>
+          <dt>languages</dt><dd>TypeScript, Dart</dd>
+          <dt>writes</dt><dd>English, Filipino</dd>
+          <dt>status</dt><dd><span class="ok">open to work</span></dd>
+        </dl>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ skills -- -->
+<section class="section" id="skills">
+  <div class="wrap">
+    <div class="section-head">
+      <h2><span class="prompt">$</span>ls -la ~/skills</h2>
+      <p>~/skills</p>
+    </div>
+
+    <div class="skills">
+      <div class="skill-group reveal">
+        <h3>languages</h3>
+        <ul class="tags">
+          <li>TypeScript</li><li>JavaScript</li><li>Dart</li><li>SQL</li>
+          <li>HTML</li><li>CSS</li><li>Python</li>
+        </ul>
+      </div>
+      <div class="skill-group reveal">
+        <h3>frontend</h3>
+        <ul class="tags">
+          <li>React</li><li>Next.js (App Router)</li><li>Flutter</li><li>Vite</li>
+          <li>Tailwind CSS</li><li>shadcn/ui</li><li>Radix UI</li><li>PWA / Service Workers</li>
+        </ul>
+      </div>
+      <div class="skill-group reveal">
+        <h3>backend &amp; data</h3>
+        <ul class="tags">
+          <li>Prisma</li><li>PostgreSQL</li><li>Firebase / Firestore</li><li>Supabase</li>
+          <li>Cloud Functions</li><li>next-auth</li><li>REST</li>
+        </ul>
+      </div>
+      <div class="skill-group reveal">
+        <h3>testing &amp; tooling</h3>
+        <ul class="tags">
+          <li>Vitest</li><li>node:test</li><li>Playwright</li><li>Firestore emulator</li>
+          <li>GitHub Actions</li><li>ESLint</li><li>Git</li>
+        </ul>
+      </div>
+      <div class="skill-group reveal">
+        <h3>architecture</h3>
+        <ul class="tags">
+          <li>Clean Architecture</li><li>Repository pattern</li><li>Riverpod</li>
+          <li>Server Actions</li><li>Role-based access control</li><li>i18n</li>
+        </ul>
+      </div>
+      <div class="skill-group reveal">
+        <h3>deploy</h3>
+        <ul class="tags">
+          <li>Vercel</li><li>Firebase Hosting</li><li>Neon</li><li>GitHub Pages</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================== projects -- -->
+<section class="section" id="projects">
+  <div class="wrap">
+    <div class="section-head">
+      <h2><span class="prompt">$</span>ls ~/projects</h2>
+      <p>5 directories</p>
+    </div>
+
+    <div class="projects">
+
+      <!-- ---------------------------------------------------- autocare -- -->
+      <article class="card reveal">
+        <a class="card-shot" href="projects/autocare.html" tabindex="-1" aria-hidden="true">
+          <img src="assets/img/shot-autocare.jpg" width="1200" height="750" loading="lazy"
+               alt="">
+        </a>
+        <div class="card-body">
+          <p class="card-kicker">Next.js &middot; Prisma &middot; PostgreSQL</p>
+          <h3><a href="projects/autocare.html">autocare<span class="slash">/</span></a></h3>
+          <p>
+            A job-management system for a car care shop, built to replace a paper
+            notebook. Seven-step wizard, one decision per screen; the running total is
+            computed and can never be typed by hand. Prints a PDF receipt for every job.
+            Bilingual (English / Filipino), role-based, with an activity log of every change.
+          </p>
+          <ul class="tags">
+            <li>Next.js 15</li><li>Prisma</li><li>PostgreSQL</li><li>next-auth</li>
+            <li>next-intl</li><li>Tailwind</li>
+          </ul>
+          <div class="card-links">
+            <a class="btn btn-primary" href="projects/autocare.html">Case study</a>
+            <a class="btn" href="https://github.com/wilfredds/my_projects/tree/main/autocare">Source</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- -------------------------------------------------- rallyready -- -->
+      <article class="card reveal">
+        <a class="card-shot" href="projects/rallyready.html" tabindex="-1" aria-hidden="true">
+          <img src="assets/img/shot-rallyready.jpg" width="1200" height="750" loading="lazy" alt="">
+        </a>
+        <div class="card-body">
+          <p class="card-kicker">React &middot; TypeScript &middot; Supabase</p>
+          <h3><a href="projects/rallyready.html">rallyready<span class="slash">/</span></a></h3>
+          <p>
+            Solo badminton training for a player with no coach and no partner. Every
+            corner call is spoken aloud, so you never look at the screen. Split-step
+            timing, audible fake calls, periodised programs, and a training-load model
+            that tells you when to back off. Installable, and the whole trainer works offline.
+          </p>
+          <ul class="tags">
+            <li>React 19</li><li>TypeScript</li><li>Vite</li><li>Supabase</li>
+            <li>Vitest &middot; 341 tests</li><li>PWA</li>
+          </ul>
+          <div class="card-links">
+            <a class="btn btn-primary" href="projects/rallyready.html">Case study</a>
+            <a class="btn" href="https://github.com/wilfredds/my_projects/tree/main/rallyready">Source</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- ------------------------------------------------- cyclemind_ai -- -->
+      <article class="card reveal">
+        <span class="card-shot is-empty" aria-hidden="true">
+          $ flutter build web<br>
+          <span class="ok">▸</span> built by CI, not by screenshot<br>
+          <span class="faint">lib/ &middot; clean architecture &middot; 6 features</span>
+        </span>
+        <div class="card-body">
+          <p class="card-kicker">Flutter &middot; Riverpod &middot; Firebase</p>
+          <h3><a href="projects/cyclemind-ai.html">cyclemind_ai<span class="slash">/</span></a></h3>
+          <p>
+            An AI cycling coach and bike doctor in one Flutter app. Photograph a bike
+            and a vision model returns a health report; the coach reads your rides and
+            plans the next one. Clean Architecture throughout &mdash; every external
+            dependency sits behind an interface, so the entire app runs on mocks with
+            zero config and no API key ever ships in the binary.
+          </p>
+          <ul class="tags">
+            <li>Flutter</li><li>Dart</li><li>Riverpod</li><li>Firebase</li>
+            <li>Cloud Functions</li><li>Claude API</li>
+          </ul>
+          <div class="card-links">
+            <a class="btn btn-primary" href="projects/cyclemind-ai.html">Case study</a>
+            <a class="btn" href="https://github.com/wilfredds/my_projects/tree/main/cyclemind_ai">Source</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- ---------------------------------------------- bike-guide-app -- -->
+      <article class="card reveal">
+        <a class="card-shot" href="projects/bike-guide-ph.html" tabindex="-1" aria-hidden="true">
+          <img src="assets/img/shot-bikeguide.jpg" width="1200" height="750" loading="lazy" alt="">
+        </a>
+        <div class="card-body">
+          <p class="card-kicker">PWA &middot; Vanilla JS &middot; Firebase</p>
+          <h3><a href="projects/bike-guide-ph.html">bike-guide-app<span class="slash">/</span></a></h3>
+          <p>
+            A cycling companion for Filipino beginner-to-intermediate riders: a gear
+            simulator that explains which ring and cog to use on a climb, curated
+            Philippine routes, GPS ride recording and a 30-day challenge. No framework,
+            no bundler &mdash; sixteen pages of hand-written HTML, CSS and JavaScript
+            that installs like an app and works offline.
+          </p>
+          <ul class="tags">
+            <li>Vanilla JS</li><li>Service Worker</li><li>Firebase</li>
+            <li>Geolocation API</li><li>Offline-first</li>
+          </ul>
+          <div class="card-links">
+            <a class="btn btn-primary" href="projects/bike-guide-ph.html">Case study</a>
+            <a class="btn" href="https://github.com/wilfredds/my_projects/tree/main/bike-guide-app">Source</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- ----------------------------------------- corruption reporting -- -->
+      <article class="card reveal">
+        <a class="card-shot" href="projects/corruption-watch-ph.html" tabindex="-1" aria-hidden="true">
+          <img src="assets/img/shot-crs.jpg" width="1200" height="750" loading="lazy" alt="">
+        </a>
+        <div class="card-body">
+          <p class="card-kicker">Firestore &middot; Security rules &middot; Static</p>
+          <h3><a href="projects/corruption-watch-ph.html">corruption-watch-ph<span class="slash">/</span></a></h3>
+          <p>
+            A public reporting site: a citizen picks a department, describes what
+            happened, and can file anonymously; an admin console reviews what comes in.
+            The interesting work is invisible &mdash; the Firestore rules that let anyone
+            write a report but nobody read someone else's, with 60 assertions run against
+            the real emulator in CI.
+          </p>
+          <ul class="tags">
+            <li>Firebase</li><li>Firestore rules</li><li>Emulator tests</li>
+            <li>Vanilla JS</li><li>Anonymous submissions</li>
+          </ul>
+          <div class="card-links">
+            <a class="btn btn-primary" href="projects/corruption-watch-ph.html">Case study</a>
+            <a class="btn" href="https://github.com/wilfredds/my_projects/tree/main/corruption-reporting-system-final">Source</a>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================== timeline -- -->
+<section class="section" id="timeline">
+  <div class="wrap">
+    <div class="section-head">
+      <h2><span class="prompt">$</span>git log --oneline --reverse</h2>
+      <p>first commit dates</p>
+    </div>
+
+    <ol class="timeline reveal">
+      <li>
+        <span class="hash">a71c0de</span>
+        <span class="when">2025-11</span>
+        <span class="what">Corruption Watch PH — first project in the repo</span>
+        <span class="note">Learning Firebase in public: a public report form, an admin console, and the first time security rules mattered more than the UI.</span>
+      </li>
+      <li>
+        <span class="hash">3f9b214</span>
+        <span class="when">2026-05</span>
+        <span class="what">Bike Guide PH — sixteen pages, no framework</span>
+        <span class="note">A PWA built the hard way to understand what frameworks do for you: service worker caching, offline fallback, and a gear-ratio simulator drawn by hand.</span>
+      </li>
+      <li>
+        <span class="hash">c04e8aa</span>
+        <span class="when">2026-06</span>
+        <span class="what">CycleMind AI — first Flutter app, first AI backend</span>
+        <span class="note">Clean Architecture with every dependency behind an interface, and the API key moved server-side into Cloud Functions where it belongs.</span>
+      </li>
+      <li>
+        <span class="hash">d82f157</span>
+        <span class="when">2026-08</span>
+        <span class="what">AutoCare — a real client, a real shop</span>
+        <span class="note">Next.js, Prisma and PostgreSQL for HI-OCTEN CAR CARE SERVICES. Money maths in one place, receipts, roles, an audit log, and a Filipino translation for the people using it.</span>
+      </li>
+      <li>
+        <span class="hash">6b1d90f</span>
+        <span class="when">2026-08</span>
+        <span class="what">RallyReady — five phases, 341 tests</span>
+        <span class="note">The most complete thing I have built: audio-first drills, a benchmark, conditioning, periodised programs and progress tracking, all verified by <code>npm run verify</code>.</span>
+      </li>
+      <li>
+        <span class="hash">9e1a721</span>
+        <span class="when">2026-08</span>
+        <span class="what">CI for all five, then this portfolio</span>
+        <span class="note">Every project got a path-filtered pipeline — lint, typecheck, tests, migrations, security rules — so nothing ships on trust alone.</span>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- =========================================================== contact -- -->
+<section class="section" id="contact">
+  <div class="wrap">
+    <div class="contact-box reveal">
+      <h2><span class="prompt">$</span>./say-hello.sh</h2>
+      <p>
+        I'm open to full-stack roles and freelance work. The fastest way to reach me
+        is email — I answer everything.
+      </p>
+      <div class="contact-actions">
+        <a class="btn btn-primary" href="mailto:frncishub@gmail.com">frncishub@gmail.com</a>
+        <a class="btn" href="https://github.com/wilfredds" rel="me noopener">GitHub</a>
+        <a class="btn" href="resume.html">Résumé</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer wrap">
+  <span>&copy; <span id="year">2026</span> Francis Wilfred Antiporda</span>
+  <span>Built by hand — no framework, no build step.</span>
+</footer>
+
+<script src="js/site.js" defer></script>
+</body>
+</html>
