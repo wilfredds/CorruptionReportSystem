@@ -16,6 +16,17 @@ export const METRIC_COMPLETED = 'completed'
 export const METRIC_DECEPTION = 'deception'
 export const METRIC_BENCHMARK_LEVEL = 'benchmark_level'
 
+/**
+ * Enough to replay a session exactly, for challenges. The engine is
+ * seed-deterministic, so these five numbers reproduce the identical corner
+ * order on somebody else's phone.
+ */
+export const METRIC_SEED = 'seed'
+export const METRIC_ROUNDS = 'cfg_rounds'
+export const METRIC_WORK_SEC = 'cfg_work'
+export const METRIC_REST_SEC = 'cfg_rest'
+export const METRIC_INTERVAL_MS = 'cfg_interval'
+
 export interface WeeklyBucket {
   weekIndex: number
   /** Monday of the week, `YYYY-MM-DD`. */

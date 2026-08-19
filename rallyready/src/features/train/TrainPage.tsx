@@ -1,5 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
-import { Flame, GraduationCap, Home, Play, SlidersHorizontal, Sparkles, X, Zap } from 'lucide-react'
+import {
+  Flame,
+  Gamepad2,
+  GraduationCap,
+  Home,
+  Play,
+  SlidersHorizontal,
+  Sparkles,
+  X,
+  Zap,
+} from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -16,11 +26,13 @@ import { buildLibrary } from '@/lib/library/entries'
 import { configFromDrill, estimateDurationSec } from '@/lib/timer/plan'
 import { formatCompactDuration, pluralize } from '@/lib/utils'
 import { useDrillConfigStore } from '@/store/drillConfigStore'
+import { usePremium } from '@/store/premiumStore'
 import { useUiStore } from '@/store/uiStore'
 
 import { TodayCard } from '../programs/components/TodayCard'
 import { CueSettingsDialog } from './components/CueSettingsDialog'
 import { DrillCard } from './components/DrillCard'
+import { CoachCard } from './components/CoachCard'
 import { FocusGrid } from './components/FocusGrid'
 import { ReadinessCard } from './components/ReadinessCard'
 import { WarmUpBar } from './components/WarmUpBar'
@@ -34,6 +46,7 @@ export function TrainPage() {
   const setupDismissed = useUiStore((state) => state.setupPromptDismissed)
   const dismissSetup = useUiStore((state) => state.dismissSetupPrompt)
   const storedLevel = useUiStore((state) => state.browseLevel)
+  const premium = usePremium()
   const [tab, setTab] = useState<Tab>('drills')
   const [homeOnly, setHomeOnly] = useState(false)
 
@@ -150,15 +163,23 @@ export function TrainPage() {
           everything below reads differently once the app knows how you feel. */}
       {!isNewHere && <ReadinessCard />}
 
+      {/* Then the instruction the check-in feeds. */}
+      {!isNewHere && <CoachCard />}
+
       <TodayCard />
 
       {isLoading && <p className="text-muted-foreground text-sm">Loading drills…</p>}
 
-      {/* Withheld on a first visit. "Start here: Six-Corner Shadow,
-          Intermediate" sitting directly under "never played before, start with
-          the basics" is two pieces of advice contradicting each other, and it
-          puts a second accent-gradient card immediately below the first. */}
-      {featured && !isNewHere && (
+      {/*
+       * The fallback hero, for anyone the coach is not deciding for.
+       *
+       * Withheld on a first visit — "Start here: Six-Corner Shadow,
+       * Intermediate" under "never played before" is two pieces of advice
+       * contradicting each other — and withheld again once Premium is on,
+       * because the coach card above has already answered this question and two
+       * competing "do this" cards answer it worse than either alone.
+       */}
+      {featured && !isNewHere && !premium.has('coach') && (
         <Card className="border-primary/40 from-accent/60 mb-6 overflow-hidden bg-gradient-to-br to-transparent">
           <CardContent className="flex flex-col gap-4 p-5">
             <div>
@@ -245,6 +266,24 @@ export function TrainPage() {
         </p>
         <FocusGrid entries={library} level={browseLevel} />
       </section>
+
+      <Card className="mb-8">
+        <CardContent className="flex items-center gap-3 p-4">
+          <span className="bg-sprint/15 text-sprint grid size-10 shrink-0 place-items-center rounded-xl">
+            <Gamepad2 className="size-5" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold">Reflex Rush</p>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              Thirty seconds, tap the corner that lights up. The only part of this app that is
+              purely for fun.
+            </p>
+          </div>
+          <Button asChild size="sm" className="shrink-0">
+            <Link to="/play/reflex">Play</Link>
+          </Button>
+        </CardContent>
+      </Card>
 
       <section aria-labelledby="catalogue">
         <div className="mb-4 flex items-center justify-between gap-3">

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef } from 'react'
 
 import { badgeStates, evaluateBadges, type BadgeInput, type BadgeState } from '@/lib/data/badges'
 import { useRepositories } from '@/lib/data/context'
+import { computeRating, type PlayerRating } from '@/lib/coach/rating'
 import { computeLoad, type LoadSummary } from '@/lib/data/load'
 import { computeStats, type TrainingStats } from '@/lib/data/stats'
 import { EMPTY_STREAK } from '@/lib/data/streaks'
@@ -23,6 +24,7 @@ export interface TrainingData {
   sessions: Session[]
   stats: TrainingStats
   load: LoadSummary
+  rating: PlayerRating
   readiness: ReadinessCheck[]
   streak: Streak
   benchmarks: Benchmark[]
@@ -77,6 +79,10 @@ export function useTrainingData(): TrainingData {
   const stats = useMemo(() => computeStats(sessions, metrics), [sessions, metrics])
   const load = useMemo(() => computeLoad(sessions, metrics), [sessions, metrics])
   const readiness = useMemo(() => readinessQuery.data ?? [], [readinessQuery.data])
+  const rating = useMemo(
+    () => computeRating({ stats, streak, load, benchmarks }),
+    [stats, streak, load, benchmarks],
+  )
 
   const badgeInput = useMemo<BadgeInput>(
     () => ({
@@ -131,6 +137,7 @@ export function useTrainingData(): TrainingData {
     sessions,
     stats,
     load,
+    rating,
     readiness,
     streak,
     benchmarks,

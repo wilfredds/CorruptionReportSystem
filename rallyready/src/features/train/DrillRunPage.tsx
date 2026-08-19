@@ -19,7 +19,16 @@ import { useRepositories } from '@/lib/data/context'
 import { findExercise } from '@/lib/data/seed/exercises'
 import { isConditioning, isPrepOrRecovery } from '@/lib/data/seed/drills'
 import { ADJUSTMENT_SCALE } from '@/lib/data/readiness'
-import { METRIC_CALLS, METRIC_COMPLETED, METRIC_DECEPTION } from '@/lib/data/stats'
+import {
+  METRIC_CALLS,
+  METRIC_COMPLETED,
+  METRIC_DECEPTION,
+  METRIC_INTERVAL_MS,
+  METRIC_REST_SEC,
+  METRIC_ROUNDS,
+  METRIC_SEED,
+  METRIC_WORK_SEC,
+} from '@/lib/data/stats'
 import { localDateKey } from '@/lib/data/streaks'
 import type { Drill } from '@/lib/data/types'
 import { cornerIdsForLayout } from '@/lib/timer/corners'
@@ -182,6 +191,15 @@ function Runner({ drill }: { drill: Drill }) {
             // Recorded per session so the badge engine can count Deception work
             // without having to know what the drill is configured like today.
             { metricKey: METRIC_DECEPTION, metricValue: drillMode === 'deception' ? 1 : 0 },
+            // What it would take to replay this session exactly on another
+            // phone. Recorded here rather than reconstructed later, because the
+            // settings can be changed afterwards and a challenge that does not
+            // match what you actually did is worse than no challenge.
+            { metricKey: METRIC_SEED, metricValue: seed },
+            { metricKey: METRIC_ROUNDS, metricValue: config?.rounds ?? 0 },
+            { metricKey: METRIC_WORK_SEC, metricValue: config?.workSec ?? 0 },
+            { metricKey: METRIC_REST_SEC, metricValue: config?.restSec ?? 0 },
+            { metricKey: METRIC_INTERVAL_MS, metricValue: config?.intervalMs ?? 0 },
           ],
         )
         navigate(`/session/${session.id}`, { replace: true })
@@ -191,7 +209,7 @@ function Runner({ drill }: { drill: Drill }) {
         navigate('/', { replace: true })
       }
     },
-    [drillMode, drill, markWarmedUp, navigate, repositories],
+    [config, drillMode, drill, markWarmedUp, navigate, repositories, seed],
   )
 
   const runner = useDrillRunner({

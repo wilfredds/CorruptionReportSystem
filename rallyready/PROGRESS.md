@@ -16,10 +16,11 @@ the way.
 | 4 — Multi-week programs                 | ✅ Done                        |
 | 5 — Curated library                     | ✅ Done                        |
 | 6 — Load, readiness, why                | ✅ Done                        |
-| **7 — Finding your way in**             | ✅ **Done — ready for review** |
+| 7 — Finding your way in                 | ✅ Done                        |
+| **8 — Coach, rating, game, premium**    | ✅ **Done — ready for review** |
 
-All seven phases are built. `npm run verify` is green: 0 type errors, 0 lint
-errors/warnings, 341 unit tests passing, production build clean.
+All eight phases are built. `npm run verify` is green: 0 type errors, 0 lint
+errors/warnings, 421 unit tests passing, production build clean.
 
 Earlier phases, one line each — the detail is in the git history:
 
@@ -30,6 +31,79 @@ Earlier phases, one line each — the detail is in the git history:
   catalogue, and drawn demos.
 - **4** — the periodiser, four built-in programs, and today's session on Train.
 - **5** — the technique reference and one filterable library over everything.
+
+---
+
+## Phase 8 — a coach, a number, a game, and a price
+
+The feedback was "it is getting boring and plain", twice, and a request for an
+algorithm, something social, a mini-game and a premium tier. The boredom
+complaint was the real signal: the app had become an excellent set of
+instruments and still gave the player nothing to chase.
+
+**The coach decides.** `lib/coach/pick.ts` takes readiness, load status, the
+program, the neglected-drill history, the benchmark clock and the level, and
+returns one instruction with one reason. Everything it needs already existed —
+the player was just being asked to hold all of it in their head and choose.
+A coach does not hand you a catalogue. It refuses to train you at all on a
+plan's rest day or after two sessions, puts the program ahead of its own
+preferences, and drops the retest suggestion on a day it has already told you
+to back off.
+
+**A rating that goes up.** 0–1000 from five parts — consistency, volume,
+sharpness, engine, range — through six tiers from Newcomer to Machine.
+Deliberately hard to farm: consistency is capped by _weeks_, so six sessions in
+one day buys nothing that six weeks does, and sharpness measures improvement
+against your own earliest sessions so a beginner is not punished for being slow
+in absolute terms.
+
+**Reflex Rush.** Thirty seconds, tap the corner that lights up. Fast reads are
+worth ten times a slow one, wrong taps cost you, and it is the one thing a solo
+player genuinely cannot train against a wall. Kept out of the training
+repositories entirely: a streak you can hold by playing a phone game is a streak
+that means nothing.
+
+**Challenges, with no server.** The engine has been seed-deterministic since
+phase one, which turns out to be the entire feature: a short code carrying a
+drill, four settings and a seed reproduces the identical corner order on someone
+else's phone, so "beat my score" is a fair contest. Codes use a base-32 alphabet
+with no O/0 or I/1, and settings are clamped on the way in — a hand-edited code
+must not be able to start a nine-hour drill.
+
+### The premium line, and where it does not fall
+
+Two rules decided it. **Nothing that prevents an injury is ever paywalled** —
+the warm-up, the readiness check and the load warning are free for everyone, for
+ever, and there is a test that fails the build if one of them turns up in the
+paid list. And **the free app has to be good on its own**: every drill, the
+whole reference, the benchmark, the game and your full history are free.
+
+Premium buys the judgement on top — being told what to do today and why, the
+rating breakdown, every program, and sending challenges. Taking a challenge is
+free even though sending one is not, because a social loop that needs both
+people to pay is not a loop.
+
+Bundles are ₱99 / ₱199 / ₱599 for one, three and twelve months, against roughly
+₱800 for a single coaching session locally.
+
+**No payments are connected, and the page says so above the prices rather than
+below them.** The entitlement lives in local storage, which anyone who opens the
+devtools can switch on; a real subscription needs a provider and a server that
+verifies the receipt. The store is shaped so that is a small change rather than
+a rewrite. A screen that looks like a checkout and quietly does nothing is how
+you lose someone's trust permanently.
+
+### Found while building it
+
+- The challenge separator was a hyphen, which silently destroyed every code:
+  `encodeURIComponent` leaves hyphens alone because they are unreserved, so
+  "six-corner-shadow" split into three fields. It is a comma now, chosen
+  specifically because the escaping removes it from the values.
+- The game's first timing loop scheduled itself with `setTimeout` recursion and
+  read a ref during render. Rewritten as a single animation frame asking "what
+  should be on screen now?" — simpler, and impossible to leak timers.
+- `Date.now()` in a React render is impure. The benchmark clock moved into
+  `pickToday`, where the reference time is an injectable parameter.
 
 ---
 

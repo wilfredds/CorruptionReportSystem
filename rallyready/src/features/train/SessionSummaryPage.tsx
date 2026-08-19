@@ -10,8 +10,17 @@ import { Card, CardContent } from '@/components/ui/card'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useRepositories } from '@/lib/data/context'
 import { METRIC_RPE } from '@/lib/data/load'
+import {
+  METRIC_INTERVAL_MS,
+  METRIC_REST_SEC,
+  METRIC_ROUNDS,
+  METRIC_SEED,
+  METRIC_WORK_SEC,
+} from '@/lib/data/stats'
 import { formatDuration, pluralize } from '@/lib/utils'
 
+import { ChallengeButton } from '../social/ChallengeButton'
+import { ChallengeResult } from '../social/ChallengeResult'
 import { ProgramDayPrompt } from '../programs/components/ProgramDayPrompt'
 import { RpePrompt } from './components/RpePrompt'
 import { ShareSessionButton } from './components/ShareSessionButton'
@@ -71,6 +80,24 @@ export function SessionSummaryPage() {
   const calls = metrics.find((metric) => metric.metricKey === 'calls_answered')?.metricValue ?? 0
   const finished = metrics.find((metric) => metric.metricKey === 'completed')?.metricValue === 1
   const rpe = metrics.find((metric) => metric.metricKey === METRIC_RPE)?.metricValue ?? null
+
+  // Everything needed to hand this exact session to somebody else. Absent on
+  // sessions logged before challenges existed, which is why it is optional.
+  const metric = (key: string) => metrics.find((entry) => entry.metricKey === key)?.metricValue
+  const seed = metric(METRIC_SEED)
+  const replayable =
+    seed !== undefined && drill
+      ? {
+          drill: drill.slug,
+          seed,
+          rounds: metric(METRIC_ROUNDS) ?? session.roundsCompleted,
+          workSec: metric(METRIC_WORK_SEC) ?? 30,
+          restSec: metric(METRIC_REST_SEC) ?? 30,
+          intervalMs: metric(METRIC_INTERVAL_MS) ?? 1400,
+          target: calls,
+          from: null,
+        }
+      : null
 
   return (
     <motion.div
@@ -133,6 +160,12 @@ export function SessionSummaryPage() {
       {/* Above everything else the screen offers: the rating is worth almost
           nothing an hour later, and the streak card will still be there. */}
       <RpePrompt sessionId={session.id} durationSec={session.durationSec} initial={rpe} />
+
+      {/* Did you beat the challenge you took? Answered before anything else,
+          because it is the only reason this screen was opened. */}
+      <ChallengeResult drillSlug={drill?.slug} calls={calls} />
+
+      {replayable && drill && <ChallengeButton challenge={replayable} drillName={drill.name} />}
 
       <ProgramDayPrompt drillSlug={drill?.slug} />
 

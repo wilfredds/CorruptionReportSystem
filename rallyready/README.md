@@ -5,11 +5,14 @@ partner. Guided footwork drills, conditioning, progression tracking, structured
 programs and a vetted library — in one place, instead of scattered across
 YouTube tabs.
 
-**All five phases are complete** — the guided drill trainer, accounts, progress
+**Eight phases are complete** — the guided drill trainer, accounts, progress
 tracking, the fitness benchmark, stamina/conditioning workouts, periodised
-multi-week programs, and the reference library. One thing the brief asked for is
-deliberately absent: curated third-party video. See
-[the library](#the-library) and `PROGRESS.md` for why.
+multi-week programs, the reference library, training load and readiness, the
+goal-first catalogue and drawn fundamentals, and a coach that decides your day.
+Two things are deliberately absent: curated third-party video (see
+[the library](#the-library)), and a payment provider — the Premium tier is built
+and its upgrade screen says plainly that nothing charges you yet. `PROGRESS.md`
+has the reasoning for both.
 
 ---
 
@@ -67,6 +70,21 @@ deliberately absent: curated third-party video. See
   same backup twice changes nothing.
 - **Share a session.** Drawn as an image and handed to the OS share sheet, which
   is what reaches Messenger, Facebook and Instagram.
+- **A coach that decides.** Readiness, workload, what you have neglected, your
+  program and the benchmark clock all collapse into one instruction with one
+  reason: do this today, and here is why. It will refuse to train you on a rest
+  day, and it puts the plan ahead of its own preferences.
+- **A rating that goes up.** 0–1000 from consistency, volume, sharpness, engine
+  and range, through six tiers. Hard to farm on purpose — consistency is
+  counted in weeks, so six sessions in one day buys nothing that six weeks does.
+- **Reflex Rush.** Thirty seconds, tap the corner that lights up. The one thing
+  a solo player cannot train against a wall, measured to the millisecond. It is
+  also the only part of the app that exists purely to be fun, and it never
+  touches your training log.
+- **Challenge anyone, with no server.** The engine has always been
+  seed-deterministic, so a short code carrying a drill and a seed reproduces the
+  identical corner order on someone else's phone. "Beat my score" becomes a fair
+  contest that fits in a chat message.
 - **Start from what you want, not from a list.** Eight goals in your own words —
   "I want to be quicker", "I want to last three games" — each opening onto
   everything that trains it, filtered to your level. A flat catalogue only helps

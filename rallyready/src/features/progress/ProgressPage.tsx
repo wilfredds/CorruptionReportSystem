@@ -29,13 +29,14 @@ import { formatDuration, pluralize } from '@/lib/utils'
 
 import { AXIS_TICK, CHART, TOOLTIP_STYLE } from './chartTheme'
 import { LoadStatusStrip } from './components/LoadStatusStrip'
+import { RatingCard } from './components/RatingCard'
 import { ReadinessTrend } from './components/ReadinessTrend'
 import { StreakCalendar } from './components/StreakCalendar'
 import { TrophyCase } from './components/TrophyCase'
 import { useTrainingData } from './useTrainingData'
 
 export function ProgressPage() {
-  const { loading, stats, load, readiness, streak, benchmarks, badges, earnedCount } =
+  const { loading, stats, load, rating, readiness, streak, benchmarks, badges, earnedCount } =
     useTrainingData()
 
   const hasHistory = stats.sessionCount > 0
@@ -146,6 +147,8 @@ export function ProgressPage() {
 
       {!loading && hasHistory && (
         <div className="space-y-5">
+          <RatingCard rating={rating} />
+
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Stat
               icon={<Flame className="size-4" />}

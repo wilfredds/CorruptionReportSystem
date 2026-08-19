@@ -23,6 +23,9 @@ import { ProgramDetailPage } from '@/features/programs/ProgramDetailPage'
 import { ProgramsPage } from '@/features/programs/ProgramsPage'
 import { DrillRunPage } from '@/features/train/DrillRunPage'
 import { DrillSetupPage } from '@/features/train/DrillSetupPage'
+import { ReflexRushPage } from '@/features/games/ReflexRushPage'
+import { PremiumPage } from '@/features/premium/PremiumPage'
+import { ChallengePage } from '@/features/social/ChallengePage'
 import { FocusPage } from '@/features/train/FocusPage'
 import { SessionSummaryPage } from '@/features/train/SessionSummaryPage'
 import { TrainPage } from '@/features/train/TrainPage'
@@ -79,6 +82,10 @@ function AppRoutes() {
           <Route path="/" element={<TrainPage />} />
           <Route path="/train/:slug" element={<DrillSetupPage />} />
           <Route path="/focus/:id" element={<FocusPage />} />
+          <Route path="/play/reflex" element={<ReflexRushPage />} />
+          <Route path="/premium" element={<PremiumPage />} />
+          <Route path="/challenge" element={<ChallengePage />} />
+          <Route path="/challenge/:code" element={<ChallengePage />} />
           <Route path="/session/:id" element={<SessionSummaryPage />} />
           <Route path="/progress" element={<ProgressPage />} />
           <Route path="/benchmark" element={<BenchmarkPage />} />
