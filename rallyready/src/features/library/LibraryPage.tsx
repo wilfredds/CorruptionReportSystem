@@ -2,11 +2,14 @@ import { useQuery } from '@tanstack/react-query'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
+import { EmptyState } from '@/components/EmptyState'
 import { PageHeader } from '@/components/PageHeader'
+import { StaggerItem } from '@/components/motion/StaggerItem'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Segmented } from '@/components/ui/segmented'
+import { SkeletonCard } from '@/components/ui/skeleton'
 import { useRepositories } from '@/lib/data/context'
 import type { DrillCategory, DrillLocation, SkillLevel } from '@/lib/data/types'
 import type { PracticeMode } from '@/lib/data/seed/technique'
@@ -185,24 +188,31 @@ export function LibraryPage() {
         </div>
       )}
 
-      {isLoading && <p className="text-muted-foreground text-sm">Loading the library…</p>}
-
-      {!isLoading && results.length === 0 ? (
-        <div className="py-12 text-center">
-          <p className="font-medium">Nothing matches that</p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Try fewer filters, or search for a cue rather than a drill name.
-          </p>
-          <Button variant="outline" className="mt-4" onClick={() => setFilters(EMPTY_FILTERS)}>
-            Clear everything
-          </Button>
-        </div>
+      {isLoading ? (
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {Array.from({ length: 6 }, (_, index) => (
+            <li key={index}>
+              <SkeletonCard />
+            </li>
+          ))}
+        </ul>
+      ) : results.length === 0 ? (
+        <EmptyState
+          illustration="shuttle"
+          title="Nothing matches that"
+          body="Try fewer filters, or search for a cue rather than a drill name."
+          action={
+            <Button variant="outline" onClick={() => setFilters(EMPTY_FILTERS)}>
+              Clear everything
+            </Button>
+          }
+        />
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
-          {results.map((entry) => (
-            <li key={entry.id}>
+          {results.map((entry, index) => (
+            <StaggerItem key={entry.id} index={index}>
               <EntryCard entry={entry} />
-            </li>
+            </StaggerItem>
           ))}
         </ul>
       )}

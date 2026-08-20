@@ -169,22 +169,42 @@ export function CourtBoard({
 
         return (
           <g key={zone.id}>
+            {/* A soft halo the size of the pip, so peripheral vision finds the
+                target before the eye has focused on it. */}
+            {isActive && (
+              <circle
+                cx={cx}
+                cy={cy}
+                r={PIP_R}
+                className={resting ? 'fill-rest' : 'fill-work'}
+                opacity="0.14"
+              />
+            )}
+
             <circle
               cx={cx}
               cy={cy}
-              r={isActive ? ZONE_R_ACTIVE : ZONE_R}
+              r={ZONE_R}
               className={cn(
-                'transition-[r,fill-opacity] duration-150',
+                'transition-transform duration-150',
                 isActive
                   ? resting
                     ? 'fill-rest'
                     : 'fill-work'
                   : isEnabled
-                    ? 'fill-foreground/10 stroke-foreground/25'
+                    ? 'fill-foreground/12 stroke-foreground/35'
                     : 'fill-transparent stroke-foreground/10',
               )}
               strokeWidth="0.7"
               strokeDasharray={isEnabled ? undefined : '1.5 1.5'}
+              // Grown with a transform rather than by animating `r`: changing
+              // the radius is a geometry change, and this is the one screen
+              // where a paint has to land inside a frame every single time.
+              style={{
+                transformBox: 'fill-box',
+                transformOrigin: 'center',
+                transform: isActive ? `scale(${ZONE_R_ACTIVE / ZONE_R})` : undefined,
+              }}
             />
 
             {/* Countdown pip: drains around the live target as its slot runs out. */}
@@ -217,12 +237,17 @@ export function CourtBoard({
         strokeWidth="0.7"
         strokeDasharray="1.6 1.4"
       />
+      {/*
+       * The marker moves every frame, so it carries no filter: a `drop-shadow`
+       * is a full repaint of the SVG on each one. A contrasting ring separates
+       * it from whatever it is passing over for free.
+       */}
       <circle
         cx={player.x}
         cy={player.y}
-        r="3.2"
-        className={cn(resting ? 'fill-rest' : 'fill-foreground', 'drop-shadow')}
-        opacity="0.9"
+        r="3.6"
+        className={cn(resting ? 'fill-rest' : 'fill-foreground', 'stroke-background')}
+        strokeWidth="1.1"
       />
 
       {/* Zone numbers go last so the base marker can never sit on top of one. */}

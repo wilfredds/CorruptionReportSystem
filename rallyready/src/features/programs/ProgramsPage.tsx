@@ -3,9 +3,12 @@ import { CalendarRange, Home, MapPin, Plus, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { PageHeader } from '@/components/PageHeader'
+import { Pressable } from '@/components/motion/Pressable'
+import { StaggerItem } from '@/components/motion/StaggerItem'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { SkeletonCard } from '@/components/ui/skeleton'
 import { useRepositories } from '@/lib/data/context'
 import type { Program } from '@/lib/data/types'
 import { PHASE_LABEL } from '@/lib/programs/periodise'
@@ -79,16 +82,24 @@ export function ProgramsPage() {
         </Card>
       )}
 
-      {isLoading && <p className="text-muted-foreground text-sm">Loading programs…</p>}
+      {isLoading && (
+        <ul className="space-y-3">
+          {Array.from({ length: 3 }, (_, index) => (
+            <li key={index}>
+              <SkeletonCard />
+            </li>
+          ))}
+        </ul>
+      )}
 
       {mine.length > 0 && (
         <section className="mb-8">
           <h2 className="mb-3 text-sm font-semibold tracking-wide uppercase">Your programs</h2>
           <ul className="space-y-3">
-            {mine.map((program) => (
-              <li key={program.id}>
+            {mine.map((program, index) => (
+              <StaggerItem key={program.id} index={index}>
                 <ProgramCard program={program} suits={suits(program)} owned />
-              </li>
+              </StaggerItem>
             ))}
           </ul>
         </section>
@@ -99,10 +110,10 @@ export function ProgramsPage() {
           {mine.length > 0 ? 'Built-in programs' : 'Choose a program'}
         </h2>
         <ul className="space-y-3">
-          {built.map((program) => (
-            <li key={program.id}>
+          {built.map((program, index) => (
+            <StaggerItem key={program.id} index={index}>
               <ProgramCard program={program} suits={suits(program)} />
-            </li>
+            </StaggerItem>
           ))}
         </ul>
       </section>
@@ -137,44 +148,46 @@ function ProgramCard({
   owned?: boolean
 }) {
   return (
-    <Card className="hover:border-primary/50 transition-colors">
-      <CardContent className="p-4">
-        <Link to={`/programs/${program.slug}`} className="block">
-          <div className="mb-2 flex flex-wrap gap-1.5">
-            <Badge>{pluralize(program.totalWeeks, 'week')}</Badge>
-            <Badge variant="outline">{LEVEL_LABEL[program.level]}</Badge>
-            <Badge variant="outline">
-              {program.location === 'anywhere' ? (
-                <>
-                  <Home className="size-3" aria-hidden />
-                  No court
-                </>
-              ) : (
-                <>
-                  <MapPin className="size-3" aria-hidden />
-                  Court
-                </>
-              )}
-            </Badge>
-            {owned && !program.isPublic && <Badge variant="outline">Private</Badge>}
-            {owned && program.isPublic && <Badge variant="accent">Published</Badge>}
-          </div>
-          <h3 className="leading-snug font-semibold">{program.name}</h3>
-          <p className="text-muted-foreground mt-1 line-clamp-3 text-sm leading-relaxed">
-            {program.description}
-          </p>
-          <p className="text-muted-foreground mt-2 flex items-center gap-1.5 text-xs">
-            <CalendarRange className="size-3.5" aria-hidden />
-            {pluralize(program.sessionsPerWeek, 'session')} a week ·{' '}
-            {Object.values(PHASE_LABEL).join(' → ')}
-          </p>
-          {!suits && (
-            <p className="text-muted-foreground mt-2 text-xs italic">
-              Assumes court access, which your profile says you do not have.
+    <Pressable>
+      <Card className="hover:border-primary/50 transition-colors">
+        <CardContent className="p-4">
+          <Link to={`/programs/${program.slug}`} className="block">
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              <Badge>{pluralize(program.totalWeeks, 'week')}</Badge>
+              <Badge variant="outline">{LEVEL_LABEL[program.level]}</Badge>
+              <Badge variant="outline">
+                {program.location === 'anywhere' ? (
+                  <>
+                    <Home className="size-3" aria-hidden />
+                    No court
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="size-3" aria-hidden />
+                    Court
+                  </>
+                )}
+              </Badge>
+              {owned && !program.isPublic && <Badge variant="outline">Private</Badge>}
+              {owned && program.isPublic && <Badge variant="accent">Published</Badge>}
+            </div>
+            <h3 className="leading-snug font-semibold">{program.name}</h3>
+            <p className="text-muted-foreground mt-1 line-clamp-3 text-sm leading-relaxed">
+              {program.description}
             </p>
-          )}
-        </Link>
-      </CardContent>
-    </Card>
+            <p className="text-muted-foreground mt-2 flex items-center gap-1.5 text-xs">
+              <CalendarRange className="size-3.5" aria-hidden />
+              {pluralize(program.sessionsPerWeek, 'session')} a week ·{' '}
+              {Object.values(PHASE_LABEL).join(' → ')}
+            </p>
+            {!suits && (
+              <p className="text-muted-foreground mt-2 text-xs italic">
+                Assumes court access, which your profile says you do not have.
+              </p>
+            )}
+          </Link>
+        </CardContent>
+      </Card>
+    </Pressable>
   )
 }

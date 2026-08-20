@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion'
-import { Outlet, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { Outlet, useLocation, useNavigationType } from 'react-router-dom'
 
-import { pageVariants, useInitialSafe, useMotionSafe } from '@/lib/motion'
+import { directionalPageVariants, useInitialSafe, useMotionSafe } from '@/lib/motion'
+import { pageDirection, type Direction } from '@/lib/pageDirection'
 
 import { BottomNav } from './BottomNav'
 
@@ -11,8 +13,28 @@ import { BottomNav } from './BottomNav'
  */
 export function AppShell() {
   const location = useLocation()
-  const variants = useMotionSafe(pageVariants)
+  const navigationType = useNavigationType()
+  const variants = useMotionSafe(directionalPageVariants)
   const initial = useInitialSafe('hidden')
+
+  /*
+   * The direction the next screen arrives from, decided at the moment the path
+   * changes and remembered until it changes again.
+   *
+   * Held in state and adjusted during render rather than in an effect: an
+   * effect runs after the new page has already been painted, so the slide
+   * would play with the previous screen's direction. React supports this
+   * pattern precisely for derived state that depends on a changing input.
+   */
+  const [nav, setNav] = useState<{ path: string; direction: Direction }>(() => ({
+    path: location.pathname,
+    direction: 1,
+  }))
+  let direction = nav.direction
+  if (nav.path !== location.pathname) {
+    direction = pageDirection(nav.path, location.pathname, navigationType)
+    setNav({ path: location.pathname, direction })
+  }
 
   return (
     <div className="min-h-dvh md:pl-20">
@@ -23,10 +45,16 @@ export function AppShell() {
         Skip to content
       </a>
       <main id="main" className="mx-auto max-w-3xl px-4 pt-6 pb-28 md:px-8 md:pt-10 md:pb-12">
-        {/* Keyed on the path so each screen fades up on arrival. Short and
-            small on purpose: this should register as the page having settled,
-            not as an animation you have to sit through before tapping. */}
-        <motion.div key={location.pathname} variants={variants} initial={initial} animate="visible">
+        {/* Keyed on the path so each screen arrives on its own. Short and small
+            on purpose: this should register as the page having settled, not as
+            an animation you have to sit through before tapping. */}
+        <motion.div
+          key={location.pathname}
+          custom={direction}
+          variants={variants}
+          initial={initial}
+          animate="visible"
+        >
           <Outlet />
         </motion.div>
       </main>

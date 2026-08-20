@@ -1,12 +1,23 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, type Variants } from 'framer-motion'
 import { ArrowLeft, Play, RotateCcw, Timer, Trophy, Zap } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { CountUp } from '@/components/motion/CountUp'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
-import { swapVariants, useInitialSafe, useMotionSafe } from '@/lib/motion'
+import {
+  DURATION,
+  EASE,
+  SPRING,
+  motionSafe,
+  swapVariants,
+  transition,
+  useInitialSafe,
+  useMotionSafe,
+  valuePopVariants,
+} from '@/lib/motion'
 import {
   gradeReaction,
   isPersonalBest,
@@ -38,8 +49,34 @@ type Phase = 'ready' | 'playing' | 'done'
 
 const LAYOUT = 6
 
+/** The last few seconds, where the bar turns and the clock starts shouting. */
+const URGENT_MS = 5000
+
+/*
+ * Game-only variants. These live here rather than in `lib/motion` because
+ * nothing else in the app should feel like this: a target that snaps out at you
+ * and a ring that fires off the corner you hit is exactly the wrong register
+ * for a training screen, and exactly the right one for the thing you open
+ * because you want to.
+ */
+const targetVariants: Variants = {
+  dark: { scale: 1, transition: transition(DURATION.quick) },
+  lit: { scale: 1.14, transition: SPRING.pop },
+  tap: { scale: 0.92, transition: transition(DURATION.instant) },
+}
+
+const rippleVariants: Variants = {
+  start: { scale: 1, opacity: 0.85 },
+  end: {
+    scale: 2.1,
+    opacity: 0,
+    transition: { duration: 0.45, ease: [...EASE.out] as [number, number, number, number] },
+  },
+}
+
 export function ReflexRushPage() {
   const swap = useMotionSafe(swapVariants)
+  const pop = useMotionSafe(valuePopVariants)
   const initial = useInitialSafe('hidden')
   // Still needed as a plain boolean: the board components take it as a prop.
   const reducedMotion = useReducedMotion()
@@ -54,7 +91,8 @@ export function ReflexRushPage() {
   const [liveScore, setLiveScore] = useState(0)
   const [summary, setSummary] = useState<ReflexSummary | null>(null)
   const [beatIt, setBeatIt] = useState(false)
-  const [flash, setFlash] = useState<{ corner: CornerId; good: boolean } | null>(null)
+  const [flash, setFlash] = useState<{ id: number; corner: CornerId; good: boolean } | null>(null)
+  const flashId = useRef(0)
 
   /*
    * All the timing lives in one ref driven by one animation frame.
@@ -148,8 +186,9 @@ export function ReflexRushPage() {
     if (corner !== state.current) {
       state.events.push({ kind: 'wrong', corner })
       setLiveScore(summarise(state.events).score)
-      setFlash({ corner, good: false })
-      window.setTimeout(() => setFlash(null), 200)
+      flashId.current += 1
+      setFlash({ id: flashId.current, corner, good: false })
+      window.setTimeout(() => setFlash(null), 460)
       return
     }
 
@@ -159,11 +198,13 @@ export function ReflexRushPage() {
     setTarget(null)
     setLiveScore(summarise(state.events).score)
     if (vibrationEnabled) vibrateCorner(CORNERS[corner].row)
-    setFlash({ corner, good: true })
-    window.setTimeout(() => setFlash(null), 160)
+    flashId.current += 1
+    setFlash({ id: flashId.current, corner, good: true })
+    window.setTimeout(() => setFlash(null), 460)
   }
 
   const seconds = Math.ceil(remainingMs / 1000)
+  const urgent = phase === 'playing' && remainingMs <= URGENT_MS
 
   return (
     <>
@@ -183,7 +224,21 @@ export function ReflexRushPage() {
         </div>
         {phase === 'playing' && (
           <div className="shrink-0 text-right">
-            <p className="tnum text-3xl leading-none font-bold tabular-nums">{seconds}</p>
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.p
+                key={seconds}
+                variants={pop}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className={cn(
+                  'tnum text-3xl leading-none font-bold tabular-nums transition-colors',
+                  urgent && 'text-destructive',
+                )}
+              >
+                {seconds}
+              </motion.p>
+            </AnimatePresence>
             <p className="text-muted-foreground text-xs font-medium">seconds</p>
           </div>
         )}
@@ -191,13 +246,33 @@ export function ReflexRushPage() {
 
       {phase === 'playing' && (
         <div className="mb-3 flex items-center justify-between gap-3">
-          <p className="text-muted-foreground text-sm">
-            Score <span className="tnum text-foreground font-bold">{liveScore}</span>
+          <p className="text-muted-foreground flex items-baseline gap-1.5 text-sm">
+            Score
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.span
+                key={liveScore}
+                variants={pop}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="tnum text-foreground font-bold"
+              >
+                {liveScore}
+              </motion.span>
+            </AnimatePresence>
           </p>
           <div className="bg-secondary h-1.5 flex-1 overflow-hidden rounded-full">
+            {/*
+             * Scaled, not resized. This runs off the game's animation frame, so
+             * a `width` here would put a layout pass between every frame and
+             * the taps it is timing.
+             */}
             <div
-              className="bg-primary h-full rounded-full"
-              style={{ width: `${(remainingMs / GAME_MS) * 100}%` }}
+              className={cn(
+                'h-full origin-left rounded-full transition-colors',
+                urgent ? 'bg-destructive' : 'bg-primary',
+              )}
+              style={{ transform: `scaleX(${Math.max(0, remainingMs / GAME_MS)})` }}
             />
           </div>
         </div>
@@ -265,7 +340,7 @@ export function ReflexRushPage() {
                   </p>
                 )}
                 <p className="tnum text-5xl leading-none font-bold tracking-tight">
-                  {summary.score}
+                  <CountUp value={summary.score} />
                 </p>
                 <p className="text-muted-foreground mt-2 text-sm">
                   {gradeReaction(summary.averageMs).label} ·{' '}
@@ -323,7 +398,7 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
 
 interface BoardProps {
   target: CornerId | null
-  flash: { corner: CornerId; good: boolean } | null
+  flash: { id: number; corner: CornerId; good: boolean } | null
   disabled: boolean
   onTap: (corner: CornerId) => void
   reducedMotion: boolean
@@ -341,6 +416,11 @@ interface BoardProps {
 const inset = (value: number, margin: number) => margin + value * (100 - margin * 2)
 
 function Board({ target, flash, disabled, onTap, reducedMotion }: BoardProps) {
+  // Stripped here rather than with the hook: this component is already handed
+  // the reduced-motion state by its parent.
+  const targetMotion = motionSafe(targetVariants, reducedMotion)
+  const rippleMotion = motionSafe(rippleVariants, reducedMotion)
+
   return (
     <div className="bg-court-surface border-border relative mx-auto aspect-[3/4] w-full max-w-sm overflow-hidden rounded-2xl border">
       {/* Court markings, purely decorative. */}
@@ -362,12 +442,11 @@ function Board({ target, flash, disabled, onTap, reducedMotion }: BoardProps) {
             aria-label={corner.description}
             aria-pressed={lit}
             className={cn(
-              'absolute grid size-[26%] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 text-center transition-colors',
-              'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
-              lit
-                ? 'bg-primary border-primary text-primary-foreground'
-                : 'border-court-line bg-card/70 text-muted-foreground',
-              flashing && !flash?.good && 'border-destructive bg-destructive/20',
+              // `w-` plus `aspect-square`, not `size-`: the board is 3:4, so a
+              // percentage height and a percentage width are different lengths
+              // and the targets came out as eggs.
+              'absolute aspect-square w-[27%] -translate-x-1/2 -translate-y-1/2 rounded-full text-center',
+              'focus-visible:ring-ring focus-visible:rounded-full focus-visible:ring-2 focus-visible:outline-none',
               disabled && 'opacity-60',
             )}
             // Court coordinates run right to the sidelines, and a target
@@ -376,15 +455,49 @@ function Board({ target, flash, disabled, onTap, reducedMotion }: BoardProps) {
             // not court-accurate placement.
             style={{ left: `${inset(corner.x, 16)}%`, top: `${inset(corner.y, 15)}%` }}
           >
+            {/*
+             * The circle is a child rather than the button itself: the button
+             * carries the `-translate-*` that centres it on its coordinate, and
+             * framer writes `transform` wholesale, so animating the button
+             * would knock it half a target off its own corner.
+             */}
             <motion.span
-              animate={reducedMotion ? undefined : { scale: lit ? 1.08 : 1 }}
-              transition={{ duration: 0.12 }}
-              className="text-[0.6rem] leading-tight font-bold tracking-wide"
+              variants={targetMotion}
+              animate={lit ? 'lit' : 'dark'}
+              whileTap="tap"
+              className={cn(
+                'absolute inset-0 grid place-items-center rounded-full border-2 transition-colors',
+                lit
+                  ? 'bg-primary border-primary text-primary-foreground'
+                  : 'border-court-line bg-card/70 text-muted-foreground',
+                flashing && !flash?.good && 'border-destructive bg-destructive/20',
+              )}
             >
-              {corner.label[0]}
-              <br />
-              {corner.label[1]}
+              <span className="text-[0.6rem] leading-tight font-bold tracking-wide">
+                {corner.label[0]}
+                <br />
+                {corner.label[1]}
+              </span>
             </motion.span>
+
+            {/* A ring fired off the corner you just touched. Keyed on a
+                counter, so hitting the same corner twice replays it. */}
+            <AnimatePresence>
+              {flashing && flash && (
+                <motion.span
+                  key={flash.id}
+                  variants={rippleMotion}
+                  initial="start"
+                  animate="end"
+                  exit="end"
+                  className={cn(
+                    'pointer-events-none absolute inset-0 rounded-full border-2',
+                    flash.good ? 'border-primary' : 'border-destructive',
+                  )}
+                  aria-hidden
+                />
+              )}
+            </AnimatePresence>
           </button>
         )
       })}

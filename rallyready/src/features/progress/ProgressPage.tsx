@@ -20,10 +20,15 @@ import {
   YAxis,
 } from 'recharts'
 
+import { EmptyState } from '@/components/EmptyState'
 import { PageHeader } from '@/components/PageHeader'
+import { CountUp } from '@/components/motion/CountUp'
+import { StaggerItem } from '@/components/motion/StaggerItem'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { gradeBenchmark } from '@/lib/timer/benchmark'
 import { formatDuration, pluralize } from '@/lib/utils'
 
@@ -38,6 +43,9 @@ import { useTrainingData } from './useTrainingData'
 export function ProgressPage() {
   const { loading, stats, load, rating, readiness, streak, benchmarks, badges, earnedCount } =
     useTrainingData()
+  // Recharts animates by default; under reduced motion the chart must simply
+  // be there, drawn, on the first frame.
+  const reducedMotion = useReducedMotion()
 
   const hasHistory = stats.sessionCount > 0
   const latestBenchmark = benchmarks[0]
@@ -55,30 +63,36 @@ export function ProgressPage() {
         description="Everything here is derived from the sessions you have actually logged."
       />
 
-      {loading && <p className="text-muted-foreground text-sm">Loading your history…</p>}
+      {/* The dashboard's own shape, so nothing below it moves when the
+          numbers arrive. */}
+      {loading && (
+        <div className="space-y-5">
+          <Skeleton className="h-28 w-full rounded-xl" />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {Array.from({ length: 4 }, (_, index) => (
+              <Skeleton key={index} className="h-[5.5rem] rounded-xl" />
+            ))}
+          </div>
+          <Skeleton className="h-52 w-full rounded-xl" />
+          <Skeleton className="h-72 w-full rounded-xl" />
+        </div>
+      )}
 
       {/* An empty dashboard should still show what it is going to measure —
             otherwise the screen is one card floating above nothing, and the
             player has no idea what logging a session actually buys them. */}
       {!loading && !hasHistory && (
         <div className="space-y-5">
-          <Card>
-            <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-              <div className="bg-accent text-accent-foreground grid size-14 place-items-center rounded-2xl">
-                <LineChartIcon className="size-7" aria-hidden />
-              </div>
-              <div>
-                <p className="font-semibold">Nothing logged yet</p>
-                <p className="text-muted-foreground mt-1 max-w-sm text-sm leading-relaxed">
-                  Finish one drill and this page starts working. Nothing here is entered by hand —
-                  it is all derived from sessions you actually did.
-                </p>
-              </div>
+          <EmptyState
+            illustration="chart"
+            title="Nothing logged yet"
+            body="Finish one drill and this page starts working. Nothing here is entered by hand — it is all derived from sessions you actually did."
+            action={
               <Button asChild size="lg">
                 <Link to="/">Start your first drill</Link>
               </Button>
-            </CardContent>
-          </Card>
+            }
+          />
 
           <div>
             <h2 className="text-muted-foreground mb-3 text-sm font-semibold tracking-wide uppercase">
@@ -106,8 +120,8 @@ export function ProgressPage() {
                   title: 'Personal bests and badges',
                   body: 'Per drill, and a trophy case that fills in as you go.',
                 },
-              ].map((item) => (
-                <li key={item.title}>
+              ].map((item, index) => (
+                <StaggerItem key={item.title} index={index}>
                   <Card className="h-full">
                     <CardContent className="flex h-full gap-3 p-4">
                       <span className="bg-secondary text-muted-foreground grid size-9 shrink-0 place-items-center rounded-lg">
@@ -121,7 +135,7 @@ export function ProgressPage() {
                       </div>
                     </CardContent>
                   </Card>
-                </li>
+                </StaggerItem>
               ))}
             </ul>
           </div>
@@ -153,25 +167,34 @@ export function ProgressPage() {
             <Stat
               icon={<Flame className="size-4" />}
               label="Week streak"
-              value={String(streak.currentStreak)}
+              value={<CountUp value={streak.currentStreak} />}
               hint={`best ${streak.longestStreak}`}
             />
             <Stat
               icon={<Timer className="size-4" />}
               label="This week"
-              value={String(streak.weeklySessionsCount)}
+              value={<CountUp value={streak.weeklySessionsCount} />}
               hint={streak.weeklySessionsCount === 1 ? 'session' : 'sessions'}
             />
             <Stat
               icon={<LineChartIcon className="size-4" />}
               label="Total time"
-              value={formatDuration(stats.totalTrainingSec)}
+              value={
+                <CountUp
+                  value={stats.totalTrainingSec}
+                  format={(seconds) => formatDuration(Math.round(seconds))}
+                />
+              }
               hint={pluralize(stats.sessionCount, 'session')}
             />
             <Stat
               icon={<Trophy className="size-4" />}
               label="Badges"
-              value={`${earnedCount}/${badges.length}`}
+              value={
+                <>
+                  <CountUp value={earnedCount} />/{badges.length}
+                </>
+              }
               hint="unlocked"
             />
           </div>
@@ -220,6 +243,9 @@ export function ProgressPage() {
                       fill={CHART.primary}
                       radius={[4, 4, 0, 0]}
                       maxBarSize={28}
+                      isAnimationActive={!reducedMotion}
+                      animationDuration={520}
+                      animationEasing="ease-out"
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -269,6 +295,9 @@ export function ProgressPage() {
                         reversed
                       />
                       <Tooltip {...TOOLTIP_STYLE} />
+                      {/* Draws itself left to right, the direction the data
+                          runs, so the shape arrives as a story rather than as
+                          a finished picture. */}
                       <Line
                         type="monotone"
                         dataKey="seconds"
@@ -276,6 +305,9 @@ export function ProgressPage() {
                         stroke={CHART.rest}
                         strokeWidth={2.5}
                         dot={{ r: 3, fill: CHART.rest, strokeWidth: 0 }}
+                        isAnimationActive={!reducedMotion}
+                        animationDuration={620}
+                        animationEasing="ease-out"
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -376,7 +408,7 @@ function Stat({
 }: {
   icon: React.ReactNode
   label: string
-  value: string
+  value: React.ReactNode
   hint?: string
 }) {
   return (

@@ -13,11 +13,14 @@ import {
 import { useState } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 
+import { EmptyState } from '@/components/EmptyState'
 import { PageHeader } from '@/components/PageHeader'
+import { StaggerItem } from '@/components/motion/StaggerItem'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Segmented } from '@/components/ui/segmented'
+import { SkeletonCard } from '@/components/ui/skeleton'
 import { useRepositories } from '@/lib/data/context'
 import { resolveRecommendation } from '@/lib/data/recommend'
 import { shouldSeeWelcome, wasWelcomeShownThisLoad, WELCOME_PATH } from '@/lib/firstRun'
@@ -191,8 +194,6 @@ export function TrainPage() {
 
       <TodayCard />
 
-      {isLoading && <p className="text-muted-foreground text-sm">Loading drills…</p>}
-
       {/*
        * The fallback hero, for anyone the coach is not deciding for.
        *
@@ -343,18 +344,40 @@ export function TrainPage() {
         />
 
         <div className="mt-4">
-          {visible.length === 0 ? (
-            <p className="text-muted-foreground py-6 text-center text-sm">
-              {homeOnly
-                ? 'Nothing here works without a court. Turn the filter off to see the rest.'
-                : 'Nothing here yet.'}
-            </p>
+          {isLoading ? (
+            // Six card-shaped placeholders rather than a line of text: the
+            // catalogue is the tallest thing on this screen, and a one-line
+            // "Loading…" makes everything below it jump when the data lands.
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {Array.from({ length: 6 }, (_, index) => (
+                <li key={index}>
+                  <SkeletonCard />
+                </li>
+              ))}
+            </ul>
+          ) : visible.length === 0 ? (
+            <EmptyState
+              illustration="court"
+              title={homeOnly ? 'Everything left needs a court' : 'Nothing here yet'}
+              body={
+                homeOnly
+                  ? 'Nothing in this tab works in a hallway. Turn the filter off to see the rest.'
+                  : 'This tab is empty at the moment.'
+              }
+              action={
+                homeOnly ? (
+                  <Button variant="outline" onClick={() => setHomeOnly(false)}>
+                    Show everything
+                  </Button>
+                ) : undefined
+              }
+            />
           ) : (
             <ul className="grid gap-3 sm:grid-cols-2">
-              {visible.map((drill) => (
-                <li key={drill.slug}>
+              {visible.map((drill, index) => (
+                <StaggerItem key={drill.slug} index={index}>
                   <DrillCard drill={drill} config={configFor(drill)} />
-                </li>
+                </StaggerItem>
               ))}
             </ul>
           )}

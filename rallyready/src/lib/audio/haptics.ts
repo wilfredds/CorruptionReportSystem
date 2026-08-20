@@ -29,6 +29,17 @@ export function vibrateCountdown(): void {
   buzz(20)
 }
 
+/**
+ * The lightest buzz the API can express, for a tap that changed something.
+ *
+ * Deliberately far shorter than any drill cue: a navigation tap must never be
+ * mistakeable for a corner call. Callers gate this on the same `vibrationEnabled`
+ * preference as the cues — somebody who turned vibration off meant all of it.
+ */
+export function vibrateTap(): void {
+  buzz(8)
+}
+
 export function vibrateComplete(): void {
   buzz([80, 60, 80, 60, 180])
 }

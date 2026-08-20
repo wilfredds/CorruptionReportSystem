@@ -159,8 +159,8 @@ export function WelcomePage() {
                   It will tell you when to stop.
                 </h1>
                 <p className="text-muted-foreground mt-3 leading-relaxed">
-                  Training alone means nobody is watching for the warning signs. So the app does
-                  it — and none of that is ever behind a paywall.
+                  Training alone means nobody is watching for the warning signs. So the app does it
+                  — and none of that is ever behind a paywall.
                 </p>
                 <ul className="mt-6 space-y-3">
                   {[
