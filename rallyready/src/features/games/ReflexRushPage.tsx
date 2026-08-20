@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { swapVariants, useInitialSafe, useMotionSafe } from '@/lib/motion'
 import {
   gradeReaction,
   isPersonalBest,
@@ -38,6 +39,9 @@ type Phase = 'ready' | 'playing' | 'done'
 const LAYOUT = 6
 
 export function ReflexRushPage() {
+  const swap = useMotionSafe(swapVariants)
+  const initial = useInitialSafe('hidden')
+  // Still needed as a plain boolean: the board components take it as a prop.
   const reducedMotion = useReducedMotion()
   const vibrationEnabled = useCueStore((state) => state.vibrationEnabled)
   const bestScore = useGameStore((state) => state.bestScore)
@@ -211,9 +215,10 @@ export function ReflexRushPage() {
         {phase === 'ready' && (
           <motion.div
             key="ready"
-            initial={reducedMotion ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reducedMotion ? undefined : { opacity: 0 }}
+            variants={swap}
+            initial={initial}
+            animate="visible"
+            exit="exit"
             className="mt-5"
           >
             <Button size="xl" className="w-full" onClick={start}>
@@ -242,8 +247,9 @@ export function ReflexRushPage() {
         {phase === 'done' && summary && (
           <motion.div
             key="done"
-            initial={reducedMotion ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
+            variants={swap}
+            initial={initial}
+            animate="visible"
             className="mt-5"
           >
             <Card

@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { pageVariants, useInitialSafe, useMotionSafe } from '@/lib/motion'
 import { usePremium } from '@/store/premiumStore'
 import { cn } from '@/lib/utils'
 
@@ -22,7 +22,8 @@ import { useCoach } from '../useCoach'
 export function CoachCard() {
   const { loading, pick } = useCoach()
   const premium = usePremium()
-  const reducedMotion = useReducedMotion()
+  const variants = useMotionSafe(pageVariants)
+  const initial = useInitialSafe('hidden')
 
   if (loading) return null
 
@@ -31,11 +32,7 @@ export function CoachCard() {
   const Icon = pick.restDay ? Coffee : pick.code === 'benchmark' ? Gauge : Target
 
   return (
-    <motion.div
-      initial={reducedMotion ? false : { opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-    >
+    <motion.div variants={variants} initial={initial} animate="visible">
       <Card
         className={cn(
           'mb-6 overflow-hidden',

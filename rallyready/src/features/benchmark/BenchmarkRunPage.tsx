@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { swapVariants, useInitialSafe, useMotionSafe } from '@/lib/motion'
 import { useSessionGuard } from '@/hooks/useSessionGuard'
 import { useRepositories } from '@/lib/data/context'
 import { METRIC_BENCHMARK_LEVEL, METRIC_CALLS } from '@/lib/data/stats'
@@ -44,6 +45,9 @@ import { useDrillRunner, type RunnerSummary } from '../train/useDrillRunner'
 export function BenchmarkRunPage() {
   const navigate = useNavigate()
   const repositories = useRepositories()
+  const swap = useMotionSafe(swapVariants)
+  const initial = useInitialSafe('hidden')
+  // Still needed as a plain boolean: the board components take it as a prop.
   const reducedMotion = useReducedMotion()
   const cues = useCueStore()
 
@@ -199,9 +203,10 @@ export function BenchmarkRunPage() {
           {isIdle ? (
             <motion.div
               key="idle"
-              initial={reducedMotion ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.18 }}
+              variants={swap}
+              initial={initial}
+              animate="visible"
+              exit="exit"
               className="mx-auto flex w-full max-w-md flex-col items-center gap-3"
             >
               <div className="flex flex-wrap justify-center gap-2">
@@ -217,9 +222,10 @@ export function BenchmarkRunPage() {
           ) : (
             <motion.div
               key="running"
-              initial={reducedMotion ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.18 }}
+              variants={swap}
+              initial={initial}
+              animate="visible"
+              exit="exit"
               className="mx-auto flex w-full max-w-md items-center gap-3"
             >
               <Button

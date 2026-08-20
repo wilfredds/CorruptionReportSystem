@@ -7,7 +7,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { useReducedMotion } from '@/hooks/useReducedMotion'
+import {
+  pageVariants,
+  stepVariants as rawStepVariants,
+  useInitialSafe,
+  useMotionSafe,
+} from '@/lib/motion'
 import { useAuth } from '@/lib/auth/context'
 import { useRepositories } from '@/lib/data/context'
 import { resolveRecommendation } from '@/lib/data/recommend'
@@ -91,7 +96,9 @@ export function OnboardingPage() {
   const repositories = useRepositories()
   const queryClient = useQueryClient()
   const auth = useAuth()
-  const reducedMotion = useReducedMotion()
+  const variants = useMotionSafe(pageVariants)
+  const stepVariants = useMotionSafe(rawStepVariants)
+  const initial = useInitialSafe('hidden')
 
   const [step, setStep] = useState<Step>(0)
   const [skillLevel, setSkillLevel] = useState<SkillLevel | null>(null)
@@ -139,14 +146,14 @@ export function OnboardingPage() {
         )
       : null
 
-  const transition = reducedMotion
-    ? {}
-    : {
-        initial: { opacity: 0, x: 16 },
-        animate: { opacity: 1, x: 0 },
-        exit: { opacity: 0, x: -16 },
-        transition: { duration: 0.18 },
-      }
+  // Steps slide sideways rather than up, so the questionnaire reads as moving
+  // forward through a sequence rather than as four unrelated screens.
+  const stepMotion = {
+    variants: stepVariants,
+    initial: 'hidden',
+    animate: 'visible',
+    exit: 'exit',
+  } as const
 
   return (
     <div className="mx-auto max-w-lg">
@@ -189,7 +196,7 @@ export function OnboardingPage() {
 
       <AnimatePresence mode="wait" initial={false}>
         {step === 0 && (
-          <motion.div key="level" {...transition}>
+          <motion.div key="level" {...stepMotion}>
             <Question
               title="Where are you right now?"
               subtitle="This sets the pace of your first session. You can change it any time."
@@ -204,7 +211,7 @@ export function OnboardingPage() {
         )}
 
         {step === 1 && (
-          <motion.div key="discipline" {...transition}>
+          <motion.div key="discipline" {...stepMotion}>
             <Question
               title="What do you mostly play?"
               subtitle="Singles and doubles ask for different movement."
@@ -219,7 +226,7 @@ export function OnboardingPage() {
         )}
 
         {step === 2 && (
-          <motion.div key="goal" {...transition}>
+          <motion.div key="goal" {...stepMotion}>
             <Question
               title="What are you training for?"
               subtitle="Pick the one that matters most this month."
@@ -234,7 +241,7 @@ export function OnboardingPage() {
         )}
 
         {step === 3 && (
-          <motion.div key="court" {...transition}>
+          <motion.div key="court" {...stepMotion}>
             <Question
               title="Where will you train?"
               subtitle="Programs adapt to this — a no-court plan uses nothing but floor space."
@@ -247,12 +254,7 @@ export function OnboardingPage() {
         )}
 
         {step === 4 && (
-          <motion.div
-            key="done"
-            initial={reducedMotion ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
+          <motion.div key="done" variants={variants} initial={initial} animate="visible">
             <div className="mb-6 text-center">
               <div className="bg-accent text-accent-foreground mx-auto mb-4 grid size-16 place-items-center rounded-2xl">
                 <Sparkles className="size-8" aria-hidden />

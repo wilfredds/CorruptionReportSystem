@@ -4,7 +4,7 @@ import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { useMotionSafe, valuePopVariants } from '@/lib/motion'
 import {
   READINESS_BAND_COPY,
   READINESS_QUESTIONS,
@@ -47,7 +47,7 @@ const ADJUSTMENT_TONE: Record<Adjustment, string> = {
 
 export function ReadinessCard() {
   const { loading, today, recommendation, applied, save, setApplied } = useReadiness()
-  const reducedMotion = useReducedMotion()
+  const answerPop = useMotionSafe(valuePopVariants)
   const [draft, setDraft] = useState<Draft>({})
   const [saving, setSaving] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -178,10 +178,10 @@ export function ReadinessCard() {
                     {chosen !== undefined && (
                       <motion.span
                         key={chosen}
-                        initial={reducedMotion ? false : { opacity: 0, y: -3 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={reducedMotion ? undefined : { opacity: 0 }}
-                        transition={{ duration: 0.15 }}
+                        variants={answerPop}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
                         className="text-muted-foreground shrink-0 text-xs font-medium"
                       >
                         {question.scale[chosen - 1]}

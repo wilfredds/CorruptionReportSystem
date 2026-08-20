@@ -2,6 +2,8 @@ import { Volume2 } from 'lucide-react'
 import { useState } from 'react'
 
 import { PageHeader } from '@/components/PageHeader'
+
+import { MotionSection } from './MotionSection'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -84,6 +86,13 @@ export function DesignSystemPage() {
       />
 
       <div className="space-y-5">
+        <Section
+          title="Motion"
+          description="Four durations, two easings, two springs. Everything animated in the app draws from this list — nothing invents its own numbers."
+        >
+          <MotionSection />
+        </Section>
+
         <Section title="Colour" description="A neutral graphite base and exactly one accent.">
           <div className="grid gap-4 sm:grid-cols-2">
             {CORE_TOKENS.map(([token, label]) => (

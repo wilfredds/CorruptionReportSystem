@@ -5,7 +5,7 @@ import { Link, useParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { pageVariants, useInitialSafe, useMotionSafe } from '@/lib/motion'
 import { useRepositories } from '@/lib/data/context'
 import { BENCHMARK_LEVELS, gradeBenchmark } from '@/lib/timer/benchmark'
 import { formatDuration } from '@/lib/utils'
@@ -13,7 +13,8 @@ import { formatDuration } from '@/lib/utils'
 export function BenchmarkResultPage() {
   const { id = '' } = useParams()
   const repositories = useRepositories()
-  const reducedMotion = useReducedMotion()
+  const variants = useMotionSafe(pageVariants)
+  const initial = useInitialSafe('hidden')
 
   const { data: benchmark, isLoading } = useQuery({
     queryKey: ['benchmark', id],
@@ -50,9 +51,9 @@ export function BenchmarkResultPage() {
 
   return (
     <motion.div
-      initial={reducedMotion ? false : { opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+      variants={variants}
+      initial={initial}
+      animate="visible"
       className="mx-auto max-w-lg"
     >
       <div className="mb-7 text-center">

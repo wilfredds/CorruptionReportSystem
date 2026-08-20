@@ -7,7 +7,7 @@ import { Link, useParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { pageVariants, useInitialSafe, useMotionSafe } from '@/lib/motion'
 import { useRepositories } from '@/lib/data/context'
 import { METRIC_RPE } from '@/lib/data/load'
 import {
@@ -28,7 +28,8 @@ import { ShareSessionButton } from './components/ShareSessionButton'
 export function SessionSummaryPage() {
   const { id = '' } = useParams()
   const repositories = useRepositories()
-  const reducedMotion = useReducedMotion()
+  const variants = useMotionSafe(pageVariants)
+  const initial = useInitialSafe('hidden')
   const queryClient = useQueryClient()
 
   // The session that just finished invalidates every derived figure — streak,
@@ -100,11 +101,7 @@ export function SessionSummaryPage() {
       : null
 
   return (
-    <motion.div
-      initial={reducedMotion ? false : { opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-    >
+    <motion.div variants={variants} initial={initial} animate="visible">
       <div className="mb-8 text-center">
         <div className="bg-accent text-accent-foreground mx-auto mb-4 grid size-16 place-items-center rounded-2xl">
           {finished ? (

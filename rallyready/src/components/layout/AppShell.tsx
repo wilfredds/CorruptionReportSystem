@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { Outlet, useLocation } from 'react-router-dom'
 
-import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { pageVariants, useInitialSafe, useMotionSafe } from '@/lib/motion'
 
 import { BottomNav } from './BottomNav'
 
@@ -11,7 +11,8 @@ import { BottomNav } from './BottomNav'
  */
 export function AppShell() {
   const location = useLocation()
-  const reducedMotion = useReducedMotion()
+  const variants = useMotionSafe(pageVariants)
+  const initial = useInitialSafe('hidden')
 
   return (
     <div className="min-h-dvh md:pl-20">
@@ -25,12 +26,7 @@ export function AppShell() {
         {/* Keyed on the path so each screen fades up on arrival. Short and
             small on purpose: this should register as the page having settled,
             not as an animation you have to sit through before tapping. */}
-        <motion.div
-          key={location.pathname}
-          initial={reducedMotion ? false : { opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        >
+        <motion.div key={location.pathname} variants={variants} initial={initial} animate="visible">
           <Outlet />
         </motion.div>
       </main>

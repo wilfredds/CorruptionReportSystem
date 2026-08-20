@@ -59,7 +59,7 @@ see fewer, something is being skipped.
   looking at the screen. Do not introduce a change that only communicates
   visually — you cannot watch a screen and move to a corner simultaneously.
 - **Split-step timing is precise.** An optional metronome tick fires a
-  configurable 0.2–0.7s *before* each call. Timing code (`lib/timer`,
+  configurable 0.2–0.7s _before_ each call. Timing code (`lib/timer`,
   `lib/audio`) is latency-sensitive; changes there need tests.
 - **The app is the random caller.** No partner, no feeder, no court. Features
   that assume a second person are out of scope.

@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { swapVariants, useInitialSafe, useMotionSafe } from '@/lib/motion'
 import { useSessionGuard } from '@/hooks/useSessionGuard'
 import { useRepositories } from '@/lib/data/context'
 import { findExercise } from '@/lib/data/seed/exercises'
@@ -90,6 +91,9 @@ export function DrillRunPage() {
 function Runner({ drill }: { drill: Drill }) {
   const navigate = useNavigate()
   const repositories = useRepositories()
+  const swap = useMotionSafe(swapVariants)
+  const initial = useInitialSafe('hidden')
+  // Still needed as a plain boolean: the board components take it as a prop.
   const reducedMotion = useReducedMotion()
   const savedConfig = useDrillConfig(drill)
 
@@ -355,10 +359,10 @@ function Runner({ drill }: { drill: Drill }) {
           {isIdle ? (
             <motion.div
               key="idle"
-              initial={reducedMotion ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reducedMotion ? undefined : { opacity: 0, y: -8 }}
-              transition={{ duration: 0.18 }}
+              variants={swap}
+              initial={initial}
+              animate="visible"
+              exit="exit"
               className="mx-auto flex w-full max-w-md flex-col items-center gap-3"
             >
               {/* Never change someone's session without telling them it
@@ -408,9 +412,10 @@ function Runner({ drill }: { drill: Drill }) {
           ) : (
             <motion.div
               key="running"
-              initial={reducedMotion ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.18 }}
+              variants={swap}
+              initial={initial}
+              animate="visible"
+              exit="exit"
               className="mx-auto flex w-full max-w-md items-center gap-3"
             >
               {/* Skip and End are icon-only so Pause keeps the width it deserves

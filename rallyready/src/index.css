@@ -167,8 +167,50 @@
   --radius-xl: calc(var(--radius) + 6px);
   --radius-2xl: calc(var(--radius) + 12px);
 
+  /*
+   * Motion tokens, mirroring `lib/motion/tokens.ts` in milliseconds.
+   *
+   * Kept in both places on purpose: a Tailwind `duration-*` class and a
+   * framer-motion transition have no way to share a value, and without a single
+   * named scale the two drift apart the first time either is tweaked. If you
+   * change one of these, change the other.
+   */
+  --duration-instant: 90ms;
+  --duration-quick: 160ms;
+  --duration-base: 240ms;
+  --duration-slow: 420ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
   --animate-pip: pip 1s linear infinite;
   --animate-breathe: breathe 3.2s ease-in-out infinite;
+  --animate-shine: shine 900ms var(--ease-out) 1;
+  --animate-rise: rise var(--duration-base) var(--ease-out) 1;
+
+  /* A single pass of light across a freshly-unlocked badge. Never loops. */
+  @keyframes shine {
+    from {
+      transform: translateX(-120%) skewX(-18deg);
+      opacity: 0;
+    }
+    35% {
+      opacity: 0.7;
+    }
+    to {
+      transform: translateX(220%) skewX(-18deg);
+      opacity: 0;
+    }
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 
   @keyframes pip {
     from {
