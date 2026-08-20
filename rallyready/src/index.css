@@ -288,6 +288,52 @@
 }
 
 @layer utilities {
+  /*
+   * Two registers, and only two.
+   *
+   * The app spends most of its time being quiet — a paragraph explaining what
+   * a drill trains, a caption under a chart — and occasionally has to be loud:
+   * a page title, a score, the word the whole screen is about. Before this
+   * every heading picked its own weight and tracking, which is how you end up
+   * with six almost-identical headings and no sense of which one matters.
+   *
+   * Loud is tight and heavy. Quiet is open and plain. Size still comes from
+   * Tailwind, so a headline can be any size and still read as a headline.
+   */
+  .type-display {
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.04;
+  }
+  .type-headline {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.18;
+  }
+  /* The small capitals above a heading. Never used for anything readable at
+     length — tracking this wide is unreadable past about four words. */
+  .type-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+  .type-lede {
+    font-size: 1rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1.6;
+  }
+  .type-body {
+    font-size: 0.875rem;
+    line-height: 1.65;
+  }
+  .type-meta {
+    font-size: 0.75rem;
+    line-height: 1.6;
+  }
+
   /* Oversized timer numerals never reflow as digits change width. */
   .tnum {
     font-variant-numeric: tabular-nums;

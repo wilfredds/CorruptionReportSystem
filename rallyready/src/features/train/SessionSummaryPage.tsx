@@ -20,7 +20,7 @@ import {
   METRIC_SEED,
   METRIC_WORK_SEC,
 } from '@/lib/data/stats'
-import { cn, formatDuration, pluralize } from '@/lib/utils'
+import { formatDuration, pluralize } from '@/lib/utils'
 
 import { useTrainingData } from '../progress/useTrainingData'
 import { ChallengeButton } from '../social/ChallengeButton'
@@ -197,12 +197,7 @@ export function SessionSummaryPage() {
       {rewards.newBadges.length > 0 && <BadgeUnlock slugs={rewards.newBadges} />}
 
       {streak && (
-        <Card
-          className={cn(
-            'relative mb-5',
-            extendedStreak && 'border-primary/50 from-accent/60 bg-gradient-to-br to-transparent',
-          )}
-        >
+        <Card level={extendedStreak ? 'lead' : 'default'} className="relative mb-5">
           {extendedStreak && <Confetti count={14} />}
           <CardContent className="relative flex items-center gap-4 p-5">
             <motion.div
@@ -214,11 +209,7 @@ export function SessionSummaryPage() {
               <Flame className="size-5" aria-hidden />
             </motion.div>
             <div className="min-w-0">
-              {extendedStreak && (
-                <p className="text-primary text-xs font-bold tracking-[0.18em] uppercase">
-                  Streak extended
-                </p>
-              )}
+              {extendedStreak && <p className="text-primary type-eyebrow">Streak extended</p>}
               <p className="font-semibold">
                 {streak.currentStreak > 0
                   ? `${pluralize(streak.currentStreak, 'week')} in a row`

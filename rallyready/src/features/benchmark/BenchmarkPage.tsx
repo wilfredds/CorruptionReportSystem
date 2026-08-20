@@ -114,7 +114,7 @@ export function BenchmarkPage() {
         </Card>
       )}
 
-      <Card className="border-primary/40 from-accent/60 mt-4 bg-gradient-to-br to-transparent">
+      <Card level="lead" className="mt-4">
         <CardContent className="space-y-4 p-5">
           <div className="flex items-start gap-3">
             <div className="bg-background/70 grid size-11 shrink-0 place-items-center rounded-xl">

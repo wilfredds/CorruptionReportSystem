@@ -32,11 +32,7 @@ export function CircuitBoard({ exerciseSlug, resting, className }: CircuitBoardP
 
   return (
     <div className={cn('flex h-full w-full flex-col items-center gap-2', className)}>
-      {resting && (
-        <p className="text-muted-foreground text-xs font-bold tracking-[0.2em] uppercase">
-          Up next
-        </p>
-      )}
+      {resting && <p className="text-muted-foreground type-eyebrow">Up next</p>}
 
       <p
         className={cn(

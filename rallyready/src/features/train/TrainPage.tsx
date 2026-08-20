@@ -153,7 +153,7 @@ export function TrainPage() {
        * *and* nothing logged — the moment there is either, it is in the way.
        */}
       {isNewHere && (
-        <Card className="border-primary/40 from-accent/60 mb-6 bg-gradient-to-br to-transparent">
+        <Card level="lead" className="mb-6">
           <CardContent className="p-5">
             <div className="mb-3 flex items-start gap-3">
               <span className="bg-primary text-primary-foreground grid size-10 shrink-0 place-items-center rounded-xl">
@@ -204,7 +204,7 @@ export function TrainPage() {
        * competing "do this" cards answer it worse than either alone.
        */}
       {featured && !isNewHere && !premium.has('coach') && (
-        <Card className="border-primary/40 from-accent/60 mb-6 overflow-hidden bg-gradient-to-br to-transparent">
+        <Card level="lead" className="mb-6 overflow-hidden">
           <CardContent className="flex flex-col gap-4 p-5">
             <div>
               <Badge variant="accent" className="mb-2">
@@ -252,7 +252,7 @@ export function TrainPage() {
       {/* Below the drill it is offering to improve, and dismissible. Above it,
           an unclosable prompt outranked the content it was advertising. */}
       {!profileLoading && !profile && !setupDismissed && !isNewHere && (
-        <div className="border-border mb-8 flex items-center gap-3 rounded-xl border border-dashed p-3">
+        <div className="border-border mb-6 flex items-center gap-3 rounded-xl border border-dashed p-3">
           <Sparkles className="text-primary size-4 shrink-0" aria-hidden />
           <p className="text-muted-foreground min-w-0 flex-1 text-xs leading-relaxed">
             <span className="text-foreground font-medium">Get drills picked for you.</span> Four
@@ -281,108 +281,115 @@ export function TrainPage() {
        * one fixes their problem — which is nobody new. A player does know what
        * they want to be better at, so the app asks that and does the mapping.
        */}
-      <section aria-labelledby="focus" className="mb-8">
-        <h2 id="focus" className="mb-1 text-lg font-semibold tracking-tight">
-          What do you want to work on?
-        </h2>
-        <p className="text-muted-foreground mb-4 text-sm">
-          Pick one and the app shows you what trains it, at your level.
-        </p>
-        <FocusGrid entries={library} level={browseLevel} />
-      </section>
+      {/*
+       * Everything above this line is "today", stacked tight. Everything below
+       * it is a place to go looking, and gets the room to read as a section of
+       * its own. Two spacings, applied consistently, is the whole rhythm.
+       */}
+      <div className="space-y-10 pt-4">
+        <section aria-labelledby="focus">
+          <h2 id="focus" className="type-headline mb-1 text-lg">
+            What do you want to work on?
+          </h2>
+          <p className="text-muted-foreground type-body mb-4">
+            Pick one and the app shows you what trains it, at your level.
+          </p>
+          <FocusGrid entries={library} level={browseLevel} />
+        </section>
 
-      <Card className="mb-8">
-        <CardContent className="flex items-center gap-3 p-4">
-          <span className="bg-sprint/15 text-sprint grid size-10 shrink-0 place-items-center rounded-xl">
-            <Gamepad2 className="size-5" aria-hidden />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold">Reflex Rush</p>
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              Thirty seconds, tap the corner that lights up. The only part of this app that is
-              purely for fun.
-            </p>
+        <Card level="quiet">
+          <CardContent className="flex items-center gap-3 p-4">
+            <span className="bg-sprint/15 text-sprint grid size-10 shrink-0 place-items-center rounded-xl">
+              <Gamepad2 className="size-5" aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">Reflex Rush</p>
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                Thirty seconds, tap the corner that lights up. The only part of this app that is
+                purely for fun.
+              </p>
+            </div>
+            <Button asChild size="sm" className="shrink-0">
+              <Link to="/play/reflex">Play</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <section aria-labelledby="catalogue">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h2 id="catalogue" className="type-headline text-lg">
+                Or browse everything
+              </h2>
+              <p className="text-muted-foreground text-xs">
+                {tab === 'drills'
+                  ? 'Corner-calling footwork, called out loud.'
+                  : 'Intervals and circuits. Most need no court at all.'}
+              </p>
+            </div>
+            <Button
+              variant={homeOnly ? 'default' : 'outline'}
+              size="sm"
+              className="shrink-0"
+              onClick={() => setHomeOnly((current) => !current)}
+              aria-pressed={homeOnly}
+            >
+              <Home />
+              No court
+            </Button>
           </div>
-          <Button asChild size="sm" className="shrink-0">
-            <Link to="/play/reflex">Play</Link>
-          </Button>
-        </CardContent>
-      </Card>
 
-      <section aria-labelledby="catalogue">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h2 id="catalogue" className="text-lg font-semibold tracking-tight">
-              Or browse everything
-            </h2>
-            <p className="text-muted-foreground text-xs">
-              {tab === 'drills'
-                ? 'Corner-calling footwork, called out loud.'
-                : 'Intervals and circuits. Most need no court at all.'}
-            </p>
+          <Segmented
+            label="Workout type"
+            value={tab}
+            options={[
+              { value: 'drills', label: 'Drills' },
+              { value: 'conditioning', label: 'Conditioning' },
+            ]}
+            onChange={(next) => setTab(next as Tab)}
+          />
+
+          <div className="mt-4">
+            {isLoading ? (
+              // Six card-shaped placeholders rather than a line of text: the
+              // catalogue is the tallest thing on this screen, and a one-line
+              // "Loading…" makes everything below it jump when the data lands.
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {Array.from({ length: 6 }, (_, index) => (
+                  <li key={index}>
+                    <SkeletonCard />
+                  </li>
+                ))}
+              </ul>
+            ) : visible.length === 0 ? (
+              <EmptyState
+                illustration="court"
+                title={homeOnly ? 'Everything left needs a court' : 'Nothing here yet'}
+                body={
+                  homeOnly
+                    ? 'Nothing in this tab works in a hallway. Turn the filter off to see the rest.'
+                    : 'This tab is empty at the moment.'
+                }
+                action={
+                  homeOnly ? (
+                    <Button variant="outline" onClick={() => setHomeOnly(false)}>
+                      Show everything
+                    </Button>
+                  ) : undefined
+                }
+              />
+            ) : (
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {visible.map((drill, index) => (
+                  <StaggerItem key={drill.slug} index={index}>
+                    <DrillCard drill={drill} config={configFor(drill)} />
+                  </StaggerItem>
+                ))}
+              </ul>
+            )}
           </div>
-          <Button
-            variant={homeOnly ? 'default' : 'outline'}
-            size="sm"
-            className="shrink-0"
-            onClick={() => setHomeOnly((current) => !current)}
-            aria-pressed={homeOnly}
-          >
-            <Home />
-            No court
-          </Button>
-        </div>
-
-        <Segmented
-          label="Workout type"
-          value={tab}
-          options={[
-            { value: 'drills', label: 'Drills' },
-            { value: 'conditioning', label: 'Conditioning' },
-          ]}
-          onChange={(next) => setTab(next as Tab)}
-        />
-
-        <div className="mt-4">
-          {isLoading ? (
-            // Six card-shaped placeholders rather than a line of text: the
-            // catalogue is the tallest thing on this screen, and a one-line
-            // "Loading…" makes everything below it jump when the data lands.
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {Array.from({ length: 6 }, (_, index) => (
-                <li key={index}>
-                  <SkeletonCard />
-                </li>
-              ))}
-            </ul>
-          ) : visible.length === 0 ? (
-            <EmptyState
-              illustration="court"
-              title={homeOnly ? 'Everything left needs a court' : 'Nothing here yet'}
-              body={
-                homeOnly
-                  ? 'Nothing in this tab works in a hallway. Turn the filter off to see the rest.'
-                  : 'This tab is empty at the moment.'
-              }
-              action={
-                homeOnly ? (
-                  <Button variant="outline" onClick={() => setHomeOnly(false)}>
-                    Show everything
-                  </Button>
-                ) : undefined
-              }
-            />
-          ) : (
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {visible.map((drill, index) => (
-                <StaggerItem key={drill.slug} index={index}>
-                  <DrillCard drill={drill} config={configFor(drill)} />
-                </StaggerItem>
-              ))}
-            </ul>
-          )}
-        </div>
-      </section>
+        </section>
+      </div>
     </>
   )
 }

@@ -128,7 +128,7 @@ export function ProgramDetailPage() {
       </div>
 
       {enrolled && state.enrollment ? (
-        <Card className="border-primary/40 from-accent/60 mb-5 bg-gradient-to-br to-transparent">
+        <Card level="lead" className="mb-5">
           <CardContent className="space-y-3 p-5">
             <div className="flex items-baseline justify-between gap-3">
               <p className="font-semibold">
@@ -164,7 +164,7 @@ export function ProgramDetailPage() {
       ) : (
         <>
           {finished && (
-            <Card className="border-primary/40 from-accent/60 mb-4 bg-gradient-to-br to-transparent">
+            <Card level="lead" className="mb-4">
               <CardContent className="flex items-center gap-4 p-5">
                 <div className="bg-accent text-accent-foreground grid size-11 shrink-0 place-items-center rounded-xl">
                   <Trophy className="size-5" aria-hidden />

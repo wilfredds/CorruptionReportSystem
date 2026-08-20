@@ -293,7 +293,7 @@ export function OnboardingPage() {
             {rewards.newBadges.length > 0 && <BadgeUnlock slugs={rewards.newBadges} />}
 
             {recommendation ? (
-              <Card className="border-primary/40 from-accent/60 overflow-hidden bg-gradient-to-br to-transparent">
+              <Card level="lead" className="overflow-hidden">
                 <CardContent className="space-y-4 p-5">
                   <div>
                     <Badge variant="accent" className="mb-2">

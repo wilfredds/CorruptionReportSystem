@@ -60,9 +60,7 @@ export function BenchmarkResultPage() {
         <div className="bg-accent text-accent-foreground mx-auto mb-4 grid size-16 place-items-center rounded-2xl">
           <Gauge className="size-8" aria-hidden />
         </div>
-        <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
-          Your score
-        </p>
+        <p className="text-muted-foreground type-eyebrow text-xs">Your score</p>
         <p className="tnum text-[clamp(4rem,20vw,7rem)] leading-none font-extrabold tracking-tighter">
           {benchmark.score}
         </p>

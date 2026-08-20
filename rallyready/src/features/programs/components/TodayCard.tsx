@@ -51,7 +51,7 @@ export function TodayCard() {
   }
 
   return (
-    <Card className="border-primary/40 from-accent/60 mb-6 bg-gradient-to-br to-transparent">
+    <Card level="lead" className="mb-6">
       <CardContent className="space-y-4 p-5">
         <div>
           <div className="mb-2 flex flex-wrap items-center gap-2">

@@ -58,13 +58,11 @@ export function FocusGrid({ entries, level }: FocusGridProps) {
         return (
           <StaggerItem key={focus.id} index={index}>
             <Pressable className="h-full">
+              {/* The beginner path leads, so it reads as the starting point
+                  rather than as one option among eight. */}
               <Card
-                className={cn(
-                  'hover:border-primary/50 h-full transition-colors',
-                  // The beginner path is given the accent so it reads as the
-                  // starting point rather than as one option among eight.
-                  first && 'border-primary/40 from-accent/50 bg-gradient-to-br to-transparent',
-                )}
+                level={first ? 'lead' : 'default'}
+                className="hover:border-primary/50 h-full transition-colors"
               >
                 <CardContent className="h-full p-4">
                   <Link to={`/focus/${focus.id}`} className="flex h-full flex-col gap-1.5">

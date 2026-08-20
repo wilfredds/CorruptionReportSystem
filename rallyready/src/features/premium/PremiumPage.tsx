@@ -49,7 +49,7 @@ export function PremiumPage() {
       />
 
       {premium.active && (
-        <Card className="border-primary/40 from-accent/60 mb-6 bg-gradient-to-br to-transparent">
+        <Card level="lead" className="mb-6">
           <CardContent className="flex items-start gap-3 p-5">
             <span className="bg-primary text-primary-foreground grid size-9 shrink-0 place-items-center rounded-xl">
               <Sparkles className="size-4" aria-hidden />

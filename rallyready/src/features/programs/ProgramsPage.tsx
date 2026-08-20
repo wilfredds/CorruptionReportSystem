@@ -57,7 +57,7 @@ export function ProgramsPage() {
       />
 
       {!loading && enrollment && active && (
-        <Card className="border-primary/40 from-accent/60 mb-8 bg-gradient-to-br to-transparent">
+        <Card level="lead" className="mb-8">
           <CardContent className="space-y-4 p-5">
             <div>
               <Badge variant="accent" className="mb-2">

@@ -26,9 +26,7 @@ export function RatingCard({ rating }: { rating: PlayerRating }) {
         <div className="flex items-center gap-4">
           <Ring value={rating.points} />
           <div className="min-w-0 flex-1">
-            <p className="text-muted-foreground text-xs font-bold tracking-[0.18em] uppercase">
-              Training rating
-            </p>
+            <p className="text-muted-foreground type-eyebrow">Training rating</p>
             <p className="text-2xl leading-tight font-bold tracking-tight">{rating.tier.name}</p>
             <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
               {rating.toNextTier === null

@@ -77,7 +77,7 @@ export function TimerDial({
               animate="visible"
               exit="exit"
               className={cn(
-                'text-xs font-bold tracking-[0.22em] uppercase transition-colors duration-300',
+                'type-eyebrow tracking-[0.22em] transition-colors duration-300',
                 PHASE_TEXT[phase],
               )}
             >

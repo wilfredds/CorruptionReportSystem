@@ -42,6 +42,7 @@ import { CircuitEditor } from '@/features/conditioning/components/CircuitEditor'
 
 import { CornerPicker } from './components/CornerPicker'
 import { CueSettingsDialog } from './components/CueSettingsDialog'
+import { SessionShape } from './components/SessionShape'
 
 const MODE_OPTIONS: { value: DrillMode; label: string; hint: string }[] = [
   { value: 'sequential', label: 'Sequential', hint: 'Fixed order — learn the pattern' },
@@ -139,13 +140,21 @@ export function DrillSetupPage() {
               Train
             </Link>
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight text-balance">{drill.name}</h1>
-          <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{drill.description}</p>
+          <h1 className="type-display text-3xl text-balance">{drill.name}</h1>
+          <p className="text-muted-foreground type-body mt-2">{drill.description}</p>
         </div>
         <CueSettingsDialog />
       </div>
 
       <div className="space-y-5">
+        {/* First, above every control: what you are about to do, to scale and
+            in the colours the runner is about to use. */}
+        <Card level="quiet">
+          <CardContent className="p-4">
+            <SessionShape config={config} />
+          </CardContent>
+        </Card>
+
         {circuit && <CircuitEditor drill={drill} config={config} onChange={update} />}
 
         {!circuit && (

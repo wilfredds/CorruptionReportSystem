@@ -31,10 +31,10 @@ export function BadgeUnlock({ slugs }: { slugs: string[] }) {
   // No `overflow-hidden` on the card: the paper is meant to leave it. The icon
   // tile below keeps its own, because the shine must not.
   return (
-    <Card className="border-primary/50 from-accent/60 relative mb-5 bg-gradient-to-br to-transparent">
+    <Card level="lead" className="relative mb-5">
       <Confetti count={18} />
       <CardContent className="relative p-5">
-        <p className="text-primary mb-3 text-xs font-bold tracking-[0.2em] uppercase">
+        <p className="text-primary type-eyebrow mb-3">
           {badges.length === 1 ? 'Badge unlocked' : `${badges.length} badges unlocked`}
         </p>
         <ul className="space-y-3">

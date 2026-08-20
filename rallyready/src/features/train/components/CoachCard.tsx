@@ -33,13 +33,11 @@ export function CoachCard() {
 
   return (
     <motion.div variants={variants} initial={initial} animate="visible">
+      {/* A rest day leads too, but in the rest colour: it is still the
+          instruction for today, it just is not a green light. */}
       <Card
-        className={cn(
-          'mb-6 overflow-hidden',
-          pick.restDay
-            ? 'border-rest/40 from-rest/10 bg-gradient-to-br to-transparent'
-            : 'border-primary/40 from-accent/60 bg-gradient-to-br to-transparent',
-        )}
+        level="lead"
+        className={cn('mb-6 overflow-hidden', pick.restDay && 'border-rest/40 from-rest/10')}
       >
         <CardContent className="p-5">
           <div className="mb-3 flex items-start gap-3">

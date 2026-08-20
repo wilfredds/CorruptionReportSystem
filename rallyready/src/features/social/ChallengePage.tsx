@@ -103,7 +103,7 @@ export function ChallengePage() {
       )}
 
       {decoded.ok && (
-        <Card className="border-primary/40 from-accent/60 bg-gradient-to-br to-transparent">
+        <Card level="lead">
           <CardContent className="p-5">
             <div className="mb-3 flex items-start gap-3">
               <span className="bg-primary text-primary-foreground grid size-10 shrink-0 place-items-center rounded-xl">

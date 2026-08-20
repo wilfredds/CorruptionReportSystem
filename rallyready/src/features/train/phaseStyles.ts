@@ -23,6 +23,25 @@ export const PHASE_STROKE: Record<BlockPhase, string> = {
   cooldown: 'stroke-cooldown',
 }
 
+/** Solid phase colour, for the shape strip that previews a session. */
+export const PHASE_FILL: Record<BlockPhase, string> = {
+  prepare: 'bg-muted-foreground/40',
+  warmup: 'bg-warmup',
+  work: 'bg-work',
+  rest: 'bg-rest',
+  sprint: 'bg-sprint',
+  cooldown: 'bg-cooldown',
+}
+
+export const PHASE_NAME: Record<BlockPhase, string> = {
+  prepare: 'Get ready',
+  warmup: 'Warm-up',
+  work: 'Work',
+  rest: 'Rest',
+  sprint: 'Sprint',
+  cooldown: 'Cool-down',
+}
+
 /** A wash of phase colour behind the runner — readable from across a room. */
 export const PHASE_WASH: Record<BlockPhase, string> = {
   prepare: 'from-muted-foreground/5',

@@ -327,18 +327,9 @@ export function ReflexRushPage() {
             animate="visible"
             className="mt-5"
           >
-            <Card
-              className={cn(
-                'mb-4',
-                beatIt && 'border-primary/50 from-accent/60 bg-gradient-to-br to-transparent',
-              )}
-            >
+            <Card level={beatIt ? 'lead' : 'default'} className="mb-4">
               <CardContent className="p-5 text-center">
-                {beatIt && (
-                  <p className="text-primary mb-1 text-xs font-bold tracking-[0.2em] uppercase">
-                    New personal best
-                  </p>
-                )}
+                {beatIt && <p className="text-primary type-eyebrow mb-1">New personal best</p>}
                 <p className="tnum text-5xl leading-none font-bold tracking-tight">
                   <CountUp value={summary.score} />
                 </p>

@@ -38,12 +38,7 @@ export function ChallengeResult({
   const drew = target !== null && calls === target
 
   return (
-    <Card
-      className={cn(
-        'mb-5',
-        won && 'border-primary/50 from-accent/60 bg-gradient-to-br to-transparent',
-      )}
-    >
+    <Card level={won ? 'lead' : 'default'} className="mb-5">
       <CardContent className="flex items-start gap-3 p-5">
         <span
           className={cn(
