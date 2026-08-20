@@ -67,7 +67,7 @@ Every project now has a workflow, each path-filtered to its own directory:
 | Workflow | Covers |
 |---|---|
 | `autocare-ci.yml` | lint, typecheck, test, migrate, seed, DB tests, build |
-| `rallyready-ci.yml` | `npm run verify` — typecheck, lint, 341 tests, build |
+| `rallyready-ci.yml` | `npm run verify` — typecheck, lint, 473 tests, build |
 | `firestore-rules-ci.yml` | 60 rules assertions against the real Firestore emulator |
 | `static-sites-ci.yml` | parses all JS in the three static sites |
 | `deploy-web.yml` | builds `cyclemind_ai` for web and publishes to Pages |

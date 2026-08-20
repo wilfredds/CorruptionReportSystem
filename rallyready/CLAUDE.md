@@ -49,7 +49,7 @@ npm run format
 ```
 
 `npm run verify` is the single gate. Prefer it over running the four
-individually. Baseline is **421 tests across 26 files, all passing** — if you
+individually. Baseline is **473 tests across 29 files, all passing** — if you
 see fewer, something is being skipped.
 
 ## What matters here
@@ -69,6 +69,20 @@ see fewer, something is being skipped.
   check and the training-load warning stay free for everyone. `ALWAYS_FREE` in
   `lib/premium/entitlements.ts` records this, and a test fails the build if one
   of them turns up in the paid list. Do not move that line.
+- **Motion comes from `lib/motion`.** Four durations, two easings, two springs
+  and a set of shared variants, mirrored into CSS custom properties in
+  `index.css` so a Tailwind `duration-*` class and a framer-motion transition
+  agree on what "quick" means. Do not hand-roll a duration, and do not write
+  the reduced-motion ternary again — `useMotionSafe` / `useTransitionSafe` /
+  `useInitialSafe` already do it, and `motionSafe` is unit-tested. Animate
+  `transform` and `opacity` only. Nothing on `lib/timer/*` or `lib/audio/*`
+  gets an animation, and nothing on the runner may force a layout or a paint
+  per tick; `TimerDial.tsx` explains why its sweep has no CSS transition.
+- **A reward fires once.** `lib/rewards` compares what has been earned against
+  a persisted record of what has been shown. That record is `string[] | null`,
+  and `null` means "never looked" — an install from before rewards existed —
+  in which case the app snapshots silently and celebrates nothing. Do not
+  default it to `[]`.
 - **No payment provider is wired.** Premium is a local entitlement plus an
   upgrade screen that says so on the page. Anything that looks like it takes
   money must keep saying it does not until a provider and server-side receipt
@@ -77,10 +91,12 @@ see fewer, something is being skipped.
 ## Layout
 
 - `src/features/` — `train`, `progress`, `programs`, `conditioning`,
-  `benchmark`, `library`, `auth`, `profile`, `onboarding`, `design-system`
-- `src/lib/` — `audio`, `timer`, `programs`, `data`, `supabase`, `auth`,
-  `coach`, `figures`, `games`, `library`, `premium`, `share`, `social`,
-  `theme.ts`
+  `benchmark`, `library`, `auth`, `profile`, `welcome`, `onboarding`, `games`,
+  `premium`, `social`, `design-system`. `welcome` is the first-run flow;
+  `onboarding` is still the profile questionnaire it hands over to.
+- `src/lib/` — `audio`, `timer`, `motion`, `programs`, `data`, `supabase`,
+  `auth`, `coach`, `figures`, `games`, `library`, `premium`, `share`, `social`,
+  `firstRun.ts`, `pageDirection.ts`, `rewards.ts`, `theme.ts`
 - `src/store/` — Zustand state · `src/hooks/` · `src/components/`
 - `supabase/schema.sql` — database schema
 - `scripts/generate-seed-sql.mjs` — run via `npm run seed:sql`

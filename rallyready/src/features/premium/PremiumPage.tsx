@@ -157,9 +157,11 @@ export function PremiumPage() {
           onClick={() => unlock(chosen, 'preview')}
           disabled={premium.active}
         >
-          {premium.active
-            ? 'Premium already on'
-            : `Switch Premium on — ${chosen.name}, free preview`}
+          {/* Buttons are `whitespace-nowrap`, and this label is long enough to
+              push a 375px screen sideways. The bundle is already named and
+              highlighted directly above; repeating it here cost a working
+              layout. */}
+          {premium.active ? 'Premium already on' : 'Switch Premium on — free preview'}
         </Button>
         <p className="text-muted-foreground mt-2 text-center text-xs">
           No card, no charge. This is a preview of the paid tier.

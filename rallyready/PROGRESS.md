@@ -17,10 +17,11 @@ the way.
 | 5 — Curated library                     | ✅ Done                        |
 | 6 — Load, readiness, why                | ✅ Done                        |
 | 7 — Finding your way in                 | ✅ Done                        |
-| **8 — Coach, rating, game, premium**    | ✅ **Done — ready for review** |
+| 8 — Coach, rating, game, premium        | ✅ Done                        |
+| **9 — Making it feel alive**            | ✅ **Done — ready for review** |
 
-All eight phases are built. `npm run verify` is green: 0 type errors, 0 lint
-errors/warnings, 421 unit tests passing, production build clean.
+All nine phases are built. `npm run verify` is green: 0 type errors, 0 lint
+errors/warnings, 473 unit tests passing, production build clean.
 
 Earlier phases, one line each — the detail is in the git history:
 
@@ -31,6 +32,180 @@ Earlier phases, one line each — the detail is in the git history:
   catalogue, and drawn demos.
 - **4** — the periodiser, four built-in programs, and today's session on Train.
 - **5** — the technique reference and one filterable library over everything.
+
+---
+
+## Phase 9 — making it feel alive
+
+Everything worked and nothing felt like anything. The brief was to fix that
+without touching what makes it work: audio-first is the product, the timer and
+cue layers are latency-sensitive, `prefers-reduced-motion` is honoured
+everywhere, and no new dependencies — framer-motion and Tailwind keyframes
+only. Five commits, in that order.
+
+### A motion vocabulary
+
+Nine components had hand-rolled their own durations, easings and
+reduced-motion ternaries. `lib/motion` now holds four durations, two easings,
+two springs and nine shared variants, mirrored into CSS custom properties so a
+Tailwind `duration-*` class and a framer transition can agree on what "quick"
+means. Both copies carry a comment saying to change the other.
+
+The interesting part is `motionSafe`, which strips every transform from a set
+of variants and replaces the timing. Under reduced motion a state change must
+still be *visible*, just not moving — so opacity survives and `x`, `y`, `scale`
+and `rotate` do not. Two things in there are load-bearing and unobvious, and
+both are covered by tests: a variant may be a *function* of its `custom` value,
+so the wrapper has to strip the resolved result too or a list keeps its
+per-index stagger delay; and the stripped transition is 0.01s rather than 0,
+because framer skips its animation loop at zero and `AnimatePresence` then
+never fires the exit callback that unmounts the element.
+
+`/design-system` grew a Motion section that plays every variant live. It is
+still out of the nav.
+
+### Somewhere to land
+
+A first-time visitor used to arrive on a catalogue of twelve drills. They never
+learned what the app was for, never heard it work, and on iOS never performed
+the gesture that unlocks the speech and audio the whole product depends on.
+
+`/welcome` is three screens with one idea each, then the four profile questions
+that already existed. The middle screen is the one that matters: pressing "Hear
+a call" plays a real spoken call, with its real tone and its real buzz, and
+that press *is* the audio unlock. It degrades honestly where speech or audio is
+unavailable instead of looking broken.
+
+Who sees it is decided by `lib/firstRun`, kept pure and tested: only from `/`,
+only with no profile and nothing logged, and only once. The persisted flag is
+backed by an in-memory guard, because storage can silently refuse to keep it
+and the failure mode there is Skip bouncing you straight back into the
+introduction. Deep links are never hijacked — a challenge someone sent you
+opens the challenge.
+
+### Per-screen polish
+
+The bottom bar has one marker that travels to the tab you pressed rather than
+five independent lights, and a navigating tap gets the shortest buzz the API
+can express — gated on the same preference as the drill cues, silent when you
+tap the tab you are already on. Pages arrive from the direction you moved in;
+that rule lives in `lib/pageDirection` with tests, and the bar builds itself
+from the same ordered list so the marker and the pages cannot disagree.
+
+Lists deal themselves out, capped so twelve drills finish arriving in about a
+fifth of a second. Cards have give under a press. Loading states are
+card-shaped placeholders rather than a line of text everything below lurches
+away from. Empty screens are drawn — a shuttle, a half-court, an empty chart —
+as inline SVG, because this has to work with no connection.
+
+Two changes on the runner's hot path made it faster rather than prettier: the
+active zone grows with a transform instead of an animated radius, and the
+player marker lost a `drop-shadow` filter that was repainting the board on
+every frame it moved. The dial's sweep is deliberately left alone, and the
+reason is written down next to it — the runner already pushes metrics at 30fps,
+so a CSS transition there would chase a target that had already moved.
+
+Reflex Rush got the full treatment, since it is the one screen you actually
+watch: targets that snap out, a ring fired off whatever you hit, a score and a
+clock that pop on change, a bar that turns red in the last five seconds. It
+scales rather than resizes, so the game's own animation frame does not share a
+thread with a layout pass. The targets are circles now; at 3:4 a percentage
+width and a percentage height are different lengths, and they had been eggs
+since the day they were written.
+
+### Three moments
+
+Finishing a session, unlocking a badge and extending a streak now look like
+something happened. The animation was the easy half. The hard half is not
+repeating it: an unlock that fires on every mount is a bug with confetti on it.
+
+`lib/rewards` compares what is earned against a persisted record of what has
+already been shown. `useRewards` snapshots that record when the screen opens
+and writes the real one immediately — so closing the app mid-burst spends the
+moment, which is the right trade, because a reward you can farm by reloading is
+not a reward.
+
+The record starts as `null` rather than empty, and that distinction is the
+whole migration story: `null` means "never looked", which is what every install
+from before this phase looks like, and on `null` the app takes a silent
+snapshot. Nobody with nine badges already earned gets nine unlock animations
+after updating. A streak is only celebrated when it beats the last one
+celebrated, and the recorded number never goes down, so a streak that breaks
+and climbs back does not fire five more times.
+
+The confetti is about forty lines of DOM. Every package on npm ships a canvas
+renderer and its own animation loop for what is twenty divs on a curve; these
+animate transform and opacity, composite, and unmount when they are done.
+Pieces are laid out from their index rather than from `Math.random`, so a
+re-render cannot reshuffle a burst mid-flight.
+
+Two things fell out of this worth more than the animation. Badges are now
+reconciled when a session *ends* rather than the next time somebody opens the
+dashboard, because the summary screen runs the same derivation the Progress
+screen does. And the end of onboarding stops claiming a badge in small grey
+text and actually hands it over.
+
+### A voice and a hierarchy
+
+Typography had drifted into six almost-identical headings. There are two
+registers now: loud is tight and heavy, quiet is open and plain, size still
+comes from Tailwind. Nine hand-rolled uppercase eyebrows now come from one
+class.
+
+Cards got three levels. The card that mattered on a screen used to be made to
+matter by pasting the same four gradient classes at the site, sixteen times;
+`level="lead"` says it once and gives us somewhere to change what important
+looks like.
+
+The setup screen opens with the session drawn to scale. "8 min" never said
+whether that was eight minutes of work or four of work and four of standing
+still. It is also where the runner's colour language gets introduced — the
+ring, the board and the background wash all change hue with the phase, and
+until now you met that vocabulary for the first time while already moving.
+Built from the real timeline, so the preview and the session cannot drift
+apart.
+
+### Verified
+
+- `npm run verify`: 473 tests across 29 files, 0 type errors, 0 lint problems.
+- 65 route/viewport/theme combinations in Chromium — 13 routes at 375px and
+  1280px, light and dark, plus 375px with `prefers-reduced-motion: reduce`. No
+  console errors, no page errors, and nothing scrolls sideways.
+- The whole first-run path walked with storage cleared, plus the four ways it
+  must *not* fire: a returning player, a reload, a deep link, and a browser
+  that refuses to persist the flag.
+- The three reward moments fired once each, stayed quiet on reload, and stayed
+  quiet entirely for a simulated pre-existing install.
+- A drill run to completion with no interaction after Start and
+  `speechSynthesis` stubbed: 14 corner calls spoken, "go" at each block, the
+  finish announced, 23 buzzes, session logged — identical under reduced motion.
+- Frame profile of a live drill, same machine, back to back: 59.8fps before,
+  60.0fps after; frames over 33ms went from 2 to 0 in the first run and 1 to 1
+  in the second. No regression, marginally fewer drops.
+- Bundle: 1,202.04 kB → 1,236.10 kB raw (+34.06 kB), 364.90 → 375.73 kB gzip
+  (+10.83 kB). About 2.8%, for a motion system, a first-run flow, the reward
+  layer and three SVG illustrations.
+
+### Found while building it
+
+- The Reflex Rush targets were ellipses, not circles: `size-[26%]` on a 3:4
+  board makes the height a third larger than the width.
+- The premium page pushed a 375px screen 10px sideways. Buttons are
+  `whitespace-nowrap`, and "Switch Premium on — 3 months, free preview" is
+  longer than a phone. The bundle is named directly above it anyway.
+- `speechSynthesis` cannot be assigned to — it is a read-only accessor. The
+  eyes-free test needed `Object.defineProperty`.
+
+### Deliberately not done
+
+- **No transition on the dial's `strokeDashoffset`.** Explained above; the
+  comment lives in `TimerDial.tsx` so nobody "fixes" it.
+- **No animation on a running drill that has to be watched.** The board's only
+  changes are the target and the recovery marker, both of which existed before
+  and both of which the audio already says out loud.
+- **No page-exit animation.** `AnimatePresence mode="wait"` would hold the new
+  screen back by the exit duration; a screen that arrives 160ms later to look
+  smoother is not smoother.
 
 ---
 
