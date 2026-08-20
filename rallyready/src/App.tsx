@@ -26,6 +26,7 @@ import { DrillSetupPage } from '@/features/train/DrillSetupPage'
 import { ReflexRushPage } from '@/features/games/ReflexRushPage'
 import { PremiumPage } from '@/features/premium/PremiumPage'
 import { ChallengePage } from '@/features/social/ChallengePage'
+import { WelcomePage } from '@/features/welcome/WelcomePage'
 import { FocusPage } from '@/features/train/FocusPage'
 import { SessionSummaryPage } from '@/features/train/SessionSummaryPage'
 import { TrainPage } from '@/features/train/TrainPage'
@@ -77,6 +78,11 @@ function AppRoutes() {
             board while a drill or a test is running. */}
         <Route path="/run/:slug" element={<DrillRunPage />} />
         <Route path="/benchmark/run" element={<BenchmarkRunPage />} />
+
+        {/* The welcome is outside it too. A first-run screen with a bottom nav
+            invites people to wander off before it has said anything, and it
+            carries its own Skip for anyone who wants out. */}
+        <Route path="/welcome" element={<WelcomePage />} />
 
         <Route element={<AppShell />}>
           <Route path="/" element={<TrainPage />} />

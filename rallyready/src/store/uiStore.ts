@@ -34,6 +34,15 @@ interface UiStore {
    */
   browseLevel: SkillLevel | null
   setBrowseLevel(level: SkillLevel | null): void
+  /**
+   * When the first-run welcome was completed or skipped. A first-run screen
+   * that reappears is worse than none at all.
+   */
+  welcomeSeenAt: number | null
+  markWelcomeSeen(): void
+  /** The install offer is made once and never again. */
+  installPromptDismissed: boolean
+  dismissInstallPrompt(): void
 }
 
 /**
@@ -55,8 +64,12 @@ export const useUiStore = create<UiStore>()(
         set({ adjustment, adjustmentDate: adjustment === null ? null : date }),
       browseLevel: null,
       setBrowseLevel: (browseLevel) => set({ browseLevel }),
+      welcomeSeenAt: null,
+      markWelcomeSeen: () => set({ welcomeSeenAt: Date.now() }),
+      installPromptDismissed: false,
+      dismissInstallPrompt: () => set({ installPromptDismissed: true }),
     }),
-    { name: 'rallyready.ui', version: 4 },
+    { name: 'rallyready.ui', version: 5 },
   ),
 )
 

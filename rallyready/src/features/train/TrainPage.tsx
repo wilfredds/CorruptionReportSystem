@@ -11,7 +11,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 
 import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
@@ -20,6 +20,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Segmented } from '@/components/ui/segmented'
 import { useRepositories } from '@/lib/data/context'
 import { resolveRecommendation } from '@/lib/data/recommend'
+import { shouldSeeWelcome, wasWelcomeShownThisLoad, WELCOME_PATH } from '@/lib/firstRun'
 import { isConditioning, isPrepOrRecovery } from '@/lib/data/seed/drills'
 import type { Drill, SkillLevel } from '@/lib/data/types'
 import { buildLibrary } from '@/lib/library/entries'
@@ -42,10 +43,12 @@ type Tab = 'drills' | 'conditioning'
 
 export function TrainPage() {
   const repositories = useRepositories()
+  const location = useLocation()
   const overrides = useDrillConfigStore((state) => state.overrides)
   const setupDismissed = useUiStore((state) => state.setupPromptDismissed)
   const dismissSetup = useUiStore((state) => state.dismissSetupPrompt)
   const storedLevel = useUiStore((state) => state.browseLevel)
+  const welcomeSeenAt = useUiStore((state) => state.welcomeSeenAt)
   const premium = usePremium()
   const [tab, setTab] = useState<Tab>('drills')
   const [homeOnly, setHomeOnly] = useState(false)
@@ -92,6 +95,26 @@ export function TrainPage() {
   // Nothing set up and nothing trained: a real first visit, not a returning
   // player who skipped the questionnaire.
   const isNewHere = !profileLoading && !profile && !historyLoading && recent.length === 0
+
+  /*
+   * A genuine first visit gets an introduction, not a catalogue.
+   *
+   * Rendered as a redirect rather than fired from an effect: an effect runs
+   * after paint, so the catalogue would flash up and vanish. Everything that
+   * decides this lives in `lib/firstRun` so it can be tested without a router.
+   */
+  if (
+    shouldSeeWelcome({
+      loading: profileLoading || historyLoading,
+      hasProfile: Boolean(profile),
+      hasSessions: recent.length > 0,
+      seenWelcome: welcomeSeenAt !== null,
+      path: location.pathname,
+      redirectedThisLoad: wasWelcomeShownThisLoad(),
+    })
+  ) {
+    return <Navigate to={WELCOME_PATH} replace />
+  }
 
   return (
     <>
