@@ -1,13 +1,16 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { CheckCircle2, Flame, RotateCcw, Timer, Target, Trophy } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { BadgeUnlock } from '@/components/rewards/BadgeUnlock'
+import { Confetti } from '@/components/rewards/Confetti'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { pageVariants, useInitialSafe, useMotionSafe } from '@/lib/motion'
+import { useRewards } from '@/hooks/useRewards'
+import { pageVariants, rewardVariants, useInitialSafe, useMotionSafe } from '@/lib/motion'
 import { useRepositories } from '@/lib/data/context'
 import { METRIC_RPE } from '@/lib/data/load'
 import {
@@ -17,8 +20,9 @@ import {
   METRIC_SEED,
   METRIC_WORK_SEC,
 } from '@/lib/data/stats'
-import { formatDuration, pluralize } from '@/lib/utils'
+import { cn, formatDuration, pluralize } from '@/lib/utils'
 
+import { useTrainingData } from '../progress/useTrainingData'
 import { ChallengeButton } from '../social/ChallengeButton'
 import { ChallengeResult } from '../social/ChallengeResult'
 import { ProgramDayPrompt } from '../programs/components/ProgramDayPrompt'
@@ -29,6 +33,7 @@ export function SessionSummaryPage() {
   const { id = '' } = useParams()
   const repositories = useRepositories()
   const variants = useMotionSafe(pageVariants)
+  const reward = useMotionSafe(rewardVariants)
   const initial = useInitialSafe('hidden')
   const queryClient = useQueryClient()
 
@@ -52,10 +57,20 @@ export function SessionSummaryPage() {
     enabled: Boolean(session),
   })
 
-  const { data: streak } = useQuery({
-    queryKey: ['streak'],
-    queryFn: () => repositories.streaks.get(),
-  })
+  /*
+   * The same derivation the Progress screen runs, for two reasons: it is where
+   * the badge reconciliation lives, so finishing a session now awards what it
+   * earned instead of waiting for somebody to open the dashboard; and the
+   * reward moments below need the earned list and the streak to agree with
+   * each other. Every query behind it is shared and cached.
+   */
+  const training = useTrainingData()
+  const streak = training.loading ? undefined : training.streak
+  const earnedSlugs = useMemo(
+    () => training.badges.filter((badge) => badge.earned).map((badge) => badge.slug),
+    [training.badges],
+  )
+  const rewards = useRewards(earnedSlugs, streak?.currentStreak, !training.loading)
 
   // `drillId` is a slug locally and a uuid once signed in, so resolve the drill
   // rather than assuming the stored id can be routed to.
@@ -81,6 +96,7 @@ export function SessionSummaryPage() {
   const calls = metrics.find((metric) => metric.metricKey === 'calls_answered')?.metricValue ?? 0
   const finished = metrics.find((metric) => metric.metricKey === 'completed')?.metricValue === 1
   const rpe = metrics.find((metric) => metric.metricKey === METRIC_RPE)?.metricValue ?? null
+  const extendedStreak = rewards.streakWeeks !== null
 
   // Everything needed to hand this exact session to somebody else. Absent on
   // sessions logged before challenges existed, which is why it is optional.
@@ -103,12 +119,24 @@ export function SessionSummaryPage() {
   return (
     <motion.div variants={variants} initial={initial} animate="visible">
       <div className="mb-8 text-center">
-        <div className="bg-accent text-accent-foreground mx-auto mb-4 grid size-16 place-items-center rounded-2xl">
-          {finished ? (
-            <Trophy className="size-8" aria-hidden />
-          ) : (
-            <CheckCircle2 className="size-8" aria-hidden />
-          )}
+        {/* The burst is anchored to the trophy rather than to the whole header
+            block, so it comes off the thing you just earned. */}
+        <div className="relative mx-auto mb-4 size-16">
+          {/* Only for a session actually finished. Bailing out at round two is
+              a perfectly good decision, and it does not want a fanfare. */}
+          {finished && <Confetti />}
+          <motion.div
+            variants={reward}
+            initial={initial}
+            animate="visible"
+            className="bg-accent text-accent-foreground relative grid size-16 place-items-center rounded-2xl"
+          >
+            {finished ? (
+              <Trophy className="size-8" aria-hidden />
+            ) : (
+              <CheckCircle2 className="size-8" aria-hidden />
+            )}
+          </motion.div>
         </div>
         <h1 className="text-3xl font-bold tracking-tight">
           {finished ? 'Session complete' : 'Session logged'}
@@ -166,13 +194,31 @@ export function SessionSummaryPage() {
 
       <ProgramDayPrompt drillSlug={drill?.slug} />
 
+      {rewards.newBadges.length > 0 && <BadgeUnlock slugs={rewards.newBadges} />}
+
       {streak && (
-        <Card className="mb-5">
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="bg-accent text-accent-foreground grid size-11 shrink-0 place-items-center rounded-xl">
+        <Card
+          className={cn(
+            'relative mb-5',
+            extendedStreak && 'border-primary/50 from-accent/60 bg-gradient-to-br to-transparent',
+          )}
+        >
+          {extendedStreak && <Confetti count={14} />}
+          <CardContent className="relative flex items-center gap-4 p-5">
+            <motion.div
+              variants={extendedStreak ? reward : undefined}
+              initial={extendedStreak ? initial : false}
+              animate="visible"
+              className="bg-accent text-accent-foreground grid size-11 shrink-0 place-items-center rounded-xl"
+            >
               <Flame className="size-5" aria-hidden />
-            </div>
+            </motion.div>
             <div className="min-w-0">
+              {extendedStreak && (
+                <p className="text-primary text-xs font-bold tracking-[0.18em] uppercase">
+                  Streak extended
+                </p>
+              )}
               <p className="font-semibold">
                 {streak.currentStreak > 0
                   ? `${pluralize(streak.currentStreak, 'week')} in a row`

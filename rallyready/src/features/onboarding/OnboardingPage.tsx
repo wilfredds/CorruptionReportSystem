@@ -4,11 +4,15 @@ import { ArrowLeft, Check, Play, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
+import { BadgeUnlock } from '@/components/rewards/BadgeUnlock'
+import { Confetti } from '@/components/rewards/Confetti'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { useRewards } from '@/hooks/useRewards'
 import {
   pageVariants,
+  rewardVariants,
   stepVariants as rawStepVariants,
   useInitialSafe,
   useMotionSafe,
@@ -91,6 +95,9 @@ const COURT_ACCESS: Choice<DrillLocation>[] = [
 
 type Step = 0 | 1 | 2 | 3 | 4
 
+/** Awarded by `finish` below; stable identity so the hook does not churn. */
+const FIRST_BADGE = ['getting-started']
+
 export function OnboardingPage() {
   const navigate = useNavigate()
   const repositories = useRepositories()
@@ -98,6 +105,7 @@ export function OnboardingPage() {
   const auth = useAuth()
   const variants = useMotionSafe(pageVariants)
   const stepVariants = useMotionSafe(rawStepVariants)
+  const reward = useMotionSafe(rewardVariants)
   const initial = useInitialSafe('hidden')
 
   const [step, setStep] = useState<Step>(0)
@@ -111,6 +119,15 @@ export function OnboardingPage() {
     queryKey: ['drills'],
     queryFn: () => repositories.drills.list(),
   })
+
+  /*
+   * The first win, run through the same machinery as every other one.
+   *
+   * `finish` has already awarded this badge, so the list is known rather than
+   * fetched — and routing it through `useRewards` is what stops the session
+   * summary handing out a second Getting Started five minutes later.
+   */
+  const rewards = useRewards(FIRST_BADGE, undefined, step === 4)
 
   const finish = async (chosenAccess: DrillLocation) => {
     setCourtAccess(chosenAccess)
@@ -256,14 +273,24 @@ export function OnboardingPage() {
         {step === 4 && (
           <motion.div key="done" variants={variants} initial={initial} animate="visible">
             <div className="mb-6 text-center">
-              <div className="bg-accent text-accent-foreground mx-auto mb-4 grid size-16 place-items-center rounded-2xl">
-                <Sparkles className="size-8" aria-hidden />
+              <div className="relative mx-auto mb-4 size-16">
+                <Confetti />
+                <motion.div
+                  variants={reward}
+                  initial={initial}
+                  animate="visible"
+                  className="bg-accent text-accent-foreground relative grid size-16 place-items-center rounded-2xl"
+                >
+                  <Sparkles className="size-8" aria-hidden />
+                </motion.div>
               </div>
               <h1 className="text-3xl font-bold tracking-tight">You&rsquo;re set up</h1>
               <p className="text-muted-foreground mt-2 text-sm">
-                Badge unlocked: <span className="text-foreground font-medium">Getting Started</span>
+                Two minutes well spent. Here is what to do first.
               </p>
             </div>
+
+            {rewards.newBadges.length > 0 && <BadgeUnlock slugs={rewards.newBadges} />}
 
             {recommendation ? (
               <Card className="border-primary/40 from-accent/60 overflow-hidden bg-gradient-to-br to-transparent">

@@ -43,6 +43,18 @@ interface UiStore {
   /** The install offer is made once and never again. */
   installPromptDismissed: boolean
   dismissInstallPrompt(): void
+  /**
+   * What has already been celebrated.
+   *
+   * `null` means the app has never looked, which is what an install from
+   * before rewards existed looks like. See `lib/rewards`: on `null` the app
+   * takes a silent snapshot rather than handing somebody nine unlock
+   * animations for badges they earned months ago.
+   */
+  seenBadges: string[] | null
+  recordSeenBadges(slugs: string[]): void
+  celebratedStreak: number | null
+  recordCelebratedStreak(weeks: number): void
 }
 
 /**
@@ -68,8 +80,12 @@ export const useUiStore = create<UiStore>()(
       markWelcomeSeen: () => set({ welcomeSeenAt: Date.now() }),
       installPromptDismissed: false,
       dismissInstallPrompt: () => set({ installPromptDismissed: true }),
+      seenBadges: null,
+      recordSeenBadges: (seenBadges) => set({ seenBadges }),
+      celebratedStreak: null,
+      recordCelebratedStreak: (celebratedStreak) => set({ celebratedStreak }),
     }),
-    { name: 'rallyready.ui', version: 5 },
+    { name: 'rallyready.ui', version: 6 },
   ),
 )
 
