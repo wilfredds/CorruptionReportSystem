@@ -1,0 +1,41 @@
+name: Deploy Bike Guide PH to GitHub Pages
+
+# Publishes the bike-guide-app/ subfolder to the gh-pages branch under
+# /bike-guide-app/. Uses keep_files so other deployments (e.g. CycleMind
+# AI at the root) are preserved.
+#
+# Live URL: https://wilfredds.github.io/CorruptionReportSystem/bike-guide-app/
+
+on:
+  push:
+    branches:
+      - main
+      - claude/bike-guide-app-planning-ciID4
+    paths:
+      - 'bike-guide-app/**'
+      - '.github/workflows/deploy-bike-guide.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages-bike-guide
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Publish bike-guide-app to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./bike-guide-app
+          publish_branch: gh-pages
+          destination_dir: bike-guide-app
+          keep_files: true
+          commit_message: "deploy(bike-guide): publish to /bike-guide-app/"

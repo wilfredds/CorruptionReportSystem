@@ -58,4 +58,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./cyclemind_ai/build/web
           publish_branch: gh-pages
-          force_orphan: true
+          # keep_files preserves /bike-guide-app/ deployed by the other workflow.
+          keep_files: true
+          commit_message: "deploy(cyclemind): publish web demo to gh-pages"
