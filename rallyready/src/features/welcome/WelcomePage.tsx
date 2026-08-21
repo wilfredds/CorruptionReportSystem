@@ -1,9 +1,11 @@
+import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowRight, HeartPulse, ShieldCheck, TrendingUp, Volume2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
+import { useRepositories } from '@/lib/data/context'
 import { markWelcomeShownThisLoad } from '@/lib/firstRun'
 import {
   DURATION,
@@ -32,6 +34,10 @@ import { InstallPrompt } from './InstallPrompt'
  * Three screens, one idea each, then straight into the four profile questions
  * that already existed. Skippable from the very first screen: somebody who
  * knows what they are doing should not have to sit through an introduction.
+ *
+ * It is also reachable on purpose, from Profile, and that is not the same
+ * visit. Somebody replaying it already has a profile, so the last button must
+ * not offer to set one up — it sends them back to training instead.
  */
 
 type Screen = 'what' | 'hear' | 'track'
@@ -43,8 +49,17 @@ const BAR_TRANSITION = transition(DURATION.base)
 
 export function WelcomePage() {
   const navigate = useNavigate()
+  const repositories = useRepositories()
   const markSeen = useUiStore((state) => state.markWelcomeSeen)
   const [index, setIndex] = useState(0)
+
+  // Only to decide where the last button goes. Cached, and already fetched by
+  // whichever screen sent them here.
+  const { data: profile } = useQuery({
+    queryKey: ['profile'],
+    queryFn: () => repositories.profiles.get(),
+  })
+  const replaying = profile != null
 
   const step = useMotionSafe(stepVariants)
   const item = useMotionSafe(listItemVariants)
@@ -61,7 +76,7 @@ export function WelcomePage() {
 
   const finish = () => {
     markSeen()
-    navigate('/onboarding', { replace: true })
+    navigate(replaying ? '/' : '/onboarding', { replace: true })
   }
 
   const skip = () => {
@@ -219,7 +234,7 @@ export function WelcomePage() {
         <AnimatePresence mode="wait" initial={false}>
           <motion.div key={last ? 'go' : 'next'} variants={pop} initial="hidden" animate="visible">
             <Button size="lg" onClick={() => (last ? finish() : setIndex((n) => n + 1))}>
-              {last ? 'Set me up' : 'Next'}
+              {last ? (replaying ? 'Back to training' : 'Set me up') : 'Next'}
               <ArrowRight />
             </Button>
           </motion.div>

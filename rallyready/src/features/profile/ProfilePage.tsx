@@ -5,7 +5,9 @@ import {
   LogIn,
   LogOut,
   Palette,
+  PlayCircle,
   SlidersHorizontal,
+  Sparkles,
   Trash2,
   UserRound,
 } from 'lucide-react'
@@ -20,6 +22,7 @@ import { useAuth } from '@/lib/auth/context'
 import { isSupabaseConfigured } from '@/lib/data'
 import { useRepositories } from '@/lib/data/context'
 import { removeKey, STORAGE_KEYS } from '@/lib/data/local/storage'
+import { WELCOME_PATH } from '@/lib/firstRun'
 import type { ThemePreference } from '@/lib/theme'
 import { formatDuration, pluralize } from '@/lib/utils'
 import { useDrillConfigStore } from '@/store/drillConfigStore'
@@ -132,6 +135,39 @@ export function ProfilePage() {
                 </Button>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/*
+         * The introduction, on demand.
+         *
+         * The first-run redirect is deliberately narrow — it never fires for
+         * anyone with a profile or a logged session, because re-introducing an
+         * app to somebody who has been training in it for a month is worse than
+         * not introducing it at all. The cost of that rule is that the people
+         * most likely to want to *see* the introduction — anyone who skipped
+         * it, anyone showing the app to a friend, and everybody who was already
+         * using it the day it shipped — had no way in at all. This is the way
+         * in. It does not reset anything.
+         */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="text-primary size-4" aria-hidden />
+              How RallyReady works
+            </CardTitle>
+            <CardDescription>
+              The three-screen introduction, including the live call demo. New players see this
+              once, automatically.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="outline" className="w-full">
+              <Link to={WELCOME_PATH}>
+                <PlayCircle />
+                Play the introduction
+              </Link>
+            </Button>
           </CardContent>
         </Card>
 
